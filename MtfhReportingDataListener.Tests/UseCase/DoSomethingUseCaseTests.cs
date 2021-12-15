@@ -16,7 +16,7 @@ namespace MtfhReportingDataListener.Tests.UseCase
     public class DoSomethingUseCaseTests
     {
         private readonly Mock<IDbEntityGateway> _mockGateway;
-        private readonly DoSomethingUseCase _sut;
+        private readonly TenureUpdatedUseCase _sut;
         private readonly DomainEntity _domainEntity;
 
         private readonly EntityEventSns _message;
@@ -28,7 +28,7 @@ namespace MtfhReportingDataListener.Tests.UseCase
             _fixture = new Fixture();
 
             _mockGateway = new Mock<IDbEntityGateway>();
-            _sut = new DoSomethingUseCase(_mockGateway.Object);
+            _sut = new TenureUpdatedUseCase(_mockGateway.Object);
 
             _domainEntity = _fixture.Create<DomainEntity>();
             _message = CreateMessage(_domainEntity.Id);
@@ -36,7 +36,7 @@ namespace MtfhReportingDataListener.Tests.UseCase
             _mockGateway.Setup(x => x.GetEntityAsync(_domainEntity.Id)).ReturnsAsync(_domainEntity);
         }
 
-        private EntityEventSns CreateMessage(Guid id, string eventType = EventTypes.DoSomethingEvent)
+        private EntityEventSns CreateMessage(Guid id, string eventType = EventTypes.TenureUpdatedEvent)
         {
             return _fixture.Build<EntityEventSns>()
                            .With(x => x.EntityId, id)

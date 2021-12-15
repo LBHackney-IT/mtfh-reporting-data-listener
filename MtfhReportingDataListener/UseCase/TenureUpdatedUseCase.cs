@@ -9,11 +9,11 @@ using System.Threading.Tasks;
 
 namespace MtfhReportingDataListener.UseCase
 {
-    public class DoSomethingUseCase : IDoSomethingUseCase
+    public class TenureUpdatedUseCase : ITenureUpdatedUseCase
     {
         private readonly IDbEntityGateway _gateway;
 
-        public DoSomethingUseCase(IDbEntityGateway gateway)
+        public TenureUpdatedUseCase(IDbEntityGateway gateway)
         {
             _gateway = gateway;
         }

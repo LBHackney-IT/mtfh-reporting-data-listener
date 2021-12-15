@@ -1,5 +1,5 @@
 namespace MtfhReportingDataListener.UseCase.Interfaces
 {
-    public interface IDoSomethingUseCase : IMessageProcessing
+    public interface ITenureUpdatedUseCase : IMessageProcessing
     { }
 }
