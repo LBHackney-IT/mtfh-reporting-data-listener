@@ -42,7 +42,7 @@ namespace MtfhReportingDataListener
             services.ConfigureDynamoDB();
 
             services.AddHttpClient();
-            services.AddScoped<IDoSomethingUseCase, DoSomethingUseCase>();
+            services.AddScoped<ITenureUpdatedUseCase, TenureUpdatedUseCase>();
 
             services.AddScoped<IDbEntityGateway, DynamoDbEntityGateway>();
 
@@ -86,12 +86,11 @@ namespace MtfhReportingDataListener
                     IMessageProcessing processor = null;
                     switch (entityEvent.EventType)
                     {
-                        case EventTypes.DoSomethingEvent:
+                        case EventTypes.TenureUpdatedEvent:
                             {
-                                processor = ServiceProvider.GetService<IDoSomethingUseCase>();
+                                processor = ServiceProvider.GetService<ITenureUpdatedUseCase>();
                                 break;
                             }
-                        // TODO - Implement other message types here...
                         default:
                             throw new ArgumentException($"Unknown event type: {entityEvent.EventType} on message id: {message.MessageId}");
                     }

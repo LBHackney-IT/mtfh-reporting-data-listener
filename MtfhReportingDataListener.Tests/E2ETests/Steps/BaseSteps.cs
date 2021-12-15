@@ -22,7 +22,7 @@ namespace MtfhReportingDataListener.Tests.E2ETests.Steps
         public BaseSteps()
         { }
 
-        protected SQSEvent.SQSMessage CreateMessage(Guid personId, string eventType = EventTypes.DoSomethingEvent)
+        protected SQSEvent.SQSMessage CreateMessage(Guid personId, string eventType = EventTypes.TenureUpdatedEvent)
         {
             var personSns = _fixture.Build<EntityEventSns>()
                                     .With(x => x.EntityId, personId)
