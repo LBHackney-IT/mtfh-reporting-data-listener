@@ -4,19 +4,19 @@ setup:
 
 .PHONY: build
 build:
-	docker-compose build base-listener
+	docker-compose build mtfh-reporting-data-listener
 
 .PHONY: serve
 serve:
-	docker-compose build base-listener && docker-compose up base-listener
+	docker-compose build mtfh-reporting-data-listener && docker-compose up mtfh-reporting-data-listener
 
 .PHONY: shell
 shell:
-	docker-compose run base-listener bash
+	docker-compose run mtfh-reporting-data-listener bash
 
 .PHONY: test
 test:
-	docker-compose up dynamodb-database & docker-compose build base-listener-test && docker-compose up base-listener-test
+	docker-compose up dynamodb-database & docker-compose build mtfh-reporting-data-listener-test && docker-compose up mtfh-reporting-data-listener-test
 
 .PHONY: lint
 lint:

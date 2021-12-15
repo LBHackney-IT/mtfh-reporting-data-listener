@@ -1,11 +1,11 @@
 version: "3.2"
 
 services:
-  base-listener:
-    image: base-listener
+  mtfh-reporting-data-listener:
+    image: mtfh-reporting-data-listener
     build:
       context: .
-      dockerfile: BaseListener/Dockerfile
+      dockerfile: MtfhReportingDataListener/Dockerfile
       args:
         - LBHPACKAGESTOKEN=${LBHPACKAGESTOKEN}
     ports:
@@ -21,11 +21,11 @@ services:
     links:
       - dynamodb-database
 
-  base-listener-test:
-    image: base-listener-test
+  mtfh-reporting-data-listener-test:
+    image: mtfh-reporting-data-listener-test
     build:
       context: .
-      dockerfile: BaseListener.Tests/Dockerfile
+      dockerfile: MtfhReportingDataListener.Tests/Dockerfile
       args:
         - LBHPACKAGESTOKEN=${LBHPACKAGESTOKEN}
     environment:
