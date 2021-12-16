@@ -6,16 +6,17 @@ using MtfhReportingDataListener.UseCase.Interfaces;
 using Hackney.Core.Logging;
 using System;
 using System.Threading.Tasks;
+using Hackney.Shared.Tenure.Boundary.Response;
 
 namespace MtfhReportingDataListener.UseCase
 {
     public class TenureUpdatedUseCase : ITenureUpdatedUseCase
     {
-        private readonly IDbEntityGateway _gateway;
+        private readonly ITenureInfoApiGateway _tenureInfoApi;
 
-        public TenureUpdatedUseCase(IDbEntityGateway gateway)
+        public TenureUpdatedUseCase(ITenureInfoApiGateway gateway)
         {
-            _gateway = gateway;
+            _tenureInfoApi = gateway;
         }
 
         [LogCall]
@@ -23,14 +24,15 @@ namespace MtfhReportingDataListener.UseCase
         {
             if (message is null) throw new ArgumentNullException(nameof(message));
 
-            // TODO - Implement use case logic
-            DomainEntity entity = await _gateway.GetEntityAsync(message.EntityId).ConfigureAwait(false);
-            if (entity is null) throw new EntityNotFoundException<DomainEntity>(message.EntityId);
+            // #1 - Get the tenure
+            var tenure = await _tenureInfoApi.GetTenureInfoByIdAsync(message.EntityId, message.CorrelationId)
+                                             .ConfigureAwait(false);
+            if (tenure is null) throw new EntityNotFoundException<TenureResponseObject>(message.EntityId);
 
-            entity.Description = "Updated";
+            //#2 - Convert the data to avro
 
-            // Save updated entity
-            await _gateway.SaveEntityAsync(entity).ConfigureAwait(false);
+            //#3 - Update the data in Kafka
+
         }
     }
 }
