@@ -7,6 +7,8 @@ using Hackney.Core.Logging;
 using System;
 using System.Threading.Tasks;
 using Hackney.Shared.Tenure.Boundary.Response;
+using System.Text.Json;
+using Confluent.Kafka;
 
 namespace MtfhReportingDataListener.UseCase
 {
@@ -31,8 +33,45 @@ namespace MtfhReportingDataListener.UseCase
 
             //#2 - Convert the data to avro
 
-            //#3 - Update the data in Kafka
 
+            //#3 - Send the data in Kafka
+            Console.WriteLine(tenure);
+            var jsonTenure = JsonSerializer.Serialize(tenure);
+            var config = new ProducerConfig
+            {
+                BootstrapServers = "http://localhost:9092",
+                ClientId = "mtfh-reporting-data-listener"
+            };
+
+            using (var producer = new ProducerBuilder<string, string>(config).Build())
+            {
+
+                producer.Produce("mtfh-reporting-data-listener",
+                                 new Message<string, string>
+                                 {
+                                     Key = Guid.NewGuid().ToString(),
+                                     Value = jsonTenure
+                                 },
+                                 null);
+                producer.Flush(TimeSpan.FromSeconds(10));
+            }
+
+            var consumerconfig = new ConsumerConfig
+            {
+                BootstrapServers = "http://localhost:9092",
+                GroupId = "4c659d6b-4739-4579-9698-a27d1aaa397d",
+                AutoOffsetReset = AutoOffsetReset.Earliest
+            };
+            using (var consumer = new ConsumerBuilder<Ignore, string>(consumerconfig).Build())
+            {
+                consumer.Subscribe("mtfh-reporting-data-listener");
+
+                
+                    var result = consumer.Consume();
+                    Console.WriteLine(result);
+
+                consumer.Close();
+            }
         }
     }
 }

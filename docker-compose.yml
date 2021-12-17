@@ -1,42 +1,39 @@
 version: "3.2"
 
-volumes:
-  zksingle-ksingle_kafka-data:
-  zksingle-ksingle_zoo-data:
-  zksingle-ksingle_zoo-log:
 
 services:
-  mtfh-reporting-data-listener:
-    image: mtfh-reporting-data-listener
-    build:
-      context: .
-      dockerfile: MtfhReportingDataListener/Dockerfile
-      args:
-        - LBHPACKAGESTOKEN=${LBHPACKAGESTOKEN}
-    ports:
-      - 3000:3000
-    environment:
-     - ENVIRONMENT=LocalDevelopment
-     - AWS_REGION=eu-west-2
-     - AWS_ACCESS_KEY_ID=local
-     - AWS_SECRET_ACCESS_KEY=local
-    links:
-      - zoo
+  #mtfh-reporting-data-listener:
+  #  image: mtfh-reporting-data-listener
+  #  build:
+  #    context: .
+  #    dockerfile: MtfhReportingDataListener/Dockerfile
+  #    args:
+  #      - LBHPACKAGESTOKEN=${LBHPACKAGESTOKEN}
+  #  ports:
+  #    - 3000:3000
+  #  environment:
+  #   - ENVIRONMENT=LocalDevelopment
+  #   - AWS_REGION=eu-west-2
+  #   - AWS_ACCESS_KEY_ID=local
+  #   - AWS_SECRET_ACCESS_KEY=local
+  #  links:
+  #    - zoo
+      
 
-  mtfh-reporting-data-listener-test:
-    image: mtfh-reporting-data-listener-test
-    build:
-      context: .
-      dockerfile: MtfhReportingDataListener.Tests/Dockerfile
-      args:
-        - LBHPACKAGESTOKEN=${LBHPACKAGESTOKEN}
-    environment:
-      - ENVIRONMENT=LocalDevelopment
-      - AWS_REGION=eu-west-2
-      - AWS_ACCESS_KEY_ID=local
-      - AWS_SECRET_ACCESS_KEY=local
-    links:
-      - zoo
+  #mtfh-reporting-data-listener-test:
+  #  image: mtfh-reporting-data-listener-test
+  #  build:
+  #    context: .
+  #    dockerfile: MtfhReportingDataListener.Tests/Dockerfile
+  #    args:
+  #      - LBHPACKAGESTOKEN=${LBHPACKAGESTOKEN}
+  #  environment:
+  #    - ENVIRONMENT=LocalDevelopment
+  #    - AWS_REGION=eu-west-2
+  #    - AWS_ACCESS_KEY_ID=local
+  #    - AWS_SECRET_ACCESS_KEY=local
+  #  links:
+  #    - zoo
     
   zoo:
     image: confluentinc/cp-zookeeper:6.2.1
@@ -48,14 +45,7 @@ services:
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_SERVER_ID: 1
       ZOOKEEPER_SERVERS: zoo:2888:3888
-    volumes:
-      - type: volume
-        source: zksingle-ksingle_zoo-data
-        target: /data
-      - type: volume
-        source: zksingle-ksingle_zoo-log
-        target: /datalog
-
+   
   kafka:
     image: confluentinc/cp-kafka:6.2.1
     hostname: kafka
@@ -75,10 +65,6 @@ services:
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
       KAFKA_JMX_PORT: 9999
       KAFKA_JMX_HOSTNAME: ${DOCKER_HOST_IP:-127.0.0.1}
-    volumes:
-      - type: volume
-        source: zksingle-ksingle_kafka-data
-        target: /var/lib/kafka/data
     depends_on:
       - zoo
       

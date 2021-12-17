@@ -44,7 +44,7 @@ namespace MtfhReportingDataListener
             services.AddHttpClient();
             services.AddScoped<ITenureUpdatedUseCase, TenureUpdatedUseCase>();
 
-            services.AddScoped<IDbEntityGateway, DynamoDbEntityGateway>();
+            services.AddScoped<ITenureInfoApiGateway, TenureInfoApiGateway>();
 
             base.ConfigureServices(services);
         }

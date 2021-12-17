@@ -26,8 +26,7 @@ namespace MtfhReportingDataListener.Tests
 
         public MockApplicationFactory()
         {
-            EnsureEnvVarConfigured("DynamoDb_LocalMode", "true");
-            EnsureEnvVarConfigured("DynamoDb_LocalServiceUrl", "http://localhost:8000");
+            EnsureEnvVarConfigured("hostname", "http://localhost:9092");
 
             _host = CreateHostBuilder().Build();
         }
