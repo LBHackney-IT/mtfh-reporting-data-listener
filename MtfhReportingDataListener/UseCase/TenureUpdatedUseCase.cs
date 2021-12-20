@@ -43,14 +43,14 @@ namespace MtfhReportingDataListener.UseCase
 
         }
 
-        public ConsumeResult<Ignore, string> SendDataToKafka(string message, string topic)
+        public DeliveryReport<string, string> SendDataToKafka(string message, string topic)
         {
             var config = new ProducerConfig
             {
                 BootstrapServers = "http://localhost:9092",
                 ClientId = "mtfh-reporting-data-listener"
             };
-           // DeliveryResult<string, string> result; 
+            // DeliveryResult<string, string> result; 
             //using (var producer = new ProducerBuilder<string, string>(config).Build())
             //{
 
@@ -64,30 +64,31 @@ namespace MtfhReportingDataListener.UseCase
 
             //}
 
-            var consumerconfig = new ConsumerConfig
-            {
-                BootstrapServers = "http://localhost:9092",
-                GroupId = "4c659d6b-4739-4579-9698-a27d1aaa397d",
-                AutoOffsetReset = AutoOffsetReset.Earliest
-            };
+            //var consumerconfig = new ConsumerConfig
+            //{
+            //    BootstrapServers = "http://localhost:9092",
+            //    GroupId = "4c659d6b-4739-4579-9698-a27d1aaa397d",
+            //    AutoOffsetReset = AutoOffsetReset.Earliest
+            //};
 
-            using (var consumer = new ConsumerBuilder<Ignore, string>(consumerconfig).Build())
-            {
-                consumer.Subscribe("mtfh-reporting-data-listener");
+            //using (var consumer = new ConsumerBuilder<Ignore, string>(consumerconfig).Build())
+            //{
+                //consumer.Subscribe("mtfh-reporting-data-listener");
                 // consumer.Assign(new List<TopicPartitionOffset>() { topic });
+                    DeliveryReport<string, string> deliveryReport = null;
 
                 using (var producer = new ProducerBuilder<string, string>(config).Build())
                 {
                     int numProduced = 0;
-
                     producer.Produce(topic,
                                     new Message<string, string>
                                     {
                                         Key = Guid.NewGuid().ToString(),
                                         Value = message
                                     },
-                    (deliveryReport) =>
+                    (report) =>
                     {
+                        deliveryReport = report;
                         if (deliveryReport.Error.Code != ErrorCode.NoError)
                         {
                             throw new Exception(deliveryReport.Error.Reason);
@@ -98,13 +99,16 @@ namespace MtfhReportingDataListener.UseCase
                             numProduced += 1;
                         }
                     });
-                    producer.Flush(TimeSpan.FromSeconds(1));
+                    var poll = producer.Poll(TimeSpan.FromSeconds(10));
 
-                }
+                    
+                    
+                    producer.Flush(TimeSpan.FromSeconds(10));
 
-                var r = consumer.Consume(TimeSpan.FromSeconds(10));
+                //}
+                    return deliveryReport;
+                    //var r = consumer.Consume(TimeSpan.FromSeconds(10));
 
-                return r;
                
             }
         }

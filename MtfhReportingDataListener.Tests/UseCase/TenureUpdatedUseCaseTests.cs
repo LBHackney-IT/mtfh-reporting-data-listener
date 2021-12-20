@@ -95,13 +95,7 @@ namespace MtfhReportingDataListener.Tests.UseCase
         [Fact]
         public void TenureUpdatedSendsDataToKafka()
         {
-            
-            var consumerconfig = new ConsumerConfig
-            {
-                BootstrapServers = "http://localhost:9092",
-                GroupId = "4c659d6b-4739-4579-9698-a27d1aaa397d",
-                AutoOffsetReset = AutoOffsetReset.Earliest
-            };
+           
             var message = JsonSerializer.Serialize(_message);
             var topic = "mtfh-reporting-data-listener";
             var result = _sut.SendDataToKafka(message, topic);
