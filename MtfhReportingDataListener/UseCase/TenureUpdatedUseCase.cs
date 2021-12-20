@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using Hackney.Shared.Tenure.Boundary.Response;
 using System.Text.Json;
 using Confluent.Kafka;
+using System.Collections.Generic;
 
 namespace MtfhReportingDataListener.UseCase
 {
@@ -31,30 +32,37 @@ namespace MtfhReportingDataListener.UseCase
                                              .ConfigureAwait(false);
             if (tenure is null) throw new EntityNotFoundException<TenureResponseObject>(message.EntityId);
 
+            var jsonTenure = JsonSerializer.Serialize(tenure);
+            var topic = "mtfh-reporting-data-listener";
+            SendDataToKafka(jsonTenure, topic );
             //#2 - Convert the data to avro
 
 
             //#3 - Send the data in Kafka
-            Console.WriteLine(tenure);
-            var jsonTenure = JsonSerializer.Serialize(tenure);
+          
+
+        }
+
+        public ConsumeResult<Ignore, string> SendDataToKafka(string message, string topic)
+        {
             var config = new ProducerConfig
             {
                 BootstrapServers = "http://localhost:9092",
                 ClientId = "mtfh-reporting-data-listener"
             };
+           // DeliveryResult<string, string> result; 
+            //using (var producer = new ProducerBuilder<string, string>(config).Build())
+            //{
 
-            using (var producer = new ProducerBuilder<string, string>(config).Build())
-            {
+            //     producer.Produce(topic,
+            //                     new Message<string, string>
+            //                     {
+            //                         Key = Guid.NewGuid().ToString(),
+            //                         Value = message
+            //                     });
+            //    producer.Flush(TimeSpan.FromSeconds(1));
 
-                producer.Produce("mtfh-reporting-data-listener",
-                                 new Message<string, string>
-                                 {
-                                     Key = Guid.NewGuid().ToString(),
-                                     Value = jsonTenure
-                                 },
-                                 null);
-                producer.Flush(TimeSpan.FromSeconds(10));
-            }
+            //}
 
             var consumerconfig = new ConsumerConfig
             {
@@ -62,15 +70,42 @@ namespace MtfhReportingDataListener.UseCase
                 GroupId = "4c659d6b-4739-4579-9698-a27d1aaa397d",
                 AutoOffsetReset = AutoOffsetReset.Earliest
             };
+
             using (var consumer = new ConsumerBuilder<Ignore, string>(consumerconfig).Build())
             {
                 consumer.Subscribe("mtfh-reporting-data-listener");
+                // consumer.Assign(new List<TopicPartitionOffset>() { topic });
 
-                
-                    var result = consumer.Consume();
-                    Console.WriteLine(result);
+                using (var producer = new ProducerBuilder<string, string>(config).Build())
+                {
+                    int numProduced = 0;
 
-                consumer.Close();
+                    producer.Produce(topic,
+                                    new Message<string, string>
+                                    {
+                                        Key = Guid.NewGuid().ToString(),
+                                        Value = message
+                                    },
+                    (deliveryReport) =>
+                    {
+                        if (deliveryReport.Error.Code != ErrorCode.NoError)
+                        {
+                            throw new Exception(deliveryReport.Error.Reason);
+                        }
+                        else
+                        {
+                            Console.WriteLine($"Produced message to: {deliveryReport.TopicPartitionOffset}");
+                            numProduced += 1;
+                        }
+                    });
+                    producer.Flush(TimeSpan.FromSeconds(1));
+
+                }
+
+                var r = consumer.Consume(TimeSpan.FromSeconds(10));
+
+                return r;
+               
             }
         }
     }

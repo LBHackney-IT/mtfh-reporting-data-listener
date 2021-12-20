@@ -12,6 +12,10 @@ using Xunit;
 using Hackney.Shared.Tenure.Boundary.Response;
 using Hackney.Shared.Tenure.Domain;
 using System.Linq;
+using Confluent.Kafka;
+using System.Text.Json;
+using System.Collections.Generic;
+using System.Text;
 
 namespace MtfhReportingDataListener.Tests.UseCase
 {
@@ -89,12 +93,28 @@ namespace MtfhReportingDataListener.Tests.UseCase
         }
 
         [Fact]
-        public async Task TenureUpdatedSendsDataToKafka()
+        public void TenureUpdatedSendsDataToKafka()
         {
             
-            _mockGateway.Setup(x => x.GetTenureInfoByIdAsync(_message.EntityId, _message.CorrelationId)).ReturnsAsync(_tenure);
-            await _sut.ProcessMessageAsync(_message).ConfigureAwait(false);
+            var consumerconfig = new ConsumerConfig
+            {
+                BootstrapServers = "http://localhost:9092",
+                GroupId = "4c659d6b-4739-4579-9698-a27d1aaa397d",
+                AutoOffsetReset = AutoOffsetReset.Earliest
+            };
+            var message = JsonSerializer.Serialize(_message);
+            var topic = "mtfh-reporting-data-listener";
+            var result = _sut.SendDataToKafka(message, topic);
+            result.Should().NotBeNull();
 
+            //using (var consumer = new ConsumerBuilder<Ignore, string>(consumerconfig).Build())
+            //{
+            //    //consumer.Subscribe("mtfh-reporting-data-listener");
+            //    consumer.Assign(new List<TopicPartitionOffset>() { produceResults.TopicPartitionOffset });
+            //    var r = consumer.Consume(TimeSpan.FromSeconds(10));
+            //    Assert.NotNull(r?.Message);
+            //    Assert.Equal(message, r.Message.Value);
+            //}
         }
 
     }
