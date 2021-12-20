@@ -22,8 +22,11 @@ namespace MtfhReportingDataListener.Infrastructure
             {
                 var producer = new ProducerBuilder<String, String>(config).Build();
                 producer.Produce("mtfh-reporting-data-listener",
-                                 new Message<string, string> { Key = Guid.NewGuid().ToString(),
-                                 Value = "New Message: " + DateTime.Now.ToString() },
+                                 new Message<string, string>
+                                 {
+                                     Key = Guid.NewGuid().ToString(),
+                                     Value = "New Message: " + DateTime.Now.ToString()
+                                 },
                                  null);
                 producer.Flush(TimeSpan.FromSeconds(0));
                 return (IServiceCollection) producer;

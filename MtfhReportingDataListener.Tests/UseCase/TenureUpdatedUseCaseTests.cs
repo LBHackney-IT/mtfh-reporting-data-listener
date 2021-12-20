@@ -12,10 +12,7 @@ using Xunit;
 using Hackney.Shared.Tenure.Boundary.Response;
 using Hackney.Shared.Tenure.Domain;
 using System.Linq;
-using Confluent.Kafka;
 using System.Text.Json;
-using System.Collections.Generic;
-using System.Text;
 
 namespace MtfhReportingDataListener.Tests.UseCase
 {
@@ -23,6 +20,7 @@ namespace MtfhReportingDataListener.Tests.UseCase
     public class TenureUpdatedUseCaseTests
     {
         private readonly Mock<ITenureInfoApiGateway> _mockGateway;
+        private readonly Mock<IKafkaGateway> _mockKafka;
         private readonly TenureUpdatedUseCase _sut;
         private readonly DomainEntity _domainEntity;
         private readonly TenureResponseObject _tenure;
@@ -36,7 +34,8 @@ namespace MtfhReportingDataListener.Tests.UseCase
             _fixture = new Fixture();
 
             _mockGateway = new Mock<ITenureInfoApiGateway>();
-            _sut = new TenureUpdatedUseCase(_mockGateway.Object);
+            _mockKafka = new Mock<IKafkaGateway>();
+            _sut = new TenureUpdatedUseCase(_mockGateway.Object, _mockKafka.Object);
 
             _domainEntity = _fixture.Create<DomainEntity>();
 
@@ -82,34 +81,28 @@ namespace MtfhReportingDataListener.Tests.UseCase
         public void ProcessMessageAsyncTestSaveEntityThrows()
         {
             var exMsg = "This is the last error";
+            var jsonTenure = JsonSerializer.Serialize(_message);
             _mockGateway.Setup(x => x.GetTenureInfoByIdAsync(_message.EntityId, _message.CorrelationId))
                         .ThrowsAsync(new Exception(exMsg));
 
             Func<Task> func = async () => await _sut.ProcessMessageAsync(_message).ConfigureAwait(false);
             func.Should().ThrowAsync<Exception>().WithMessage(exMsg);
-
-            //_mockGateway.Verify(x => x.GetEntityAsync(_domainEntity.Id), Times.Once);
-            //_mockGateway.Verify(x => x.SaveEntityAsync(_domainEntity), Times.Once);
+            _mockGateway.Verify(x => x.GetTenureInfoByIdAsync(_message.EntityId, _message.CorrelationId), Times.Once);
         }
 
-        [Fact]
-        public void TenureUpdatedSendsDataToKafka()
+        [Fact(Skip = "TODO")]
+        public async Task ProcessMessageAsyncSuccess()
         {
-           
-            var message = JsonSerializer.Serialize(_message);
-            var topic = "mtfh-reporting-data-listener";
-            var result = _sut.SendDataToKafka(message, topic);
-            result.Should().NotBeNull();
+            var jsonTenure = JsonSerializer.Serialize(_message);
+            _mockGateway.Setup(x => x.GetTenureInfoByIdAsync(_message.EntityId, _message.CorrelationId))
+                        .ReturnsAsync(_tenure);
 
-            //using (var consumer = new ConsumerBuilder<Ignore, string>(consumerconfig).Build())
-            //{
-            //    //consumer.Subscribe("mtfh-reporting-data-listener");
-            //    consumer.Assign(new List<TopicPartitionOffset>() { produceResults.TopicPartitionOffset });
-            //    var r = consumer.Consume(TimeSpan.FromSeconds(10));
-            //    Assert.NotNull(r?.Message);
-            //    Assert.Equal(message, r.Message.Value);
-            //}
+            await _sut.ProcessMessageAsync(_message).ConfigureAwait(false);
+            _mockKafka.Verify(x => x.SendDataToKafka(jsonTenure, "mtfh-reporting-data-listener"), Times.Once);
+
         }
+
+
 
     }
 }

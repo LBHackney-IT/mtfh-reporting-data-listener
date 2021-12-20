@@ -1,0 +1,65 @@
+using AutoFixture;
+using Confluent.Kafka;
+using FluentAssertions;
+using Moq;
+using MtfhReportingDataListener.Boundary;
+using MtfhReportingDataListener.Domain;
+using MtfhReportingDataListener.Gateway;
+using MtfhReportingDataListener.Gateway.Interfaces;
+using System;
+using System.Collections.Generic;
+using System.Text;
+using System.Text.Json;
+using Xunit;
+
+namespace MtfhReportingDataListener.Tests.Gateway
+{
+    [Collection("LogCall collection")]
+    public class KafkaGatewayTests
+    {
+        private readonly IKafkaGateway _gateway;
+        private readonly EntityEventSns _message;
+        private readonly DomainEntity _domainEntity;
+        private readonly Fixture _fixture = new Fixture();
+
+        public KafkaGatewayTests()
+        {
+            _gateway = new KafkaGateway();
+            _domainEntity = _fixture.Create<DomainEntity>();
+
+            _message = CreateMessage(_domainEntity.Id);
+        }
+
+        private EntityEventSns CreateMessage(Guid id, string eventType = EventTypes.TenureUpdatedEvent)
+        {
+            return _fixture.Build<EntityEventSns>()
+                           .With(x => x.EntityId, id)
+                           .With(x => x.EventType, eventType)
+                           .Create();
+        }
+
+        [Fact]
+        public void TenureUpdatedSendsDataToKafka()
+        {
+            var consumerconfig = new ConsumerConfig
+            {
+                BootstrapServers = "localhost:9092",
+                GroupId = "4c659d6b-4739-4579-9698-a27d1aaa397d",
+                AutoOffsetReset = AutoOffsetReset.Earliest
+            };
+            var message = JsonSerializer.Serialize(_message);
+            var topic = "mtfh-reporting-data-listener";
+            var result = _gateway.SendDataToKafka(message, topic);
+            result.Success.Should().BeTrue();
+            using (var consumer = new ConsumerBuilder<Ignore, string>(consumerconfig).Build())
+            {
+                consumer.Subscribe("mtfh-reporting-data-listener");
+                var r = consumer.Consume(TimeSpan.FromSeconds(30));
+                Assert.NotNull(r?.Message);
+                Assert.Equal(message, r.Message.Value);
+                consumer.Close();
+            }
+        }
+
+    }
+}
