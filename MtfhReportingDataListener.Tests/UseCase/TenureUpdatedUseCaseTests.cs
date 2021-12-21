@@ -1,6 +1,5 @@
 using AutoFixture;
 using MtfhReportingDataListener.Boundary;
-using MtfhReportingDataListener.Domain;
 using MtfhReportingDataListener.Gateway.Interfaces;
 using MtfhReportingDataListener.Infrastructure.Exceptions;
 using MtfhReportingDataListener.UseCase;
@@ -26,7 +25,6 @@ namespace MtfhReportingDataListener.Tests.UseCase
         private readonly Mock<ITenureInfoApiGateway> _mockGateway;
         private readonly Mock<IKafkaGateway> _mockKafka;
         private readonly TenureUpdatedUseCase _sut;
-        private readonly DomainEntity _domainEntity;
         private readonly TenureResponseObject _tenure;
 
         private readonly EntityEventSns _message;
@@ -41,17 +39,15 @@ namespace MtfhReportingDataListener.Tests.UseCase
             _mockKafka = new Mock<IKafkaGateway>();
             _sut = new TenureUpdatedUseCase(_mockGateway.Object, _mockKafka.Object);
 
-            _domainEntity = _fixture.Create<DomainEntity>();
 
             _tenure = CreateTenure();
-            _message = CreateMessage(_domainEntity.Id);
+            _message = CreateMessage();
 
         }
 
-        private EntityEventSns CreateMessage(Guid id, string eventType = EventTypes.TenureUpdatedEvent)
+        private EntityEventSns CreateMessage(string eventType = EventTypes.TenureUpdatedEvent)
         {
             return _fixture.Build<EntityEventSns>()
-                           .With(x => x.EntityId, id)
                            .With(x => x.EventType, eventType)
                            .Create();
         }
@@ -78,7 +74,7 @@ namespace MtfhReportingDataListener.Tests.UseCase
         {
             _mockGateway.Setup(x => x.GetTenureInfoByIdAsync(_message.EntityId, _message.CorrelationId)).ReturnsAsync((TenureResponseObject) null);
             Func<Task> func = async () => await _sut.ProcessMessageAsync(null).ConfigureAwait(false);
-            func.Should().ThrowAsync<EntityNotFoundException<DomainEntity>>();
+            func.Should().ThrowAsync<EntityNotFoundException<TenureResponseObject>>();
         }
 
         [Fact]
