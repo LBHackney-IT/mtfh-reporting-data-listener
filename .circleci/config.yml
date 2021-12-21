@@ -109,7 +109,7 @@ jobs:
           command: docker-compose build kafka
       - run:
           name: Run kafka
-          command: docker-compose run kafka
+          command: docker-compose up -d kafka
       - run:
           name: Run tests
           command: dotnet test
