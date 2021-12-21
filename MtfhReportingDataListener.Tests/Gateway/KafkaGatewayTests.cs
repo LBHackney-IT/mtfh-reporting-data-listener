@@ -15,10 +15,10 @@ using Xunit;
 namespace MtfhReportingDataListener.Tests.Gateway
 {
     [Collection("LogCall collection")]
-    public class KafkaGatewayTests
+    public class KafkaGatewayTests : MockApplicationFactory
     {
         private readonly IKafkaGateway _gateway;
-        private readonly EntityEventSns _message;
+        private readonly string _message;
         private readonly DomainEntity _domainEntity;
         private readonly Fixture _fixture = new Fixture();
 
@@ -35,7 +35,7 @@ namespace MtfhReportingDataListener.Tests.Gateway
         {
             var consumerconfig = new ConsumerConfig
             {
-                BootstrapServers = "localhost:9092",
+                BootstrapServers = Environment.GetEnvironmentVariable("DATAPLATFORM_KAFKA_HOSTNAME"),
                 GroupId = "4c659d6b-4739-4579-9698-a27d1aaa397d",
                 AutoOffsetReset = AutoOffsetReset.Earliest
             };

@@ -7,15 +7,13 @@ using System.Collections.Generic;
 
 namespace MtfhReportingDataListener.Tests
 {
-    // TODO - Remove DynamoDb parts if not required
-
     public class MockApplicationFactory
     {
         private readonly IHost _host;
 
         public MockApplicationFactory()
         {
-            EnsureEnvVarConfigured("hostname", "localhost:9092");
+            EnsureEnvVarConfigured("DATAPLATFORM_KAFKA_HOSTNAME", "localhost:9092");
 
             _host = CreateHostBuilder().Build();
         }

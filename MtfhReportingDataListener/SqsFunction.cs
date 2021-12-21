@@ -38,8 +38,6 @@ namespace MtfhReportingDataListener
         /// <param name="services"></param>
         protected override void ConfigureServices(IServiceCollection services)
         {
-            services.ConfigureDynamoDB();
-
             services.AddHttpClient();
             services.AddScoped<ITenureUpdatedUseCase, TenureUpdatedUseCase>();
 
