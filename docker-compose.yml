@@ -20,20 +20,20 @@ services:
   #    - zoo
       
 
-  #mtfh-reporting-data-listener-test:
-  #  image: mtfh-reporting-data-listener-test
-  #  build:
-  #    context: .
-  #    dockerfile: MtfhReportingDataListener.Tests/Dockerfile
-  #    args:
-  #      - LBHPACKAGESTOKEN=${LBHPACKAGESTOKEN}
-  #  environment:
-  #    - ENVIRONMENT=LocalDevelopment
-  #    - AWS_REGION=eu-west-2
-  #    - AWS_ACCESS_KEY_ID=local
-  #    - AWS_SECRET_ACCESS_KEY=local
-  #  links:
-  #    - zoo
+  mtfh-reporting-data-listener-test:
+   image: mtfh-reporting-data-listener-test
+   build:
+     context: .
+     dockerfile: MtfhReportingDataListener.Tests/Dockerfile
+     args:
+       - LBHPACKAGESTOKEN=${LBHPACKAGESTOKEN}
+   environment:
+     - ENVIRONMENT=LocalDevelopment
+     - AWS_REGION=eu-west-2
+     - AWS_ACCESS_KEY_ID=local
+     - AWS_SECRET_ACCESS_KEY=local
+   links:
+     - zoo
     
   zoo:
     image: confluentinc/cp-zookeeper:6.2.1

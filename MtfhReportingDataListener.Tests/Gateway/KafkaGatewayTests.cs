@@ -27,15 +27,7 @@ namespace MtfhReportingDataListener.Tests.Gateway
             _gateway = new KafkaGateway();
             _domainEntity = _fixture.Create<DomainEntity>();
 
-            _message = CreateMessage(_domainEntity.Id);
-        }
-
-        private EntityEventSns CreateMessage(Guid id, string eventType = EventTypes.TenureUpdatedEvent)
-        {
-            return _fixture.Build<EntityEventSns>()
-                           .With(x => x.EntityId, id)
-                           .With(x => x.EventType, eventType)
-                           .Create();
+            _message = _fixture.Create<string>();
         }
 
         [Fact]
@@ -47,16 +39,15 @@ namespace MtfhReportingDataListener.Tests.Gateway
                 GroupId = "4c659d6b-4739-4579-9698-a27d1aaa397d",
                 AutoOffsetReset = AutoOffsetReset.Earliest
             };
-            var message = JsonSerializer.Serialize(_message);
             var topic = "mtfh-reporting-data-listener";
-            var result = _gateway.SendDataToKafka(message, topic);
+            var result = _gateway.SendDataToKafka(_message, topic);
             result.Success.Should().BeTrue();
             using (var consumer = new ConsumerBuilder<Ignore, string>(consumerconfig).Build())
             {
                 consumer.Subscribe("mtfh-reporting-data-listener");
                 var r = consumer.Consume(TimeSpan.FromSeconds(30));
                 Assert.NotNull(r?.Message);
-                Assert.Equal(message, r.Message.Value);
+                Assert.Equal(_message, r.Message.Value);
                 consumer.Close();
             }
         }
