@@ -20,7 +20,6 @@
     <PackageReference Include="Amazon.Lambda.SQSEvents" Version="2.0.0" />
     <PackageReference Include="AWSXRayRecorder.Handlers.AwsSdk" Version="2.8.3" />
     <PackageReference Include="Confluent.Kafka" Version="1.8.2" />
-    <PackageReference Include="Hackney.Core.DynamoDb" Version="1.51.0" />
     <PackageReference Include="Hackney.Core.Http" Version="1.63.0" />
     <PackageReference Include="Hackney.Core.Logging" Version="1.49.0" />
     <PackageReference Include="Hackney.Shared.Tenure" Version="0.9.0" />

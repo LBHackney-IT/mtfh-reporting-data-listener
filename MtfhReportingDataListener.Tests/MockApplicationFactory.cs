@@ -1,6 +1,3 @@
-using Amazon.DynamoDBv2;
-using Hackney.Core.DynamoDb;
-using Hackney.Core.Testing.DynamoDb;
 using Hackney.Core.Testing.Shared;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -14,19 +11,11 @@ namespace MtfhReportingDataListener.Tests
 
     public class MockApplicationFactory
     {
-        private readonly List<TableDef> _tables = new List<TableDef>
-        {
-            // Define all tables required by the application here.
-            // The definition should be exactly the same as that used in real deployed environments
-            new TableDef { Name = "SomeTable", KeyName = "id", KeyType = ScalarAttributeType.S }
-        };
-        public IDynamoDbFixture DynamoDbFixture { get; private set; }
-
         private readonly IHost _host;
 
         public MockApplicationFactory()
         {
-            EnsureEnvVarConfigured("hostname", "http://localhost:9092");
+            EnsureEnvVarConfigured("hostname", "localhost:9092");
 
             _host = CreateHostBuilder().Build();
         }
@@ -42,9 +31,6 @@ namespace MtfhReportingDataListener.Tests
         {
             if (disposing && !_disposed)
             {
-                if (DynamoDbFixture != null)
-                    DynamoDbFixture.Dispose();
-
                 if (null != _host)
                 {
                     _host.StopAsync().GetAwaiter().GetResult();
@@ -65,15 +51,9 @@ namespace MtfhReportingDataListener.Tests
            .ConfigureAppConfiguration(b => b.AddEnvironmentVariables())
            .ConfigureServices((hostContext, services) =>
            {
-               services.ConfigureDynamoDB();
-               services.ConfigureDynamoDbFixture();
-
                var serviceProvider = services.BuildServiceProvider();
 
                LogCallAspectFixture.SetupLogCallAspect();
-
-               DynamoDbFixture = serviceProvider.GetRequiredService<IDynamoDbFixture>();
-               DynamoDbFixture.EnsureTablesExist(_tables);
            });
     }
 }
