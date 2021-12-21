@@ -90,10 +90,10 @@ namespace MtfhReportingDataListener.Tests.UseCase
             _mockGateway.Verify(x => x.GetTenureInfoByIdAsync(_message.EntityId, _message.CorrelationId), Times.Once);
         }
 
-        [Fact(Skip = "TODO")]
+        [Fact]
         public async Task ProcessMessageAsyncSuccess()
         {
-            var jsonTenure = JsonSerializer.Serialize(_message);
+            var jsonTenure = JsonSerializer.Serialize(_tenure);
             _mockGateway.Setup(x => x.GetTenureInfoByIdAsync(_message.EntityId, _message.CorrelationId))
                         .ReturnsAsync(_tenure);
 

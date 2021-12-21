@@ -2,38 +2,38 @@ version: "3.2"
 
 
 services:
-  #mtfh-reporting-data-listener:
-  #  image: mtfh-reporting-data-listener
-  #  build:
-  #    context: .
-  #    dockerfile: MtfhReportingDataListener/Dockerfile
-  #    args:
-  #      - LBHPACKAGESTOKEN=${LBHPACKAGESTOKEN}
-  #  ports:
-  #    - 3000:3000
-  #  environment:
-  #   - ENVIRONMENT=LocalDevelopment
-  #   - AWS_REGION=eu-west-2
-  #   - AWS_ACCESS_KEY_ID=local
-  #   - AWS_SECRET_ACCESS_KEY=local
-  #  links:
-  #    - zoo
+  mtfh-reporting-data-listener:
+    image: mtfh-reporting-data-listener
+    build:
+      context: .
+      dockerfile: MtfhReportingDataListener/Dockerfile
+      args:
+        - LBHPACKAGESTOKEN=${LBHPACKAGESTOKEN}
+    ports:
+      - 3000:3000
+    environment:
+     - ENVIRONMENT=LocalDevelopment
+     - AWS_REGION=eu-west-2
+     - AWS_ACCESS_KEY_ID=local
+     - AWS_SECRET_ACCESS_KEY=local
+    links:
+      - zoo
       
 
-  #mtfh-reporting-data-listener-test:
-  #  image: mtfh-reporting-data-listener-test
-  #  build:
-  #    context: .
-  #    dockerfile: MtfhReportingDataListener.Tests/Dockerfile
-  #    args:
-  #      - LBHPACKAGESTOKEN=${LBHPACKAGESTOKEN}
-  #  environment:
-  #    - ENVIRONMENT=LocalDevelopment
-  #    - AWS_REGION=eu-west-2
-  #    - AWS_ACCESS_KEY_ID=local
-  #    - AWS_SECRET_ACCESS_KEY=local
-  #  links:
-  #    - zoo
+  mtfh-reporting-data-listener-test:
+    image: mtfh-reporting-data-listener-test
+    build:
+      context: .
+      dockerfile: MtfhReportingDataListener.Tests/Dockerfile
+      args:
+        - LBHPACKAGESTOKEN=${LBHPACKAGESTOKEN}
+    environment:
+      - ENVIRONMENT=LocalDevelopment
+      - AWS_REGION=eu-west-2
+      - AWS_ACCESS_KEY_ID=local
+      - AWS_SECRET_ACCESS_KEY=local
+    links:
+      - zoo
     
   zoo:
     image: confluentinc/cp-zookeeper:6.2.1
