@@ -117,11 +117,10 @@ jobs:
           name: build
           command: docker-compose build kafka
       - run:
-          name: Run kafka
-          command: docker-compose up -d kafka
-      - run:
           name: Run tests
-          command: dotnet test
+          command: |
+            docker-compose up -d kafka
+            dotnet test
   assume-role-development:
     executor: docker-python
     steps:
