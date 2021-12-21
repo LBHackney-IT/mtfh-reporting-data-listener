@@ -5,6 +5,7 @@ orbs:
   aws-cli: circleci/aws-cli@0.1.9
   aws_assume_role: lbh-hackit/aws_assume_role@0.1.0
 
+
 executors:
   docker-python:
     docker:
@@ -100,16 +101,24 @@ jobs:
           name: Run formatter check
           command: ./dotnet-format-local/dotnet-format --check
   build-and-test:
-    executor: docker-python
+    executor: docker-dotnet
     steps:
       - checkout
       - setup_remote_docker
       - run:
+          name: Install Docker Compose
+          environment:
+            COMPOSE_VERSION: '1.29.2'
+          command: |
+            curl -L "https://github.com/docker/compose/releases/download/${COMPOSE_VERSION}/docker-compose-$(uname -s)-$(uname -m)" -o ~/docker-compose
+            chmod +x ~/docker-compose
+            sudo mv ~/docker-compose /usr/local/bin/docker-compose
+      - run:
           name: build
-          command: docker compose build kafka
+          command: docker-compose build kafka
       - run:
           name: Run kafka
-          command: docker compose up -d kafka
+          command: docker-compose up -d kafka
       - run:
           name: Run tests
           command: dotnet test
