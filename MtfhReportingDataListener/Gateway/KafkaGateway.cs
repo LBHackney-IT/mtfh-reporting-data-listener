@@ -1,4 +1,9 @@
+using Avro.Generic;
 using Confluent.Kafka;
+using Confluent.Kafka.SyncOverAsync;
+using Confluent.SchemaRegistry;
+using Confluent.SchemaRegistry.Serdes;
+using Hackney.Shared.Tenure.Boundary.Response;
 using MtfhReportingDataListener.Gateway.Interfaces;
 using System;
 using System.Collections.Generic;
@@ -13,23 +18,24 @@ namespace MtfhReportingDataListener.Gateway
     public class KafkaGateway : IKafkaGateway
     {
         public KafkaGateway() { }
-        public IsSuccessful SendDataToKafka(string message, string topic)
+        public IsSuccessful SendDataToKafka(TenureResponseObject message, string topic, string schemaRegistryUrl)
         {
             var config = new ProducerConfig
             {
                 BootstrapServers = Environment.GetEnvironmentVariable("DATAPLATFORM_KAFKA_HOSTNAME"),
-                ClientId = "mtfh-reporting-data-listener"
+                ClientId = "mtfh-reporting-data-listener",
             };
 
 
-            DeliveryReport<string, string> deliveryReport = null;
+            DeliveryReport<string, TenureResponseObject> deliveryReport = null;
 
-            using (var producer = new ProducerBuilder<string, string>(config).Build())
+            using (var schemaRegistry = new CachedSchemaRegistryClient(new SchemaRegistryConfig { Url = schemaRegistryUrl }))
+            using (var producer = new ProducerBuilder<string, TenureResponseObject>(config)
+                .SetValueSerializer(new AvroSerializer<TenureResponseObject>(schemaRegistry).AsSyncOverAsync()).Build())
             {
                 producer.Produce(topic,
-                                new Message<string, string>
+                                new Message<string, TenureResponseObject>
                                 {
-                                    Key = Guid.NewGuid().ToString(),
                                     Value = message
                                 },
                 (report) =>
@@ -52,6 +58,11 @@ namespace MtfhReportingDataListener.Gateway
             {
                 Success = deliveryReport?.Error?.Code == ErrorCode.NoError
             };
+        }
+
+        public string GetSchema()
+        {
+            return "";
         }
     }
 }

@@ -13,6 +13,10 @@ using Hackney.Shared.Tenure.Boundary.Response;
 using Hackney.Shared.Tenure.Domain;
 using System.Linq;
 using System.Text.Json;
+using System.IO;
+using System.Reflection;
+using Avro.Generic;
+using Avro;
 
 namespace MtfhReportingDataListener.Tests.UseCase
 {
@@ -91,14 +95,37 @@ namespace MtfhReportingDataListener.Tests.UseCase
         }
 
         [Fact]
-        public async Task ProcessMessageAsyncSuccess()
+        public async Task ProcessMessageAsyncSendsDataToKafka()
         {
-            var jsonTenure = JsonSerializer.Serialize(_tenure);
             _mockGateway.Setup(x => x.GetTenureInfoByIdAsync(_message.EntityId, _message.CorrelationId))
                         .ReturnsAsync(_tenure);
 
             await _sut.ProcessMessageAsync(_message).ConfigureAwait(false);
-            _mockKafka.Verify(x => x.SendDataToKafka(jsonTenure, "mtfh-reporting-data-listener"), Times.Once);
+            _mockKafka.Verify(x => x.SendDataToKafka(It.IsAny<TenureResponseObject>(), "mtfh-reporting-data-listener", "registryURL"), Times.Once);
+
+        }
+
+        [Fact]
+        public async Task GetSchema()
+        {
+            var tenure = new TenureResponseObject
+            {
+                Id = Guid.NewGuid(),
+                IsActive = true,
+                PaymentReference = "1234567345"
+            };
+            var jsonTenure = JsonSerializer.Serialize(tenure);
+            _mockGateway.Setup(x => x.GetTenureInfoByIdAsync(_message.EntityId, _message.CorrelationId))
+                        .ReturnsAsync(_tenure);
+
+            await _sut.ProcessMessageAsync(_message).ConfigureAwait(false);
+            var dirName = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location.Replace("bin\\Debug", string.Empty));
+            Console.WriteLine(dirName);
+            var schema = File.ReadAllText($"{dirName}/../schema.json");
+            _mockKafka.Setup(x => x.GetSchema()).Returns(schema);
+            //var parse = (RecordSchema) Schema.Parse(schema);
+            //var expected = new GenericRecord(parse);
+            _mockKafka.Verify(x => x.SendDataToKafka(tenure, "mtfh-reporting-data-listener", "registryURL"), Times.Once);
 
         }
 

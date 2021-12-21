@@ -13,6 +13,7 @@
     <PackageReference Include="Amazon.Lambda.Core" Version="2.0.0" />
     <PackageReference Include="Amazon.Lambda.TestUtilities" Version="2.0.0" />
     <PackageReference Include="Amazon.Lambda.SQSEvents" Version="2.0.0" />
+    <PackageReference Include="Apache.Avro" Version="1.11.0" />
     <PackageReference Include="AutoFixture" Version="4.17.0" />
     <PackageReference Include="Confluent.Kafka" Version="1.8.2" />
     <PackageReference Include="coverlet.msbuild" Version="3.1.0">
