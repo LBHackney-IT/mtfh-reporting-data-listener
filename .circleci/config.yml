@@ -100,7 +100,7 @@ jobs:
           name: Run formatter check
           command: ./dotnet-format-local/dotnet-format --check
   build-and-test:
-    executor: docker-python
+    executor: docker-dotnet
     steps:
       - checkout
       - setup_remote_docker
