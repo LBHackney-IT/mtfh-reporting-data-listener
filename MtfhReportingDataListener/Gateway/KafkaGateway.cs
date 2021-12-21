@@ -8,6 +8,7 @@ using MtfhReportingDataListener.Gateway.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Text;
+using TenureSchema;
 
 namespace MtfhReportingDataListener.Gateway
 {
@@ -27,14 +28,14 @@ namespace MtfhReportingDataListener.Gateway
             };
 
 
-            DeliveryReport<string, TenureResponseObject> deliveryReport = null;
+            DeliveryReport<string, TenureSchema.TenureInformation> deliveryReport = null;
 
             using (var schemaRegistry = new CachedSchemaRegistryClient(new SchemaRegistryConfig { Url = schemaRegistryUrl }))
-            using (var producer = new ProducerBuilder<string, TenureResponseObject>(config)
-                .SetValueSerializer(new AvroSerializer<TenureResponseObject>(schemaRegistry).AsSyncOverAsync()).Build())
+            using (var producer = new ProducerBuilder<string, TenureSchema.TenureInformation>(config)
+                .SetValueSerializer(new AvroSerializer<TenureSchema.TenureInformation>(schemaRegistry).AsSyncOverAsync()).Build())
             {
                 producer.Produce(topic,
-                                new Message<string, TenureResponseObject>
+                                new Message<string, TenureSchema.TenureInformation>
                                 {
                                     Value = message
                                 },
