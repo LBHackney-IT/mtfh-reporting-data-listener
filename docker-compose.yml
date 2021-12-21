@@ -32,9 +32,11 @@ services:
      - AWS_REGION=eu-west-2
      - AWS_ACCESS_KEY_ID=local
      - AWS_SECRET_ACCESS_KEY=local
-     - DATAPLATFORM_KAFKA_HOSTNAME=localhost:9092
+     - DATAPLATFORM_KAFKA_HOSTNAME=kafka:9092
    links:
      - zoo
+   depends_on:
+    - kafka
     
   zoo:
     image: confluentinc/cp-zookeeper:6.2.1

@@ -50,7 +50,7 @@ namespace MtfhReportingDataListener.Gateway
             }
             return new IsSuccessful
             {
-                Success = deliveryReport.Error.Code == ErrorCode.NoError
+                Success = deliveryReport?.Error?.Code == ErrorCode.NoError
             };
         }
     }
