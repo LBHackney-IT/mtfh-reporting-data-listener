@@ -21,6 +21,7 @@ namespace MtfhReportingDataListener.Gateway
 
         public IsSuccessful SendDataToKafka(TenureResponseObject message, string topic, string schemaRegistryUrl)
         {
+            Console.WriteLine(Environment.GetEnvironmentVariable("DATAPLATFORM_KAFKA_HOSTNAME"));
             var config = new ProducerConfig
             {
                 BootstrapServers = Environment.GetEnvironmentVariable("DATAPLATFORM_KAFKA_HOSTNAME"),
