@@ -138,7 +138,6 @@ namespace MtfhReportingDataListener.Domain
         public static MMH.TenureInformation ToAvro(this TenureResponseObject tenure)
         {
 
-
             return new MMH.TenureInformation
             {
                 Id = tenure.Id.ToString(),
