@@ -33,22 +33,15 @@ namespace MtfhReportingDataListener.UseCase
         {
             if (message is null) throw new ArgumentNullException(nameof(message));
 
-            // #1 - Get the tenure
+            // Get the tenure
             var tenure = await _tenureInfoApi.GetTenureInfoByIdAsync(message.EntityId, message.CorrelationId)
                                              .ConfigureAwait(false);
             if (tenure is null) throw new EntityNotFoundException<TenureResponseObject>(message.EntityId);
 
-            //#2 - Convert the data to avro
-            var schema = _kafkaGateway.GetSchema();
-            //var logMessageSchema = (RecordSchema) Schema.Parse(schema);
-            //var avro = new GenericRecord(logMessageSchema);
-            //avro.Add("Id", tenure.Id);
-            //#3 - Send the data in Kafka
-            var jsonTenure = JsonSerializer.Serialize(tenure);
+
+            // Send the data in Kafka
             var topic = "mtfh-reporting-data-listener";
-            _kafkaGateway.SendDataToKafka(tenure, topic, "registryURL");
+            _kafkaGateway.SendDataToKafka(tenure, topic);
         }
-
-
     }
 }

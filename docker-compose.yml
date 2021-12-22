@@ -19,7 +19,6 @@ services:
     links:
       - zoo
       
-
   mtfh-reporting-data-listener-test:
    image: mtfh-reporting-data-listener-test
    build:
@@ -32,11 +31,12 @@ services:
      - AWS_REGION=eu-west-2
      - AWS_ACCESS_KEY_ID=local
      - AWS_SECRET_ACCESS_KEY=local
-     - DATAPLATFORM_KAFKA_HOSTNAME=kafka:9092
-   links:
-     - zoo
+     - DATAPLATFORM_KAFKA_HOSTNAME=PLAINTEXT://kafka:19092
+     - SCHEMA_REGISTRY_HOST_NAME=schemaregistry:8081
    depends_on:
+    - zoo
     - kafka
+    - schemaregistry
     
   zoo:
     image: confluentinc/cp-zookeeper:6.2.1
@@ -48,11 +48,13 @@ services:
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_SERVER_ID: 1
       ZOOKEEPER_SERVERS: zoo:2888:3888
+      ZOOKEEPER_LOG4J_ROOT_LOGLEVEL: DEBUG
    
   kafka:
     image: confluentinc/cp-kafka:6.2.1
     hostname: kafka
     user: "appuser:appuser"
+    container_name: kafka
     ports:
       - "9092:9092"
       - "9999:9999"
@@ -68,6 +70,23 @@ services:
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
       KAFKA_JMX_PORT: 9999
       KAFKA_JMX_HOSTNAME: ${DOCKER_HOST_IP:-127.0.0.1}
+      KAFKA_LOG4J_ROOT_LOGLEVEL: DEBUG
+      # KAFKA_SCHEMA_REGISTRY_URL: "schemaregistry:8081"
     depends_on:
       - zoo
-      
+
+  schemaregistry:
+    image: confluentinc/cp-schema-registry:6.2.1
+    container_name: schemaregistry
+    hostname: schemaregistry
+    depends_on:
+      - zoo
+      - kafka
+    ports:
+      - "8081:8081"
+    environment:
+      SCHEMA_REGISTRY_KAFKASTORE_CONNECTION_URL: "zoo:2181"
+      SCHEMA_REGISTRY_LOG4J_ROOT_LOGLEVEL: DEBUG
+      SCHEMA_REGISTRY_HOST_NAME: schemaregistry
+      SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: "kafka:19092"      
+      SCHEMA_REGISTRY_DEBUG: "true"

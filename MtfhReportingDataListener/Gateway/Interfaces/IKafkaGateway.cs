@@ -4,7 +4,7 @@ namespace MtfhReportingDataListener.Gateway.Interfaces
 {
     public interface IKafkaGateway
     {
-        IsSuccessful SendDataToKafka(TenureResponseObject message, string topic, string schemaRegistryUrl);
+        IsSuccessful SendDataToKafka(TenureResponseObject message, string topic);
         string GetSchema();
     }
 }
