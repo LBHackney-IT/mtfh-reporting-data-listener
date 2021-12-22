@@ -19,7 +19,7 @@ namespace MtfhReportingDataListener.Gateway
     {
         public KafkaGateway() { }
 
-        public IsSuccessful SendDataToKafka(TenureResponseObject message, string topic, string schemaRegistryUrl)
+        public IsSuccessful SendDataToKafka(TenureResponseObject message, string topic)
         {
             Console.WriteLine(Environment.GetEnvironmentVariable("DATAPLATFORM_KAFKA_HOSTNAME"));
             var config = new ProducerConfig
@@ -30,6 +30,8 @@ namespace MtfhReportingDataListener.Gateway
 
 
             DeliveryReport<string, TenureInformation> deliveryReport = null;
+            var schemaRegistryUrl = Environment.GetEnvironmentVariable("SCHEMA_REGISTRY_HOST_NAME");
+            Console.WriteLine($"Schema registry hostname {schemaRegistryUrl}");
 
             using (var schemaRegistry = new CachedSchemaRegistryClient(new SchemaRegistryConfig { Url = schemaRegistryUrl }))
             using (var producer = new ProducerBuilder<string, TenureInformation>(config)
@@ -40,9 +42,8 @@ namespace MtfhReportingDataListener.Gateway
                                 {
                                     Value = message.ToAvro()
                                 },
-                (report) =>
+                (deliveryReport) =>
                 {
-                    deliveryReport = report;
                     if (deliveryReport.Error.Code != ErrorCode.NoError)
                     {
                         throw new Exception(deliveryReport.Error.Reason);

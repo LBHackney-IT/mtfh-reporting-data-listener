@@ -24,25 +24,6 @@ namespace MtfhReportingDataListener.Tests.Gateway
         public KafkaGatewayTests()
         {
             _gateway = new KafkaGateway();
-
-            //var schema = (RecordSchema) Schema.Parse(@"{
-            //          ""type"": ""record"",
-            //          ""name"": ""Person"",
-            //          ""fields"": [
-            //            {
-            //              ""name"": ""firstName"",
-            //              ""type"": ""string""
-            //            },
-            //            {
-            //              ""name"": ""lastName"",
-            //              ""type"": ""string""
-            //            },
-            //            {
-            //              ""name"": ""id"",
-            //              ""type"": ""long""
-            //            }
-            //          ]
-            //        }");
             _message = _fixture.Create<TenureResponseObject>();
 
         }
@@ -50,9 +31,6 @@ namespace MtfhReportingDataListener.Tests.Gateway
         [Fact]
         public void TenureUpdatedSendsDataToKafka()
         {
-            //_message.Add("id", 5);
-            //_message.Add("firstName", "Tom");
-            //_message.Add("lastName", "Brown");
             var consumerconfig = new ConsumerConfig
             {
                 BootstrapServers = Environment.GetEnvironmentVariable("DATAPLATFORM_KAFKA_HOSTNAME"),
@@ -60,10 +38,12 @@ namespace MtfhReportingDataListener.Tests.Gateway
                 AutoOffsetReset = AutoOffsetReset.Earliest
             };
             var topic = "mtfh-reporting-data-listener";
-            var schemaRegistryUrl = "registryUrl";
+            var schemaRegistryUrl = Environment.GetEnvironmentVariable("SCHEMA_REGISTRY_HOST_NAME");
+            // Do we need to upload to schema do the docker registry here?
+            // Can we mount it directly into the container?
 
 
-            var result = _gateway.SendDataToKafka(_message, topic, schemaRegistryUrl);
+            var result = _gateway.SendDataToKafka(_message, topic);
             result.Success.Should().BeTrue();
 
             var expectedReceivedMessage = _message.ToAvro();
@@ -74,7 +54,7 @@ namespace MtfhReportingDataListener.Tests.Gateway
                 consumer.Subscribe("mtfh-reporting-data-listener");
                 var r = consumer.Consume(TimeSpan.FromSeconds(30));
                 Assert.NotNull(r?.Message);
-                // Assert.Equal(expectedReceivedMessage, r.Message.Value);
+                Assert.Equal(expectedReceivedMessage, r.Message.Value);
                 consumer.Close();
             }
         }
