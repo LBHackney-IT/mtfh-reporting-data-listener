@@ -5,7 +5,7 @@
 //    is regenerated
 // </auto-generated>
 // ------------------------------------------------------------------------------
-namespace TenureSchema
+namespace MMH
 {
 	using System;
 	using System.Collections.Generic;
@@ -13,48 +13,47 @@ namespace TenureSchema
 	using global::Avro;
 	using global::Avro.Specific;
 	
-	public partial class Terminated : ISpecificRecord
+	public partial class TenureType : ISpecificRecord
 	{
-		public static Schema _SCHEMA = Schema.Parse("{\"type\":\"record\",\"name\":\"Terminated\",\"namespace\":\"TenureSchema\",\"fields\":[{\"name\"" +
-				":\"IsTerminated\",\"type\":\"boolean\"},{\"name\":\"ReasonForTermination\",\"type\":\"string\"" +
-				"}]}");
-		private bool _IsTerminated;
-		private string _ReasonForTermination;
+		public static Schema _SCHEMA = Schema.Parse("{\"type\":\"record\",\"name\":\"TenureType\",\"namespace\":\"MMH\",\"fields\":[{\"name\":\"Code\",\"" +
+				"type\":\"string\"},{\"name\":\"Description\",\"type\":\"string\"}]}");
+		private string _Code;
+		private string _Description;
 		public virtual Schema Schema
 		{
 			get
 			{
-				return Terminated._SCHEMA;
+				return TenureType._SCHEMA;
 			}
 		}
-		public bool IsTerminated
+		public string Code
 		{
 			get
 			{
-				return this._IsTerminated;
+				return this._Code;
 			}
 			set
 			{
-				this._IsTerminated = value;
+				this._Code = value;
 			}
 		}
-		public string ReasonForTermination
+		public string Description
 		{
 			get
 			{
-				return this._ReasonForTermination;
+				return this._Description;
 			}
 			set
 			{
-				this._ReasonForTermination = value;
+				this._Description = value;
 			}
 		}
 		public virtual object Get(int fieldPos)
 		{
 			switch (fieldPos)
 			{
-			case 0: return this.IsTerminated;
-			case 1: return this.ReasonForTermination;
+			case 0: return this.Code;
+			case 1: return this.Description;
 			default: throw new AvroRuntimeException("Bad index " + fieldPos + " in Get()");
 			};
 		}
@@ -62,8 +61,8 @@ namespace TenureSchema
 		{
 			switch (fieldPos)
 			{
-			case 0: this.IsTerminated = (System.Boolean)fieldValue; break;
-			case 1: this.ReasonForTermination = (System.String)fieldValue; break;
+			case 0: this.Code = (System.String)fieldValue; break;
+			case 1: this.Description = (System.String)fieldValue; break;
 			default: throw new AvroRuntimeException("Bad index " + fieldPos + " in Put()");
 			};
 		}

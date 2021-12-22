@@ -5,7 +5,7 @@
 //    is regenerated
 // </auto-generated>
 // ------------------------------------------------------------------------------
-namespace TenureSchema
+namespace MMH
 {
 	using System;
 	using System.Collections.Generic;
@@ -15,8 +15,8 @@ namespace TenureSchema
 	
 	public partial class AgreementType : ISpecificRecord
 	{
-		public static Schema _SCHEMA = Schema.Parse("{\"type\":\"record\",\"name\":\"AgreementType\",\"namespace\":\"TenureSchema\",\"fields\":[{\"na" +
-				"me\":\"Code\",\"type\":\"string\"},{\"name\":\"Description\",\"type\":\"string\"}]}");
+		public static Schema _SCHEMA = Schema.Parse("{\"type\":\"record\",\"name\":\"AgreementType\",\"namespace\":\"MMH\",\"fields\":[{\"name\":\"Code" +
+				"\",\"type\":\"string\"},{\"name\":\"Description\",\"type\":\"string\"}]}");
 		private string _Code;
 		private string _Description;
 		public virtual Schema Schema

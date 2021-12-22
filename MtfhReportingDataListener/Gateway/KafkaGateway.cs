@@ -1,14 +1,12 @@
-using Avro.Generic;
 using Confluent.Kafka;
 using Confluent.Kafka.SyncOverAsync;
 using Confluent.SchemaRegistry;
 using Confluent.SchemaRegistry.Serdes;
-using Hackney.Shared.Tenure.Boundary.Response;
 using MtfhReportingDataListener.Gateway.Interfaces;
+using Hackney.Shared.Tenure.Boundary.Response;
 using System;
-using System.Collections.Generic;
-using System.Text;
-using TenureSchema;
+using MMH;
+using MtfhReportingDataListener.Domain;
 
 namespace MtfhReportingDataListener.Gateway
 {
@@ -16,9 +14,11 @@ namespace MtfhReportingDataListener.Gateway
     {
         public bool Success { get; set; }
     }
+
     public class KafkaGateway : IKafkaGateway
     {
         public KafkaGateway() { }
+
         public IsSuccessful SendDataToKafka(TenureResponseObject message, string topic, string schemaRegistryUrl)
         {
             var config = new ProducerConfig
@@ -28,16 +28,16 @@ namespace MtfhReportingDataListener.Gateway
             };
 
 
-            DeliveryReport<string, TenureSchema.TenureInformation> deliveryReport = null;
+            DeliveryReport<string, TenureInformation> deliveryReport = null;
 
             using (var schemaRegistry = new CachedSchemaRegistryClient(new SchemaRegistryConfig { Url = schemaRegistryUrl }))
-            using (var producer = new ProducerBuilder<string, TenureSchema.TenureInformation>(config)
-                .SetValueSerializer(new AvroSerializer<TenureSchema.TenureInformation>(schemaRegistry).AsSyncOverAsync()).Build())
+            using (var producer = new ProducerBuilder<string, TenureInformation>(config)
+                .SetValueSerializer(new AvroSerializer<TenureInformation>(schemaRegistry).AsSyncOverAsync()).Build())
             {
                 producer.Produce(topic,
-                                new Message<string, TenureSchema.TenureInformation>
+                                new Message<string, TenureInformation>
                                 {
-                                    Value = message
+                                    Value = message.ToAvro()
                                 },
                 (report) =>
                 {

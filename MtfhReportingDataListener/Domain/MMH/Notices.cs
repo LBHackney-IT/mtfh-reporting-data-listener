@@ -5,7 +5,7 @@
 //    is regenerated
 // </auto-generated>
 // ------------------------------------------------------------------------------
-namespace TenureSchema
+namespace MMH
 {
 	using System;
 	using System.Collections.Generic;
@@ -15,12 +15,12 @@ namespace TenureSchema
 	
 	public partial class Notices : ISpecificRecord
 	{
-		public static Schema _SCHEMA = Schema.Parse(@"{""type"":""record"",""name"":""Notices"",""namespace"":""TenureSchema"",""fields"":[{""name"":""Type"",""type"":""string""},{""name"":""ServedDate"",""type"":""int"",""logicalType"":""date""},{""name"":""ExpiryDate"",""type"":""int"",""logicalType"":""date""},{""name"":""EffectiveDate"",""type"":""int"",""logicalType"":""date""},{""name"":""EndDate"",""type"":""int"",""logicalType"":""date""}]}");
+		public static Schema _SCHEMA = Schema.Parse(@"{""type"":""record"",""name"":""Notices"",""namespace"":""MMH"",""fields"":[{""name"":""Type"",""type"":""string""},{""name"":""ServedDate"",""type"":""int"",""logicalType"":""date""},{""name"":""ExpiryDate"",""type"":""int"",""logicalType"":""date""},{""name"":""EffectiveDate"",""type"":""int"",""logicalType"":""date""},{""name"":""EndDate"",""type"":[""int"",""null""],""logicalType"":""date""}]}");
 		private string _Type;
 		private int _ServedDate;
 		private int _ExpiryDate;
 		private int _EffectiveDate;
-		private int _EndDate;
+		private System.Nullable<int> _EndDate;
 		public virtual Schema Schema
 		{
 			get
@@ -72,7 +72,7 @@ namespace TenureSchema
 				this._EffectiveDate = value;
 			}
 		}
-		public int EndDate
+		public System.Nullable<int> EndDate
 		{
 			get
 			{
@@ -103,7 +103,7 @@ namespace TenureSchema
 			case 1: this.ServedDate = (System.Int32)fieldValue; break;
 			case 2: this.ExpiryDate = (System.Int32)fieldValue; break;
 			case 3: this.EffectiveDate = (System.Int32)fieldValue; break;
-			case 4: this.EndDate = (System.Int32)fieldValue; break;
+			case 4: this.EndDate = (System.Nullable<int>)fieldValue; break;
 			default: throw new AvroRuntimeException("Bad index " + fieldPos + " in Put()");
 			};
 		}

@@ -5,7 +5,7 @@
 //    is regenerated
 // </auto-generated>
 // ------------------------------------------------------------------------------
-namespace TenureSchema
+namespace MMH
 {
 	using System;
 	using System.Collections.Generic;
@@ -15,8 +15,8 @@ namespace TenureSchema
 	
 	public partial class LegacyReferences : ISpecificRecord
 	{
-		public static Schema _SCHEMA = Schema.Parse("{\"type\":\"record\",\"name\":\"LegacyReferences\",\"namespace\":\"TenureSchema\",\"fields\":[{" +
-				"\"name\":\"Name\",\"type\":\"string\"},{\"name\":\"Value\",\"type\":\"string\"}]}");
+		public static Schema _SCHEMA = Schema.Parse("{\"type\":\"record\",\"name\":\"LegacyReferences\",\"namespace\":\"MMH\",\"fields\":[{\"name\":\"N" +
+				"ame\",\"type\":\"string\"},{\"name\":\"Value\",\"type\":\"string\"}]}");
 		private string _Name;
 		private string _Value;
 		public virtual Schema Schema

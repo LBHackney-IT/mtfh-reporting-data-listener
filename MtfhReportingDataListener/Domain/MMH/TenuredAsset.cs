@@ -5,7 +5,7 @@
 //    is regenerated
 // </auto-generated>
 // ------------------------------------------------------------------------------
-namespace TenureSchema
+namespace MMH
 {
 	using System;
 	using System.Collections.Generic;
@@ -15,9 +15,9 @@ namespace TenureSchema
 	
 	public partial class TenuredAsset : ISpecificRecord
 	{
-		public static Schema _SCHEMA = Schema.Parse(@"{""type"":""record"",""name"":""TenuredAsset"",""namespace"":""TenureSchema"",""fields"":[{""name"":""Id"",""type"":""string"",""logicalType"":""uuid""},{""name"":""TenuredAsset"",""type"":{""type"":""enum"",""name"":""TenuredAssetType"",""namespace"":""TenureSchema"",""symbols"":[""Block"",""Concierge"",""Dwelling"",""LettableNonDwelling"",""MediumRiseBlock"",""NA"",""TravellerSite""]}},{""name"":""FullAddress"",""type"":""string""},{""name"":""Uprn"",""type"":""string""},{""name"":""PropertyReference"",""type"":""string""}]}");
+		public static Schema _SCHEMA = Schema.Parse(@"{""type"":""record"",""name"":""TenuredAsset"",""namespace"":""MMH"",""fields"":[{""name"":""Id"",""type"":""string"",""logicalType"":""uuid""},{""name"":""TenuredAssetType"",""type"":[{""type"":""enum"",""name"":""TenuredAssetType"",""namespace"":""MMH"",""symbols"":[""Block"",""Concierge"",""Dwelling"",""LettableNonDwelling"",""MediumRiseBlock"",""NA"",""TravellerSite""]},""null""]},{""name"":""FullAddress"",""type"":""string""},{""name"":""Uprn"",""type"":""string""},{""name"":""PropertyReference"",""type"":""string""}]}");
 		private string _Id;
-		private TenureSchema.TenuredAssetType _TenuredAsset;
+		private System.Nullable<MMH.TenuredAssetType> _TenuredAssetType;
 		private string _FullAddress;
 		private string _Uprn;
 		private string _PropertyReference;
@@ -39,15 +39,15 @@ namespace TenureSchema
 				this._Id = value;
 			}
 		}
-		public TenureSchema.TenuredAssetType TenuredAsset
+		public System.Nullable<MMH.TenuredAssetType> TenuredAssetType
 		{
 			get
 			{
-				return this._TenuredAsset;
+				return this._TenuredAssetType;
 			}
 			set
 			{
-				this._TenuredAsset = value;
+				this._TenuredAssetType = value;
 			}
 		}
 		public string FullAddress
@@ -88,7 +88,7 @@ namespace TenureSchema
 			switch (fieldPos)
 			{
 			case 0: return this.Id;
-			case 1: return this.TenuredAsset;
+			case 1: return this.TenuredAssetType;
 			case 2: return this.FullAddress;
 			case 3: return this.Uprn;
 			case 4: return this.PropertyReference;
@@ -100,7 +100,7 @@ namespace TenureSchema
 			switch (fieldPos)
 			{
 			case 0: this.Id = (System.String)fieldValue; break;
-			case 1: this.TenuredAsset = (TenureSchema.TenuredAssetType)fieldValue; break;
+			case 1: this.TenuredAssetType = fieldValue == null ? (System.Nullable<MMH.TenuredAssetType>)null : (MMH.TenuredAssetType)fieldValue; break;
 			case 2: this.FullAddress = (System.String)fieldValue; break;
 			case 3: this.Uprn = (System.String)fieldValue; break;
 			case 4: this.PropertyReference = (System.String)fieldValue; break;

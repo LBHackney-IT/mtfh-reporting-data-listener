@@ -1,9 +1,4 @@
-using Avro.Generic;
-using Confluent.Kafka;
 using Hackney.Shared.Tenure.Boundary.Response;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace MtfhReportingDataListener.Gateway.Interfaces
 {

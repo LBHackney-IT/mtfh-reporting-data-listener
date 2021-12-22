@@ -5,7 +5,7 @@
 //    is regenerated
 // </auto-generated>
 // ------------------------------------------------------------------------------
-namespace TenureSchema
+namespace MMH
 {
 	using System;
 	using System.Collections.Generic;
@@ -15,7 +15,7 @@ namespace TenureSchema
 	
 	public partial class Charges : ISpecificRecord
 	{
-		public static Schema _SCHEMA = Schema.Parse(@"{""type"":""record"",""name"":""Charges"",""namespace"":""TenureSchema"",""fields"":[{""name"":""Rent"",""type"":""float""},{""name"":""CurrentBalance"",""type"":""float""},{""name"":""BillingFrequency"",""type"":""string""},{""name"":""ServiceCharge"",""type"":""float""},{""name"":""OtherCharges"",""type"":""float""},{""name"":""CombinedServiceCharges"",""type"":""float""},{""name"":""CombinedRentCharges"",""type"":""float""},{""name"":""TenancyInsuranceCharge"",""type"":""float""},{""name"":""OriginalRentCharge"",""type"":""float""},{""name"":""OriginalServiceCharge"",""type"":""float""}]}");
+		public static Schema _SCHEMA = Schema.Parse(@"{""type"":""record"",""name"":""Charges"",""namespace"":""MMH"",""fields"":[{""name"":""Rent"",""type"":""float""},{""name"":""CurrentBalance"",""type"":""float""},{""name"":""BillingFrequency"",""type"":""string""},{""name"":""ServiceCharge"",""type"":""float""},{""name"":""OtherCharges"",""type"":""float""},{""name"":""CombinedServiceCharges"",""type"":""float""},{""name"":""CombinedRentCharges"",""type"":""float""},{""name"":""TenancyInsuranceCharge"",""type"":""float""},{""name"":""OriginalRentCharge"",""type"":""float""},{""name"":""OriginalServiceCharge"",""type"":""float""}]}");
 		private float _Rent;
 		private float _CurrentBalance;
 		private string _BillingFrequency;
