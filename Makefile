@@ -20,8 +20,6 @@ test:
 
 .PHONY: lint
 lint:
-	-dotnet tool install -g dotnet-format
-	dotnet tool update -g dotnet-format
+	-dotnet tool install -g dotnet-format --version 5.1.250801
+	dotnet tool update -g dotnet-format --version 5.1.250801
 	dotnet format
-
-

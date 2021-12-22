@@ -5,7 +5,7 @@
 //    is regenerated
 // </auto-generated>
 // ------------------------------------------------------------------------------
-namespace TenureSchema
+namespace MMH
 {
 	using System;
 	using System.Collections.Generic;
@@ -13,12 +13,14 @@ namespace TenureSchema
 	using global::Avro;
 	using global::Avro.Specific;
 	
-	public enum PersonTenureType
+	public enum TenuredAssetType
 	{
-		Tenant,
-		Leaseholder,
-		Freeholder,
-		HouseholdMember,
-		Occupant,
+		Block,
+		Concierge,
+		Dwelling,
+		LettableNonDwelling,
+		MediumRiseBlock,
+		NA,
+		TravellerSite,
 	}
 }

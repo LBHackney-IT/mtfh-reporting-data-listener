@@ -5,7 +5,7 @@
 //    is regenerated
 // </auto-generated>
 // ------------------------------------------------------------------------------
-namespace TenureSchema
+namespace MMH
 {
 	using System;
 	using System.Collections.Generic;
@@ -15,13 +15,13 @@ namespace TenureSchema
 	
 	public partial class HouseholdMember : ISpecificRecord
 	{
-		public static Schema _SCHEMA = Schema.Parse(@"{""type"":""record"",""name"":""HouseholdMember"",""namespace"":""TenureSchema"",""fields"":[{""name"":""Id"",""type"":""string"",""logicalType"":""uuid""},{""name"":""HouseholdMembers"",""type"":{""type"":""enum"",""name"":""HouseholdMembersType"",""namespace"":""TenureSchema"",""symbols"":[""Person"",""Organization""]}},{""name"":""FullName"",""type"":""string""},{""name"":""IsResponsible"",""type"":""boolean""},{""name"":""DateOfBirth"",""type"":""int"",""logicalType"":""date""},{""name"":""PersonTenure"",""type"":{""type"":""enum"",""name"":""PersonTenureType"",""namespace"":""TenureSchema"",""symbols"":[""Tenant"",""Leaseholder"",""Freeholder"",""HouseholdMember"",""Occupant""]}}]}");
+		public static Schema _SCHEMA = Schema.Parse(@"{""type"":""record"",""name"":""HouseholdMember"",""namespace"":""MMH"",""fields"":[{""name"":""Id"",""type"":""string"",""logicalType"":""uuid""},{""name"":""HouseholdMembersType"",""type"":{""type"":""enum"",""name"":""HouseholdMembersType"",""namespace"":""MMH"",""symbols"":[""Person"",""Organization""]}},{""name"":""FullName"",""type"":""string""},{""name"":""IsResponsible"",""type"":""boolean""},{""name"":""DateOfBirth"",""type"":""int"",""logicalType"":""date""},{""name"":""PersonTenureType"",""type"":{""type"":""enum"",""name"":""PersonTenureType"",""namespace"":""MMH"",""symbols"":[""Tenant"",""Leaseholder"",""Freeholder"",""HouseholdMember"",""Occupant""]}}]}");
 		private string _Id;
-		private TenureSchema.HouseholdMembersType _HouseholdMembers;
+		private MMH.HouseholdMembersType _HouseholdMembersType;
 		private string _FullName;
 		private bool _IsResponsible;
 		private int _DateOfBirth;
-		private TenureSchema.PersonTenureType _PersonTenure;
+		private MMH.PersonTenureType _PersonTenureType;
 		public virtual Schema Schema
 		{
 			get
@@ -40,15 +40,15 @@ namespace TenureSchema
 				this._Id = value;
 			}
 		}
-		public TenureSchema.HouseholdMembersType HouseholdMembers
+		public MMH.HouseholdMembersType HouseholdMembersType
 		{
 			get
 			{
-				return this._HouseholdMembers;
+				return this._HouseholdMembersType;
 			}
 			set
 			{
-				this._HouseholdMembers = value;
+				this._HouseholdMembersType = value;
 			}
 		}
 		public string FullName
@@ -84,15 +84,15 @@ namespace TenureSchema
 				this._DateOfBirth = value;
 			}
 		}
-		public TenureSchema.PersonTenureType PersonTenure
+		public MMH.PersonTenureType PersonTenureType
 		{
 			get
 			{
-				return this._PersonTenure;
+				return this._PersonTenureType;
 			}
 			set
 			{
-				this._PersonTenure = value;
+				this._PersonTenureType = value;
 			}
 		}
 		public virtual object Get(int fieldPos)
@@ -100,11 +100,11 @@ namespace TenureSchema
 			switch (fieldPos)
 			{
 			case 0: return this.Id;
-			case 1: return this.HouseholdMembers;
+			case 1: return this.HouseholdMembersType;
 			case 2: return this.FullName;
 			case 3: return this.IsResponsible;
 			case 4: return this.DateOfBirth;
-			case 5: return this.PersonTenure;
+			case 5: return this.PersonTenureType;
 			default: throw new AvroRuntimeException("Bad index " + fieldPos + " in Get()");
 			};
 		}
@@ -113,11 +113,11 @@ namespace TenureSchema
 			switch (fieldPos)
 			{
 			case 0: this.Id = (System.String)fieldValue; break;
-			case 1: this.HouseholdMembers = (TenureSchema.HouseholdMembersType)fieldValue; break;
+			case 1: this.HouseholdMembersType = (MMH.HouseholdMembersType)fieldValue; break;
 			case 2: this.FullName = (System.String)fieldValue; break;
 			case 3: this.IsResponsible = (System.Boolean)fieldValue; break;
 			case 4: this.DateOfBirth = (System.Int32)fieldValue; break;
-			case 5: this.PersonTenure = (TenureSchema.PersonTenureType)fieldValue; break;
+			case 5: this.PersonTenureType = (MMH.PersonTenureType)fieldValue; break;
 			default: throw new AvroRuntimeException("Bad index " + fieldPos + " in Put()");
 			};
 		}

@@ -1,22 +1,16 @@
 using AutoFixture;
-using Avro;
-using Avro.Generic;
 using Confluent.Kafka;
 using Confluent.Kafka.SyncOverAsync;
 using Confluent.SchemaRegistry;
 using Confluent.SchemaRegistry.Serdes;
 using FluentAssertions;
 using Hackney.Shared.Tenure.Boundary.Response;
-using Moq;
-using MtfhReportingDataListener.Boundary;
 using MtfhReportingDataListener.Gateway;
+using MtfhReportingDataListener.Domain;
 using MtfhReportingDataListener.Gateway.Interfaces;
 using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Text.Json;
 using Xunit;
-using TenureSchema;
+using MMH;
 
 namespace MtfhReportingDataListener.Tests.Gateway
 {
@@ -24,7 +18,7 @@ namespace MtfhReportingDataListener.Tests.Gateway
     public class KafkaGatewayTests : MockApplicationFactory
     {
         private readonly IKafkaGateway _gateway;
-        private readonly TenureSchema.TenureInformation _message;
+        private readonly TenureResponseObject _message;
         private readonly Fixture _fixture = new Fixture();
 
         public KafkaGatewayTests()
@@ -49,7 +43,7 @@ namespace MtfhReportingDataListener.Tests.Gateway
             //            }
             //          ]
             //        }");
-            _message = _fixture.Create<TenureSchema.TenureInformation>();
+            _message = _fixture.Create<TenureResponseObject>();
 
         }
 
@@ -68,17 +62,19 @@ namespace MtfhReportingDataListener.Tests.Gateway
             var topic = "mtfh-reporting-data-listener";
             var schemaRegistryUrl = "registryUrl";
 
-            var stubTenureObj = new TenureResponseObject();
 
-            var result = _gateway.SendDataToKafka(stubTenureObj, topic, schemaRegistryUrl);
+            var result = _gateway.SendDataToKafka(_message, topic, schemaRegistryUrl);
             result.Success.Should().BeTrue();
+
+            var expectedReceivedMessage = _message.ToAvro();
+
             using (var schemaRegistry = new CachedSchemaRegistryClient(new SchemaRegistryConfig { Url = schemaRegistryUrl }))
-            using (var consumer = new ConsumerBuilder<Ignore, TenureSchema.TenureInformation>(consumerconfig).SetValueDeserializer(new AvroDeserializer<TenureSchema.TenureInformation>(schemaRegistry).AsSyncOverAsync()).Build())
+            using (var consumer = new ConsumerBuilder<Ignore, TenureInformation>(consumerconfig).SetValueDeserializer(new AvroDeserializer<TenureInformation>(schemaRegistry).AsSyncOverAsync()).Build())
             {
                 consumer.Subscribe("mtfh-reporting-data-listener");
                 var r = consumer.Consume(TimeSpan.FromSeconds(30));
                 Assert.NotNull(r?.Message);
-                //Assert.Equal(_message, r.Message.Value);
+                // Assert.Equal(expectedReceivedMessage, r.Message.Value);
                 consumer.Close();
             }
         }
