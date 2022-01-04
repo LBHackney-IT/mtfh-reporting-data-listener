@@ -1,17 +1,14 @@
 using AutoFixture;
 using Confluent.Kafka;
-using Confluent.Kafka.SyncOverAsync;
-using Confluent.SchemaRegistry;
-using Confluent.SchemaRegistry.Serdes;
 using FluentAssertions;
 using Hackney.Shared.Tenure.Boundary.Response;
 using MtfhReportingDataListener.Gateway;
-using MtfhReportingDataListener.Domain;
 using MtfhReportingDataListener.Gateway.Interfaces;
 using System;
 using Xunit;
 using Avro;
 using Avro.Generic;
+using Schema = Avro.Schema;
 
 namespace MtfhReportingDataListener.Tests.Gateway
 {

@@ -7,7 +7,7 @@ using System;
 using MMH;
 using MtfhReportingDataListener.Domain;
 using Avro.Generic;
-using AvroConvert;
+using SolTechnology.Avro;
 
 namespace MtfhReportingDataListener.Gateway
 {
@@ -70,9 +70,10 @@ namespace MtfhReportingDataListener.Gateway
     }
     public class CustomSerializer : ISerializer<GenericRecord>
     {
-        public byte[] Serialize(GenericRecord record)
+        public byte[] Serialize(GenericRecord record, SerializationContext context)
         {
             return AvroConvert.Serialize(record);
         }
+
     }
 }
