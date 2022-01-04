@@ -64,3 +64,5 @@ tmp/
 .ionide
 
 testresults/
+
+.env
