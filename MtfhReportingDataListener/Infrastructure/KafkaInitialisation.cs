@@ -35,15 +35,6 @@ namespace MtfhReportingDataListener.Infrastructure
             {
                 throw new Exception(ex.Message);
             }
-            //finally
-            //{
-            //    if (producer != null)
-            //    {
-            //        ((IDisposable) producer).Dispose();
-            //    }
-            //}
-
-
 
         }
     }
