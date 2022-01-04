@@ -1,6 +1,5 @@
 using Confluent.Kafka;
 using Confluent.Kafka.SyncOverAsync;
-using Confluent.SchemaRegistry;
 using Confluent.SchemaRegistry.Serdes;
 using MtfhReportingDataListener.Gateway.Interfaces;
 using Hackney.Shared.Tenure.Boundary.Response;
