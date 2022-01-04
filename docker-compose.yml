@@ -32,7 +32,7 @@ services:
      - AWS_REGION=eu-west-2
      - AWS_ACCESS_KEY_ID=local
      - AWS_SECRET_ACCESS_KEY=local
-     - DATAPLATFORM_KAFKA_HOSTNAME=kafka:9092
+     - DATAPLATFORM_KAFKA_HOSTNAME=kafka:19092
    links:
      - zoo
    depends_on:
@@ -52,6 +52,7 @@ services:
   kafka:
     image: confluentinc/cp-kafka:6.2.1
     hostname: kafka
+    container_name: kafka
     user: "appuser:appuser"
     ports:
       - "9092:9092"
