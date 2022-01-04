@@ -115,12 +115,10 @@ jobs:
             mv ~/docker-compose /usr/local/bin/docker-compose
       - run:
           name: build
-          command: docker-compose build kafka
+          command: docker-compose build mtfh-reporting-data-listener-test
       - run:
           name: Run tests
-          command: |
-            docker-compose up -d kafka
-            dotnet test
+          command: docker-compose run mtfh-reporting-data-listener-test
   assume-role-development:
     executor: docker-python
     steps:
