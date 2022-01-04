@@ -7,6 +7,7 @@ using System;
 using MMH;
 using MtfhReportingDataListener.Domain;
 using Avro.Generic;
+using AvroConvert;
 
 namespace MtfhReportingDataListener.Gateway
 {
@@ -34,7 +35,7 @@ namespace MtfhReportingDataListener.Gateway
             // Console.WriteLine($"Schema registry hostname {schemaRegistryUrl}");
 
             // using (var schemaRegistry = new CachedSchemaRegistryClient(new SchemaRegistryConfig { Url = schemaRegistryUrl }))
-            using (var producer = new ProducerBuilder<string, GenericRecord>(config).Build())
+            using (var producer = new ProducerBuilder<string, GenericRecord>(config).SetValueSerializer(new CustomSerializer()).Build())
             {
                 producer.Produce(topic,
                                 new Message<string, GenericRecord>
@@ -65,6 +66,13 @@ namespace MtfhReportingDataListener.Gateway
         public string GetSchema()
         {
             return "";
+        }
+    }
+    public class CustomSerializer : ISerializer<GenericRecord>
+    {
+        public byte[] Serialize(GenericRecord record)
+        {
+            return AvroConvert.Serialize(record);
         }
     }
 }
