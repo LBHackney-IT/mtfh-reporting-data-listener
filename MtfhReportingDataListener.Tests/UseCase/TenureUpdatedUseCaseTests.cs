@@ -94,7 +94,17 @@ namespace MtfhReportingDataListener.Tests.UseCase
         {
             _mockGateway.Setup(x => x.GetTenureInfoByIdAsync(_message.EntityId, _message.CorrelationId))
                         .ReturnsAsync(_tenure);
-            // _mockGlue.Setup();
+            var mockSchema = @"{
+                ""type"": ""record"",
+                ""name"": ""Person"",
+                ""fields"": [
+                   {
+                     ""name"": ""firstName"",
+                     ""type"": ""string""
+                   },
+                ]
+            }";
+            _mockGlue.Setup(x => x.GetSchema()).Returns(mockSchema);
 
             await _sut.ProcessMessageAsync(_message).ConfigureAwait(false);
             _mockKafka.Verify(x => x.SendDataToKafka("mtfh-reporting-data-listener", It.IsAny<GenericRecord>()), Times.Once);
