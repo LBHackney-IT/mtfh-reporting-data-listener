@@ -21,11 +21,13 @@ namespace MtfhReportingDataListener.UseCase
     {
         private readonly ITenureInfoApiGateway _tenureInfoApi;
         private readonly IKafkaGateway _kafkaGateway;
+        private readonly IGlueGateway _glueGateway;
 
-        public TenureUpdatedUseCase(ITenureInfoApiGateway gateway, IKafkaGateway kafkaGateway)
+        public TenureUpdatedUseCase(ITenureInfoApiGateway gateway, IKafkaGateway kafkaGateway, IGlueGateway glueGateway)
         {
             _tenureInfoApi = gateway;
             _kafkaGateway = kafkaGateway;
+            _glueGateway = glueGateway;
         }
 
         [LogCall]
@@ -38,10 +40,26 @@ namespace MtfhReportingDataListener.UseCase
                                              .ConfigureAwait(false);
             if (tenure is null) throw new EntityNotFoundException<TenureResponseObject>(message.EntityId);
 
+            // Get the schema
 
+            var schema = _glueGateway.GetSchema();
+            var logMessageSchema = (RecordSchema) Schema.Parse(schema);
+
+            // build record here            
+            var record = BuildTenureRecord(logMessageSchema, tenure);
+            
             // Send the data in Kafka
             var topic = "mtfh-reporting-data-listener";
-            _kafkaGateway.SendDataToKafka(tenure, topic);
+            _kafkaGateway.SendDataToKafka(topic, record);
+        }
+
+        private GenericRecord BuildTenureRecord(RecordSchema schema, TenureResponseObject tenure)
+        {
+            var record = new GenericRecord(schema);
+            
+            // Add fields here
+
+            return record;
         }
     }
 }
