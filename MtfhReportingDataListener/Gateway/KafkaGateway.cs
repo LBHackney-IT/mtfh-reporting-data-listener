@@ -7,6 +7,7 @@ using Hackney.Shared.Tenure.Boundary.Response;
 using System;
 using MMH;
 using MtfhReportingDataListener.Domain;
+using Avro.Generic;
 
 namespace MtfhReportingDataListener.Gateway
 {
@@ -19,7 +20,7 @@ namespace MtfhReportingDataListener.Gateway
     {
         public KafkaGateway() { }
 
-        public IsSuccessful SendDataToKafka(TenureResponseObject message, string topic)
+        public IsSuccessful SendDataToKafka(string topic, GenericRecord message)
         {
             Console.WriteLine(Environment.GetEnvironmentVariable("DATAPLATFORM_KAFKA_HOSTNAME"));
             var config = new ProducerConfig
@@ -29,18 +30,17 @@ namespace MtfhReportingDataListener.Gateway
             };
 
 
-            DeliveryReport<string, TenureInformation> deliveryReport = null;
-            var schemaRegistryUrl = Environment.GetEnvironmentVariable("SCHEMA_REGISTRY_HOST_NAME");
-            Console.WriteLine($"Schema registry hostname {schemaRegistryUrl}");
+            DeliveryReport<string, GenericRecord> deliveryReport = null;
+            // var schemaRegistryUrl = Environment.GetEnvironmentVariable("SCHEMA_REGISTRY_HOST_NAME");
+            // Console.WriteLine($"Schema registry hostname {schemaRegistryUrl}");
 
-            using (var schemaRegistry = new CachedSchemaRegistryClient(new SchemaRegistryConfig { Url = schemaRegistryUrl }))
-            using (var producer = new ProducerBuilder<string, TenureInformation>(config)
-                .SetValueSerializer(new AvroSerializer<TenureInformation>(schemaRegistry).AsSyncOverAsync()).Build())
+            // using (var schemaRegistry = new CachedSchemaRegistryClient(new SchemaRegistryConfig { Url = schemaRegistryUrl }))
+            using (var producer = new ProducerBuilder<string, GenericRecord>(config).Build())
             {
                 producer.Produce(topic,
-                                new Message<string, TenureInformation>
+                                new Message<string, GenericRecord>
                                 {
-                                    Value = message.ToAvro()
+                                    Value = message
                                 },
                 (deliveryReport) =>
                 {

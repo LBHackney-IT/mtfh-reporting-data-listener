@@ -12,10 +12,7 @@ using Hackney.Shared.Tenure.Boundary.Response;
 using Hackney.Shared.Tenure.Domain;
 using System.Linq;
 using System.Text.Json;
-using System.IO;
-using System.Reflection;
 using Avro.Generic;
-using Avro;
 
 namespace MtfhReportingDataListener.Tests.UseCase
 {
@@ -24,6 +21,7 @@ namespace MtfhReportingDataListener.Tests.UseCase
     {
         private readonly Mock<ITenureInfoApiGateway> _mockGateway;
         private readonly Mock<IKafkaGateway> _mockKafka;
+        private readonly Mock<IGlueGateway> _mockGlue;
         private readonly TenureUpdatedUseCase _sut;
         private readonly TenureResponseObject _tenure;
 
@@ -37,7 +35,8 @@ namespace MtfhReportingDataListener.Tests.UseCase
 
             _mockGateway = new Mock<ITenureInfoApiGateway>();
             _mockKafka = new Mock<IKafkaGateway>();
-            _sut = new TenureUpdatedUseCase(_mockGateway.Object, _mockKafka.Object);
+            _mockGlue = new Mock<IGlueGateway>();
+            _sut = new TenureUpdatedUseCase(_mockGateway.Object, _mockKafka.Object, _mockGlue.Object);
 
 
             _tenure = CreateTenure();
@@ -95,10 +94,12 @@ namespace MtfhReportingDataListener.Tests.UseCase
         {
             _mockGateway.Setup(x => x.GetTenureInfoByIdAsync(_message.EntityId, _message.CorrelationId))
                         .ReturnsAsync(_tenure);
+            // _mockGlue.Setup();
 
             await _sut.ProcessMessageAsync(_message).ConfigureAwait(false);
-            _mockKafka.Verify(x => x.SendDataToKafka(_tenure, "mtfh-reporting-data-listener"), Times.Once);
-
+            _mockKafka.Verify(x => x.SendDataToKafka("mtfh-reporting-data-listener", It.IsAny<GenericRecord>()), Times.Once);
         }
+
+        //TODO - Check generic record has correct data
     }
 }

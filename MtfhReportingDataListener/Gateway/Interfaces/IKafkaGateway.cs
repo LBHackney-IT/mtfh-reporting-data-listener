@@ -1,10 +1,10 @@
-using Hackney.Shared.Tenure.Boundary.Response;
+using Avro.Generic;
 
 namespace MtfhReportingDataListener.Gateway.Interfaces
 {
     public interface IKafkaGateway
     {
-        IsSuccessful SendDataToKafka(TenureResponseObject message, string topic);
+        IsSuccessful SendDataToKafka(string topic, GenericRecord record);
         string GetSchema();
     }
 }

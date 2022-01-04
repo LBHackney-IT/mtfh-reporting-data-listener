@@ -1,10 +1,12 @@
+include .env
+
 .PHONY: setup
 setup:
 	docker-compose build
 
 .PHONY: build
 build:
-	docker-compose build mtfh-reporting-data-listener
+	LBHPACKAGESTOKEN=${LBHPACKAGESTOKEN} docker-compose build mtfh-reporting-data-listener
 
 .PHONY: serve
 serve:
@@ -16,7 +18,7 @@ shell:
 
 .PHONY: test
 test:
-	docker-compose build mtfh-reporting-data-listener-test && docker-compose up mtfh-reporting-data-listener-test
+	LBHPACKAGESTOKEN=${LBHPACKAGESTOKEN} docker-compose build mtfh-reporting-data-listener-test && docker-compose run mtfh-reporting-data-listener-test 
 
 .PHONY: lint
 lint:
