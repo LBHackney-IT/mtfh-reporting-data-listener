@@ -1,5 +1,7 @@
 using AutoFixture;
 using Confluent.Kafka;
+using Confluent.Kafka.SyncOverAsync;
+using Confluent.SchemaRegistry.Serdes;
 using FluentAssertions;
 using Hackney.Shared.Tenure.Boundary.Response;
 using MtfhReportingDataListener.Gateway;
@@ -37,37 +39,31 @@ namespace MtfhReportingDataListener.Tests.Gateway
             };
 
             var topic = "mtfh-reporting-data-listener";
-            // var schemaRegistryUrl = Environment.GetEnvironmentVariable("SCHEMA_REGISTRY_HOST_NAME");
-            // Do we need to upload to schema do the docker registry here?
-            // Can we mount it directly into the container?
 
-            var schema = (RecordSchema) Schema.Parse(@"{
+            var schemaString = @"{
                  ""type"": ""record"",
                  ""name"": ""Person"",
                  ""fields"": [
                    {
                      ""name"": ""firstName"",
                      ""type"": ""string""
-                   },
-                   {
-                     ""name"": ""lastName"",
-                     ""type"": ""string""
-                   },
-                   {
-                     ""name"": ""id"",
-                     ""type"": ""long""
                    }
                  ]
-               }");
+               }";
+
+            var schema = (RecordSchema) Schema.Parse(schemaString);
             GenericRecord message = new GenericRecord(schema);
             message.Add("firstName", "Tom");
-            var result = _gateway.SendDataToKafka(topic, message);
+            var schemaWithMetadata = new Confluent.SchemaRegistry.Schema("tenure", 1, 1, schemaString);
+            var result = _gateway.SendDataToKafka(topic, message, schemaWithMetadata);
             result.Success.Should().BeTrue();
 
-            // var expectedReceivedMessage = _message.ToAvro();
+            var schemaRegistryClient = new SchemaRegistryClient(schemaWithMetadata);
 
-            // using (var schemaResgistry = new CachedSchemaRegistryClient(new SchemaRegistryConfig { Url = schemaRegistryUrl }))
-            using (var consumer = new ConsumerBuilder<Ignore, GenericRecord>(consumerconfig).Build())
+            using (var consumer = new ConsumerBuilder<Ignore, GenericRecord>(consumerconfig)
+                .SetValueDeserializer(new AvroDeserializer<GenericRecord>(schemaRegistryClient).AsSyncOverAsync())
+                .Build()
+            )
             {
                 consumer.Subscribe("mtfh-reporting-data-listener");
                 var r = consumer.Consume(TimeSpan.FromSeconds(30));
@@ -76,6 +72,5 @@ namespace MtfhReportingDataListener.Tests.Gateway
                 consumer.Close();
             }
         }
-
     }
 }

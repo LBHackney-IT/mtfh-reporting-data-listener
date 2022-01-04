@@ -13,6 +13,7 @@ using Hackney.Shared.Tenure.Domain;
 using System.Linq;
 using System.Text.Json;
 using Avro.Generic;
+using Confluent.SchemaRegistry;
 
 namespace MtfhReportingDataListener.Tests.UseCase
 {
@@ -107,7 +108,7 @@ namespace MtfhReportingDataListener.Tests.UseCase
             _mockGlue.Setup(x => x.GetSchema()).Returns(mockSchema);
 
             await _sut.ProcessMessageAsync(_message).ConfigureAwait(false);
-            _mockKafka.Verify(x => x.SendDataToKafka("mtfh-reporting-data-listener", It.IsAny<GenericRecord>()), Times.Once);
+            _mockKafka.Verify(x => x.SendDataToKafka("mtfh-reporting-data-listener", It.IsAny<GenericRecord>(), It.IsAny<Schema>()), Times.Once);
         }
 
         //TODO - Check generic record has correct data

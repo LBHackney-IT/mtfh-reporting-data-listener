@@ -1,5 +1,4 @@
 using MtfhReportingDataListener.Boundary;
-using MtfhReportingDataListener.Domain;
 using MtfhReportingDataListener.Gateway.Interfaces;
 using MtfhReportingDataListener.Infrastructure.Exceptions;
 using MtfhReportingDataListener.UseCase.Interfaces;
@@ -7,12 +6,7 @@ using Hackney.Core.Logging;
 using System;
 using System.Threading.Tasks;
 using Hackney.Shared.Tenure.Boundary.Response;
-
-using System.Text.Json;
-using Confluent.Kafka;
-using System.Collections.Generic;
 using Avro;
-using System.IO;
 using Avro.Generic;
 
 namespace MtfhReportingDataListener.UseCase
@@ -41,22 +35,24 @@ namespace MtfhReportingDataListener.UseCase
             if (tenure is null) throw new EntityNotFoundException<TenureResponseObject>(message.EntityId);
 
             // Get the schema
-
             var schema = _glueGateway.GetSchema();
+
+            // (subject, version, Id, string) -> get from glue?
+            var schemaWithMetadata = new Confluent.SchemaRegistry.Schema("tenure", 1, 1, schema);
             var logMessageSchema = (RecordSchema) Schema.Parse(schema);
 
-            // build record here            
+            // build record here
             var record = BuildTenureRecord(logMessageSchema, tenure);
-            
+
             // Send the data in Kafka
             var topic = "mtfh-reporting-data-listener";
-            _kafkaGateway.SendDataToKafka(topic, record);
+            _kafkaGateway.SendDataToKafka(topic, record, schemaWithMetadata);
         }
 
         private GenericRecord BuildTenureRecord(RecordSchema schema, TenureResponseObject tenure)
         {
             var record = new GenericRecord(schema);
-            
+
             // Add fields here
 
             return record;

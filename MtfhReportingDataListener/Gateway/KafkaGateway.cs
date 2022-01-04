@@ -2,12 +2,9 @@ using Confluent.Kafka;
 using Confluent.Kafka.SyncOverAsync;
 using Confluent.SchemaRegistry.Serdes;
 using MtfhReportingDataListener.Gateway.Interfaces;
-using Hackney.Shared.Tenure.Boundary.Response;
 using System;
-using MMH;
-using MtfhReportingDataListener.Domain;
 using Avro.Generic;
-using SolTechnology.Avro;
+using Confluent.SchemaRegistry;
 
 namespace MtfhReportingDataListener.Gateway
 {
@@ -20,7 +17,7 @@ namespace MtfhReportingDataListener.Gateway
     {
         public KafkaGateway() { }
 
-        public IsSuccessful SendDataToKafka(string topic, GenericRecord message)
+        public IsSuccessful SendDataToKafka(string topic, GenericRecord message, Schema schema)
         {
             Console.WriteLine(Environment.GetEnvironmentVariable("DATAPLATFORM_KAFKA_HOSTNAME"));
             var config = new ProducerConfig
@@ -31,19 +28,22 @@ namespace MtfhReportingDataListener.Gateway
 
 
             DeliveryReport<string, GenericRecord> deliveryReport = null;
-            // var schemaRegistryUrl = Environment.GetEnvironmentVariable("SCHEMA_REGISTRY_HOST_NAME");
-            // Console.WriteLine($"Schema registry hostname {schemaRegistryUrl}");
 
-            // using (var schemaRegistry = new CachedSchemaRegistryClient(new SchemaRegistryConfig { Url = schemaRegistryUrl }))
-            using (var producer = new ProducerBuilder<string, GenericRecord>(config).SetValueSerializer(new CustomSerializer()).Build())
+            var schemaRegistryClient = new SchemaRegistryClient(schema);
+
+            using (var producer = new ProducerBuilder<string, GenericRecord>(config)
+                .SetValueSerializer(new AvroSerializer<GenericRecord>(schemaRegistryClient).AsSyncOverAsync())
+                .Build()
+            )
             {
                 producer.Produce(topic,
                                 new Message<string, GenericRecord>
                                 {
                                     Value = message
                                 },
-                (deliveryReport) =>
+                (report) =>
                 {
+                    deliveryReport = report;
                     if (deliveryReport.Error.Code != ErrorCode.NoError)
                     {
                         throw new Exception(deliveryReport.Error.Reason);
@@ -67,13 +67,5 @@ namespace MtfhReportingDataListener.Gateway
         {
             return "";
         }
-    }
-    public class CustomSerializer : ISerializer<GenericRecord>
-    {
-        public byte[] Serialize(GenericRecord record, SerializationContext context)
-        {
-            return AvroConvert.Serialize(record);
-        }
-
     }
 }
