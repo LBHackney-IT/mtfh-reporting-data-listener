@@ -105,7 +105,7 @@ namespace MtfhReportingDataListener.Tests.UseCase
                    },
                 ]
             }";
-            _mockGlue.Setup(x => x.GetSchema()).Returns(mockSchema);
+            _mockGlue.Setup(x => x.GetSchema("", "", "")).ReturnsAsync(mockSchema);
 
             await _sut.ProcessMessageAsync(_message).ConfigureAwait(false);
             _mockKafka.Verify(x => x.SendDataToKafka("mtfh-reporting-data-listener", It.IsAny<GenericRecord>(), It.IsAny<Schema>()), Times.Once);
