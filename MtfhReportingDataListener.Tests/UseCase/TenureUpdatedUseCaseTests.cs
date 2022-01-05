@@ -95,7 +95,9 @@ namespace MtfhReportingDataListener.Tests.UseCase
         {
             _mockGateway.Setup(x => x.GetTenureInfoByIdAsync(_message.EntityId, _message.CorrelationId))
                         .ReturnsAsync(_tenure);
-            var mockSchema = @"{
+            var mockSchema = new SchemaResponse
+            {
+                Schema = @"{
                 ""type"": ""record"",
                 ""name"": ""Person"",
                 ""fields"": [
@@ -104,7 +106,8 @@ namespace MtfhReportingDataListener.Tests.UseCase
                      ""type"": ""string""
                    },
                 ]
-            }";
+                }"
+            };
             _mockGlue.Setup(x => x.GetSchema("", "", "")).ReturnsAsync(mockSchema);
 
             await _sut.ProcessMessageAsync(_message).ConfigureAwait(false);

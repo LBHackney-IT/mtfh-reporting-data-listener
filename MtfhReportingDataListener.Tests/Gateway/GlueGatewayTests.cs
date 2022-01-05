@@ -2,10 +2,12 @@ using Amazon.Glue;
 using Amazon.Glue.Model;
 using Moq;
 using MtfhReportingDataListener.Gateway;
+using MtfhReportingDataListener.Gateway.Interfaces;
 using Xunit;
 using System.Threading.Tasks;
 using System.Threading;
 using AutoFixture;
+using FluentAssertions;
 
 namespace MtfhReportingDataListener.Tests.Gateway
 {
@@ -14,7 +16,7 @@ namespace MtfhReportingDataListener.Tests.Gateway
     {
         public readonly GlueGateway _gateway;
         public readonly Mock<AmazonGlueClient> _mockAmazonGlue;
-        public readonly Fixture _fixture = new Fixture(); 
+        public readonly Fixture _fixture = new Fixture();
 
         public GlueGatewayTests()
         {
@@ -37,16 +39,25 @@ namespace MtfhReportingDataListener.Tests.Gateway
                 }
             };
             var getSchemaResponse = _fixture.Create<GetSchemaResponse>();
-            _mockAmazonGlue.Setup(x => x.GetSchemaAsync(It.Is<GetSchemaRequest>(x => CheckRequestsEquivalent(getSchemaRequest, x)), It.IsAny<CancellationToken>())).ReturnsAsync(getSchemaResponse).Verifiable();
+            _mockAmazonGlue.Setup(x => x.GetSchemaAsync(It.Is<GetSchemaRequest>(x => CheckRequestsEquivalent(getSchemaRequest, x)), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(getSchemaResponse).Verifiable();
+            _mockAmazonGlue.Setup(x => x.GetSchemaVersionAsync(
+                    It.IsAny<GetSchemaVersionRequest>(),
+                    It.IsAny<CancellationToken>()
+                )).ReturnsAsync(new GetSchemaVersionResponse { SchemaDefinition = "schema" });
+
             await _gateway.GetSchema("TenureSchema", "arn:aws:glue:mmh", "MMH").ConfigureAwait(false);
             _mockAmazonGlue.Verify();
         }
-        [Fact]
-        public async Task VerifyGettingTheSchemaStringForTheLatestVersion()
+
+        [Theory]
+        [InlineData("goodnight moon", 4)]
+        [InlineData("hello world", 7)]
+        public async Task VerifyGettingTheSchemaStringForTheLatestVersion(string schema, int versionId)
         {
             var getSchemaResponse = new GetSchemaResponse()
             {
-                LatestSchemaVersion = 5,
+                LatestSchemaVersion = versionId,
                 RegistryName = "TenureSchema",
                 SchemaArn = "arn:aws:glue:mmh",
                 SchemaName = "MMH"
@@ -55,7 +66,7 @@ namespace MtfhReportingDataListener.Tests.Gateway
             _mockAmazonGlue.Setup(x => x.GetSchemaAsync(It.IsAny<GetSchemaRequest>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(getSchemaResponse);
 
-            var response = new GetSchemaVersionResponse { SchemaDefinition = "schema" };
+            var response = new GetSchemaVersionResponse { SchemaDefinition = schema };
 
             _mockAmazonGlue.Setup(x =>
                 x.GetSchemaVersionAsync(
@@ -64,17 +75,15 @@ namespace MtfhReportingDataListener.Tests.Gateway
                 )
             ).ReturnsAsync(response);
 
-            var schema = await _gateway.GetSchema("TenureSchema", "arn:aws:glue:mmh", "MMH").ConfigureAwait(false);
+            var schemaDetails = await _gateway.GetSchema("TenureSchema", "arn:aws:glue:mmh", "MMH").ConfigureAwait(false);
 
             var expectedSchemaResponse = new SchemaResponse
             {
-                Schema = "",
-                VersionId = 1,
-                SchemaId = 1,
-                Subject = "Tenure"
+                Schema = schema,
+                VersionId = versionId,
             };
 
-
+            schemaDetails.Should().BeEquivalentTo(expectedSchemaResponse);
         }
 
         private static bool CheckRequestsEquivalent(GetSchemaRequest expectedRequest, GetSchemaRequest receivedRequest)

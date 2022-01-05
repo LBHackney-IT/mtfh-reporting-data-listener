@@ -38,8 +38,8 @@ namespace MtfhReportingDataListener.UseCase
             var schema = await _glueGateway.GetSchema("", "", "").ConfigureAwait(false);
 
             // (subject, version, Id, string) -> get from glue?
-            var schemaWithMetadata = new Confluent.SchemaRegistry.Schema("tenure", 1, 1, schema);
-            var logMessageSchema = (RecordSchema) Schema.Parse(schema);
+            var schemaWithMetadata = new Confluent.SchemaRegistry.Schema("tenure", 1, 1, schema.Schema);
+            var logMessageSchema = (RecordSchema) Schema.Parse(schema.Schema);
 
             // build record here
             var record = BuildTenureRecord(logMessageSchema, tenure);

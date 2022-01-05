@@ -16,7 +16,7 @@ namespace MtfhReportingDataListener.Gateway
             _amazonGlueClient = amazonGlueClient;
         }
 
-        public async Task<string> GetSchema(string registryName, string schemaArn, string schemaName)
+        public async Task<SchemaResponse> GetSchema(string registryName, string schemaArn, string schemaName)
         {
             var schemaRequest = new GetSchemaRequest()
             {
@@ -28,12 +28,11 @@ namespace MtfhReportingDataListener.Gateway
                     SchemaName = schemaName
 
                 }
-
             };
 
             var getSchema = await _amazonGlueClient.GetSchemaAsync(schemaRequest).ConfigureAwait(false);
 
-            var schemaVersion = new GetSchemaVersionRequest()
+            var schemaVersionRequest = new GetSchemaVersionRequest()
             {
                 SchemaId = new SchemaId()
                 {
@@ -50,15 +49,12 @@ namespace MtfhReportingDataListener.Gateway
                 }
             };
 
-            await _amazonGlueClient.GetSchemaVersionAsync(schemaVersion).ConfigureAwait(false);
-            return "";
+            var schemaVersionResponse = await _amazonGlueClient.GetSchemaVersionAsync(schemaVersionRequest).ConfigureAwait(false);
+            return new SchemaResponse
+            {
+                Schema = schemaVersionResponse.SchemaDefinition,
+                VersionId = getSchema.LatestSchemaVersion
+            };
         }
-    }
-    public class SchemaResponse
-    {
-        public string Schema { get; set; }
-        public int VersionId { get; set; }
-        public int SchemaId { get; set; }
-        public string Subject { get; set; }
     }
 }
