@@ -114,6 +114,18 @@ namespace MtfhReportingDataListener.Tests.UseCase
             _mockKafka.Verify(x => x.SendDataToKafka("mtfh-reporting-data-listener", It.IsAny<GenericRecord>(), It.IsAny<Schema>()), Times.Once);
         }
 
+        [Fact]
+        public async Task SchemaResponseReturnsAsExpected()
+        {
+            var schemaResponse = _fixture.Create<SchemaResponse>();
+            _mockGateway.Setup(x => x.GetTenureInfoByIdAsync(_message.EntityId, _message.CorrelationId))
+                        .ReturnsAsync(_tenure);
+            _mockGlue.Setup(x => x.GetSchema("", "", "")).ReturnsAsync(schemaResponse).Verifiable();
+
+            await _sut.ProcessMessageAsync(_message).ConfigureAwait(false);
+            _mockGlue.Verify();
+        }
+
         //TODO - Check generic record has correct data
     }
 }
