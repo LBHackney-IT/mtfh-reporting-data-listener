@@ -21,7 +21,7 @@ namespace MtfhReportingDataListener.Tests.Gateway
             _gateway = new GlueGateway(_mockAmazonGlue.Object);
         }
 
-        
+
         [Fact]
         public void VerifyTheGetSchemaFromGlueIsRetrieved()
         {

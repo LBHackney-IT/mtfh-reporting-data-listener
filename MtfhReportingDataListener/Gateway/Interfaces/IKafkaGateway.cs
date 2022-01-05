@@ -7,5 +7,5 @@ namespace MtfhReportingDataListener.Gateway.Interfaces
     {
         IsSuccessful SendDataToKafka(string topic, GenericRecord record, Schema schema);
     }
-    
+
 }

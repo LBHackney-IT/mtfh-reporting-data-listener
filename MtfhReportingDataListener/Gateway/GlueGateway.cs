@@ -16,7 +16,7 @@ namespace MtfhReportingDataListener.Gateway
 
         public string GetSchema()
         {
-            
+            return "";
         }
     }
 }
