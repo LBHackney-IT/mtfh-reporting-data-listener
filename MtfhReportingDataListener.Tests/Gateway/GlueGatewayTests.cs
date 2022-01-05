@@ -2,10 +2,9 @@ using Amazon.Glue;
 using Amazon.Glue.Model;
 using Moq;
 using MtfhReportingDataListener.Gateway;
-using System;
-using System.Collections.Generic;
-using System.Text;
 using Xunit;
+using System.Threading.Tasks;
+using System.Threading;
 
 namespace MtfhReportingDataListener.Tests.Gateway
 {
@@ -23,7 +22,7 @@ namespace MtfhReportingDataListener.Tests.Gateway
 
 
         [Fact]
-        public void VerifyTheGetSchemaFromGlueIsRetrieved()
+        public async Task VerifyTheSchemaDetailsAreRetrievedFromGlue()
         {
             var getSchemaRequest = new GetSchemaRequest()
             {
@@ -35,9 +34,15 @@ namespace MtfhReportingDataListener.Tests.Gateway
                     SchemaName = "MMH"
                 }
             };
-            _mockAmazonGlue.Verify(x => x.GetSchemaAsync(getSchemaRequest, default));
+            await _gateway.GetSchema("TenureSchema", "arn:aws:glue:mmh", "MMH").ConfigureAwait(false);
+            _mockAmazonGlue.Verify(x => x.GetSchemaAsync(It.Is<GetSchemaRequest>(x => CheckRequestsEquivalent(getSchemaRequest, x)), It.IsAny<CancellationToken>()));
         }
 
-
+        private bool CheckRequestsEquivalent(GetSchemaRequest expectedRequest, GetSchemaRequest receivedRequest)
+        {
+            return receivedRequest.SchemaId.RegistryName == expectedRequest.SchemaId.RegistryName
+                && receivedRequest.SchemaId.SchemaArn == expectedRequest.SchemaId.SchemaArn
+                && receivedRequest.SchemaId.SchemaName == expectedRequest.SchemaId.SchemaName;
+        }
     }
 }
