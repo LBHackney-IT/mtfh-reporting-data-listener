@@ -1,5 +1,6 @@
 version: "3.2"
 
+
 services:
   mtfh-reporting-data-listener:
     image: mtfh-reporting-data-listener
@@ -12,36 +13,62 @@ services:
       - 3000:3000
     environment:
      - ENVIRONMENT=LocalDevelopment
-      # Alter if not using DynamoDb
-     - DynamoDb_LocalMode=true
-     - DynamoDb_LocalServiceUrl=http://dynamodb-database:8000
      - AWS_REGION=eu-west-2
      - AWS_ACCESS_KEY_ID=local
      - AWS_SECRET_ACCESS_KEY=local
     links:
-      - dynamodb-database
+      - zoo
+      
 
   mtfh-reporting-data-listener-test:
-    image: mtfh-reporting-data-listener-test
-    build:
-      context: .
-      dockerfile: MtfhReportingDataListener.Tests/Dockerfile
-      args:
-        - LBHPACKAGESTOKEN=${LBHPACKAGESTOKEN}
-    environment:
-      - ENVIRONMENT=LocalDevelopment
-      # Alter if not using DynamoDb
-      - DynamoDb_LocalMode=true
-      - DynamoDb_LocalServiceUrl=http://dynamodb-database:8000
-      - AWS_REGION=eu-west-2
-      - AWS_ACCESS_KEY_ID=local
-      - AWS_SECRET_ACCESS_KEY=local
-    links:
-      - dynamodb-database
+   image: mtfh-reporting-data-listener-test
+   build:
+     context: .
+     dockerfile: MtfhReportingDataListener.Tests/Dockerfile
+     args:
+       - LBHPACKAGESTOKEN=${LBHPACKAGESTOKEN}
+   environment:
+     - ENVIRONMENT=LocalDevelopment
+     - AWS_REGION=eu-west-2
+     - AWS_ACCESS_KEY_ID=local
+     - AWS_SECRET_ACCESS_KEY=local
+     - DATAPLATFORM_KAFKA_HOSTNAME=kafka:19092
+   links:
+     - zoo
+   depends_on:
+    - kafka
     
-  # Alter if not using DynamoDb
-  dynamodb-database:
-    image: amazon/dynamodb-local
+  zoo:
+    image: confluentinc/cp-zookeeper:6.2.1
+    hostname: zoo
+    container_name: zoo
     ports:
-      - 8000:8000
+      - "2181:2181"
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_SERVER_ID: 1
+      ZOOKEEPER_SERVERS: zoo:2888:3888
+   
+  kafka:
+    image: confluentinc/cp-kafka:6.2.1
+    hostname: kafka
+    container_name: kafka
+    user: "appuser:appuser"
+    ports:
+      - "9092:9092"
+      - "9999:9999"
+    environment:
+      KAFKA_ADVERTISED_LISTENERS: LISTENER_DOCKER_INTERNAL://kafka:19092,LISTENER_DOCKER_EXTERNAL://${DOCKER_HOST_IP:-127.0.0.1}:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: LISTENER_DOCKER_INTERNAL:PLAINTEXT,LISTENER_DOCKER_EXTERNAL:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: LISTENER_DOCKER_INTERNAL
+      KAFKA_ZOOKEEPER_CONNECT: "zoo:2181"
+      KAFKA_BROKER_ID: 1
+      KAFKA_LOG4J_LOGGERS: "kafka.controller=INFO,kafka.producer.async.DefaultEventHandler=INFO,state.change.logger=INFO"
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_JMX_PORT: 9999
+      KAFKA_JMX_HOSTNAME: ${DOCKER_HOST_IP:-127.0.0.1}
+    depends_on:
+      - zoo
       

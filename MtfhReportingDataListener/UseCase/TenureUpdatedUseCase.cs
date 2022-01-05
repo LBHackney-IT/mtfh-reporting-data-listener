@@ -6,16 +6,23 @@ using MtfhReportingDataListener.UseCase.Interfaces;
 using Hackney.Core.Logging;
 using System;
 using System.Threading.Tasks;
+using Hackney.Shared.Tenure.Boundary.Response;
+
+using System.Text.Json;
+using Confluent.Kafka;
+using System.Collections.Generic;
 
 namespace MtfhReportingDataListener.UseCase
 {
     public class TenureUpdatedUseCase : ITenureUpdatedUseCase
     {
-        private readonly IDbEntityGateway _gateway;
+        private readonly ITenureInfoApiGateway _tenureInfoApi;
+        private readonly IKafkaGateway _kafkaGateway;
 
-        public TenureUpdatedUseCase(IDbEntityGateway gateway)
+        public TenureUpdatedUseCase(ITenureInfoApiGateway gateway, IKafkaGateway kafkaGateway)
         {
-            _gateway = gateway;
+            _tenureInfoApi = gateway;
+            _kafkaGateway = kafkaGateway;
         }
 
         [LogCall]
@@ -23,14 +30,20 @@ namespace MtfhReportingDataListener.UseCase
         {
             if (message is null) throw new ArgumentNullException(nameof(message));
 
-            // TODO - Implement use case logic
-            DomainEntity entity = await _gateway.GetEntityAsync(message.EntityId).ConfigureAwait(false);
-            if (entity is null) throw new EntityNotFoundException<DomainEntity>(message.EntityId);
+            // #1 - Get the tenure
+            var tenure = await _tenureInfoApi.GetTenureInfoByIdAsync(message.EntityId, message.CorrelationId)
+                                             .ConfigureAwait(false);
+            if (tenure is null) throw new EntityNotFoundException<TenureResponseObject>(message.EntityId);
 
-            entity.Description = "Updated";
+            //#2 - Convert the data to avro
 
-            // Save updated entity
-            await _gateway.SaveEntityAsync(entity).ConfigureAwait(false);
+
+            //#3 - Send the data in Kafka
+            var jsonTenure = JsonSerializer.Serialize(tenure);
+            var topic = "mtfh-reporting-data-listener";
+            _kafkaGateway.SendDataToKafka(jsonTenure, topic);
         }
+
+
     }
 }
