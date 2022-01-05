@@ -95,7 +95,7 @@ namespace MtfhReportingDataListener.Tests.UseCase
         {
             _mockGateway.Setup(x => x.GetTenureInfoByIdAsync(_message.EntityId, _message.CorrelationId))
                         .ReturnsAsync(_tenure);
-            var mockSchema = new SchemaResponse
+            var mockSchemaResponse = new SchemaResponse
             {
                 Schema = @"{
                 ""type"": ""record"",
@@ -108,22 +108,11 @@ namespace MtfhReportingDataListener.Tests.UseCase
                 ]
                 }"
             };
-            _mockGlue.Setup(x => x.GetSchema("", "", "")).ReturnsAsync(mockSchema);
+            _mockGlue.Setup(x => x.GetSchema("", "", "")).ReturnsAsync(mockSchemaResponse);
 
             await _sut.ProcessMessageAsync(_message).ConfigureAwait(false);
             _mockKafka.Verify(x => x.SendDataToKafka("mtfh-reporting-data-listener", It.IsAny<GenericRecord>(), It.IsAny<Schema>()), Times.Once);
-        }
-
-        [Fact]
-        public async Task SchemaResponseReturnsAsExpected()
-        {
-            var schemaResponse = _fixture.Create<SchemaResponse>();
-            _mockGateway.Setup(x => x.GetTenureInfoByIdAsync(_message.EntityId, _message.CorrelationId))
-                        .ReturnsAsync(_tenure);
-            _mockGlue.Setup(x => x.GetSchema("", "", "")).ReturnsAsync(schemaResponse).Verifiable();
-
-            await _sut.ProcessMessageAsync(_message).ConfigureAwait(false);
-            _mockGlue.Verify();
+            _mockGlue.Verify(x => x.GetSchema("", "", ""), Times.Once());
         }
 
         //TODO - Check generic record has correct data
