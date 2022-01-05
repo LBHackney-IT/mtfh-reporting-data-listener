@@ -26,9 +26,9 @@ namespace MtfhReportingDataListener.Gateway
                     RegistryName = registryName,
                     SchemaArn = schemaArn,
                     SchemaName = schemaName
-                   
+
                 }
-                
+
             };
 
             var getSchema = await _amazonGlueClient.GetSchemaAsync(schemaRequest).ConfigureAwait(false);
@@ -53,5 +53,12 @@ namespace MtfhReportingDataListener.Gateway
             await _amazonGlueClient.GetSchemaVersionAsync(schemaVersion).ConfigureAwait(false);
             return "";
         }
+    }
+    public class SchemaResponse
+    {
+        public string Schema { get; set; }
+        public int VersionId { get; set; }
+        public int SchemaId { get; set; }
+        public string Subject { get; set; }
     }
 }

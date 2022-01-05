@@ -55,28 +55,26 @@ namespace MtfhReportingDataListener.Tests.Gateway
             _mockAmazonGlue.Setup(x => x.GetSchemaAsync(It.IsAny<GetSchemaRequest>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(getSchemaResponse);
 
-            await _gateway.GetSchema("TenureSchema", "arn:aws:glue:mmh", "MMH").ConfigureAwait(false);
+            var response = new GetSchemaVersionResponse { SchemaDefinition = "schema" };
 
-            var expectedRequest = new GetSchemaVersionRequest
-            {
-                SchemaId = new SchemaId()
-                {
-                    RegistryName = "TenureSchema",
-                    SchemaArn = "arn:aws:glue:mmh",
-                    SchemaName = "MMH"
-                },
-                SchemaVersionNumber = new SchemaVersionNumber
-                {
-                    LatestVersion = true,
-                    VersionNumber = 5
-                }
-            };
-            _mockAmazonGlue.Verify(x =>
+            _mockAmazonGlue.Setup(x =>
                 x.GetSchemaVersionAsync(
-                    It.Is<GetSchemaVersionRequest>(x => CheckVersionRequestsEquivalent(expectedRequest, x)),
+                    It.IsAny<GetSchemaVersionRequest>(),
                     It.IsAny<CancellationToken>()
                 )
-            );
+            ).ReturnsAsync(response);
+
+            var schema = await _gateway.GetSchema("TenureSchema", "arn:aws:glue:mmh", "MMH").ConfigureAwait(false);
+
+            var expectedSchemaResponse = new SchemaResponse
+            {
+                Schema = "",
+                VersionId = 1,
+                SchemaId = 1,
+                Subject = "Tenure"
+            };
+
+
         }
 
         private static bool CheckRequestsEquivalent(GetSchemaRequest expectedRequest, GetSchemaRequest receivedRequest)
