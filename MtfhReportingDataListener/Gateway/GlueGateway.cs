@@ -26,10 +26,31 @@ namespace MtfhReportingDataListener.Gateway
                     RegistryName = registryName,
                     SchemaArn = schemaArn,
                     SchemaName = schemaName
+                   
+                }
+                
+            };
+
+            var getSchema = await _amazonGlueClient.GetSchemaAsync(schemaRequest).ConfigureAwait(false);
+
+            var schemaVersion = new GetSchemaVersionRequest()
+            {
+                SchemaId = new SchemaId()
+                {
+
+                    RegistryName = registryName,
+                    SchemaArn = schemaArn,
+                    SchemaName = schemaName
+
+                },
+                SchemaVersionNumber = new SchemaVersionNumber()
+                {
+                    LatestVersion = true,
+                    VersionNumber = getSchema.LatestSchemaVersion
                 }
             };
 
-            await _amazonGlueClient.GetSchemaAsync(schemaRequest).ConfigureAwait(false);
+            await _amazonGlueClient.GetSchemaVersionAsync(schemaVersion).ConfigureAwait(false);
             return "";
         }
     }

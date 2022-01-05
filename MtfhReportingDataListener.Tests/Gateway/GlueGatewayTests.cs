@@ -5,6 +5,7 @@ using MtfhReportingDataListener.Gateway;
 using Xunit;
 using System.Threading.Tasks;
 using System.Threading;
+using AutoFixture;
 
 namespace MtfhReportingDataListener.Tests.Gateway
 {
@@ -13,6 +14,7 @@ namespace MtfhReportingDataListener.Tests.Gateway
     {
         public readonly GlueGateway _gateway;
         public readonly Mock<AmazonGlueClient> _mockAmazonGlue;
+        public readonly Fixture _fixture = new Fixture(); 
 
         public GlueGatewayTests()
         {
@@ -34,8 +36,10 @@ namespace MtfhReportingDataListener.Tests.Gateway
                     SchemaName = "MMH"
                 }
             };
+            var getSchemaResponse = _fixture.Create<GetSchemaResponse>();
+            _mockAmazonGlue.Setup(x => x.GetSchemaAsync(It.Is<GetSchemaRequest>(x => CheckRequestsEquivalent(getSchemaRequest, x)), It.IsAny<CancellationToken>())).ReturnsAsync(getSchemaResponse).Verifiable();
             await _gateway.GetSchema("TenureSchema", "arn:aws:glue:mmh", "MMH").ConfigureAwait(false);
-            _mockAmazonGlue.Verify(x => x.GetSchemaAsync(It.Is<GetSchemaRequest>(x => CheckRequestsEquivalent(getSchemaRequest, x)), It.IsAny<CancellationToken>()));
+            _mockAmazonGlue.Verify();
         }
         [Fact]
         public async Task VerifyGettingTheSchemaStringForTheLatestVersion()
