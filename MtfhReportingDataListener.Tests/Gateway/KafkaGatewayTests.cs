@@ -1,9 +1,7 @@
-using AutoFixture;
 using Confluent.Kafka;
 using Confluent.Kafka.SyncOverAsync;
 using Confluent.SchemaRegistry.Serdes;
 using FluentAssertions;
-using Hackney.Shared.Tenure.Boundary.Response;
 using MtfhReportingDataListener.Gateway;
 using MtfhReportingDataListener.Gateway.Interfaces;
 using System;
@@ -18,14 +16,10 @@ namespace MtfhReportingDataListener.Tests.Gateway
     public class KafkaGatewayTests : MockApplicationFactory
     {
         private readonly IKafkaGateway _gateway;
-        private readonly TenureResponseObject _message;
-        private readonly Fixture _fixture = new Fixture();
 
         public KafkaGatewayTests()
         {
             _gateway = new KafkaGateway();
-            _message = _fixture.Create<TenureResponseObject>();
-
         }
 
         [Fact]

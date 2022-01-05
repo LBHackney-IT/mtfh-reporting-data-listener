@@ -62,10 +62,5 @@ namespace MtfhReportingDataListener.Gateway
                 Success = deliveryReport?.Error?.Code == ErrorCode.NoError
             };
         }
-
-        public string GetSchema()
-        {
-            return "";
-        }
     }
 }

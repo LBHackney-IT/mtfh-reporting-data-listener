@@ -74,19 +74,3 @@ services:
       # KAFKA_SCHEMA_REGISTRY_URL: "schemaregistry:8081"
     depends_on:
       - zoo
-
-  # schemaregistry:
-  #   image: confluentinc/cp-schema-registry:6.2.1
-  #   container_name: schemaregistry
-  #   hostname: schemaregistry
-  #   depends_on:
-  #     - kafka
-  #     - zoo
-  #   ports:
-  #     - "8081:8081"
-  #   environment:
-  #     SCHEMA_REGISTRY_KAFKASTORE_CONNECTION_URL: "zoo:2181"
-  #     SCHEMA_REGISTRY_LOG4J_ROOT_LOGLEVEL: DEBUG
-  #     SCHEMA_REGISTRY_HOST_NAME: schemaregistry
-  #     SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: "kafka:19092"      
-  #     SCHEMA_REGISTRY_DEBUG: "true"
