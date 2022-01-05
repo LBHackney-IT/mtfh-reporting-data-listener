@@ -12,8 +12,9 @@ using Hackney.Shared.Tenure.Boundary.Response;
 using Hackney.Shared.Tenure.Domain;
 using System.Linq;
 using System.Text.Json;
+using Avro;
 using Avro.Generic;
-using Confluent.SchemaRegistry;
+using Schema = Confluent.SchemaRegistry.Schema;
 
 namespace MtfhReportingDataListener.Tests.UseCase
 {
@@ -102,7 +103,7 @@ namespace MtfhReportingDataListener.Tests.UseCase
                 ""name"": ""Person"",
                 ""fields"": [
                    {
-                     ""name"": ""firstName"",
+                     ""name"": ""Id"",
                      ""type"": ""string""
                    },
                 ]
@@ -115,6 +116,64 @@ namespace MtfhReportingDataListener.Tests.UseCase
             _mockGlue.Verify(x => x.GetSchema("", "", ""), Times.Once());
         }
 
+        [Fact]
+        public void BuildTenureRecordCanSetOneValueToAGenericRecord()
+        {
+            var schema = (RecordSchema) Avro.Schema.Parse(@"{
+                ""type"": ""record"",
+                ""name"": ""TenureInformation"",
+                ""fields"": [
+                   {
+                     ""name"": ""Id"",
+                     ""type"": ""string"",
+                     ""logicalType"": ""uuid""
+                   }
+                ]
+            }");
+
+            var tenure = _tenure;
+
+            var expectedRecord = new GenericRecord(schema);
+            expectedRecord.Add("Id", _tenure.Id);
+
+            var receivedRecord = _sut.BuildTenureRecord(schema, tenure);
+
+
+            Assert.Equal(receivedRecord["Id"], expectedRecord["Id"].ToString());
+        }
+
+
+        [Fact]
+        public void BuildTenureRecordCanSetMultipleValuesToAGenericRecord()
+        {
+            var schema = (RecordSchema) Avro.Schema.Parse(@"{
+                ""type"": ""record"",
+                ""name"": ""TenureInformation"",
+                ""fields"": [
+                   {
+                     ""name"": ""Id"",
+                     ""type"": ""string"",
+                     ""logicalType"": ""uuid""
+                   },
+                   {
+                     ""name"": ""PaymentReference"",
+                     ""type"": ""string""
+                   },
+                ]
+            }");
+
+            var tenure = _tenure;
+
+            var expectedRecord = new GenericRecord(schema);
+            expectedRecord.Add("Id", _tenure.Id);
+            expectedRecord.Add("PaymentReference", _tenure.PaymentReference);
+
+            var receivedRecord = _sut.BuildTenureRecord(schema, tenure);
+
+
+            Assert.Equal(receivedRecord["Id"], expectedRecord["Id"].ToString());
+            Assert.Equal(receivedRecord["PaymentReference"], expectedRecord["PaymentReference"]);
+        }
         //TODO - Check generic record has correct data
     }
 }

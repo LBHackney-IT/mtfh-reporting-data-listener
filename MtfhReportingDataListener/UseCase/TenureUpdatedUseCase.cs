@@ -5,6 +5,7 @@ using MtfhReportingDataListener.UseCase.Interfaces;
 using Hackney.Core.Logging;
 using System;
 using System.Threading.Tasks;
+using System.Reflection;
 using Hackney.Shared.Tenure.Boundary.Response;
 using Avro;
 using Avro.Generic;
@@ -49,11 +50,21 @@ namespace MtfhReportingDataListener.UseCase
             _kafkaGateway.SendDataToKafka(topic, record, schemaWithMetadata);
         }
 
-        private GenericRecord BuildTenureRecord(RecordSchema schema, TenureResponseObject tenure)
+        public GenericRecord BuildTenureRecord(RecordSchema schema, TenureResponseObject tenure)
         {
+
             var record = new GenericRecord(schema);
 
-            // Add fields here
+            schema.Fields.ForEach(field =>
+            {
+                if (field.Name == "Id" || field.Name == "PaymentReference")
+                {
+                    Type tenureType = typeof(TenureResponseObject);
+                    PropertyInfo propInfo = tenureType.GetProperty(field.Name);
+                    var fieldValue = propInfo.GetValue(tenure);
+                    record.Add(field.Name, fieldValue.ToString());
+                }
+            });
 
             return record;
         }
