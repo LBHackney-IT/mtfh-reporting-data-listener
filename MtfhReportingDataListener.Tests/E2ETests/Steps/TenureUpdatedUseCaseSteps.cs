@@ -31,7 +31,7 @@ namespace MtfhReportingDataListener.Tests.E2ETests.Steps
         {
             _lastException.Should().NotBeNull();
             _lastException.Should().BeOfType(typeof(EntityNotFoundException<TenureResponseObject>));
-                (_lastException as EntityNotFoundException<TenureResponseObject>).Id.Should().Be(id);
+            (_lastException as EntityNotFoundException<TenureResponseObject>).Id.Should().Be(id);
         }
         public void ThenTheUpdatedDataIsSavedToKafka()
         {
