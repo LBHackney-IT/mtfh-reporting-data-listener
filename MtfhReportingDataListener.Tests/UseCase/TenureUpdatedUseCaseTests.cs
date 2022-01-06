@@ -208,6 +208,67 @@ namespace MtfhReportingDataListener.Tests.UseCase
             Assert.Equal(receivedRecord[nullableBoolFieldName], expectedRecord[nullableBoolFieldName]);
         }
 
+        [Fact]
+        public void BuildTenureRecordCanSetIntTypeValuesToAGenericRecord()
+        {
+            var schema = (RecordSchema) Avro.Schema.Parse(@"{
+                ""type"": ""record"",
+                ""name"": ""TenureInformation"",
+                ""fields"": [
+                   {
+                     ""name"": ""StartOfTenureDate"",
+                     ""type"": [""int"", ""null""],
+                     ""logicalType"": ""date""
+                   },
+                   {
+                     ""name"": ""EndOfTenureDate"",
+                     ""type"": [""int"", ""null""],
+                   },
+                ]
+            }");
+
+            var tenure = _tenure;
+
+            var expectedRecord = new GenericRecord(schema);
+            expectedRecord.Add("StartOfTenureDate", _tenure.StartOfTenureDate);
+            expectedRecord.Add("EndOfTenureDate", _tenure.EndOfTenureDate);
+
+            var receivedRecord = _sut.BuildTenureRecord(schema, tenure);
+            Assert.Equal(receivedRecord["StartOfTenureDate"], expectedRecord["StartOfTenureDate"]);
+            Assert.Equal(receivedRecord["EndOfTenureDate"], expectedRecord["EndOfTenureDate"]);
+
+        }
+
+        [Fact]
+        public void BuildTenureRecordCanSetNestedFieldType()
+        {
+            var schema = (RecordSchema) Avro.Schema.Parse(@"{
+                    ""type"": ""record"",
+                    ""name"": ""TenureInformation"",
+                    ""fields"": [
+                       {
+                         ""name"": ""TenureType"",
+                         ""type"": {
+                            ""type"": ""record"",
+                            ""name"": ""charge"",
+                            ""fields"": [
+                            {
+                                ""name"": ""Rent"",
+                                ""type"": ""float""
+                            }]
+                            }
+                        }
+                    ]
+                }");
+
+            var tenure = _tenure;
+            var expectedRecord =  new GenericRecord(schema);
+            expectedRecord.Add("TenureType.Rent", _tenure.TenureType);
+
+            var receivedRecord = _sut.BuildTenureRecord(schema, tenure);
+            Assert.Equal(receivedRecord["TenureType.Rent"], expectedRecord["TenureType.Rent"]);
+        }
+
         private T GetFieldValueFromStringName<T>(string fieldName, TenureResponseObject tenure)
         {
             return (T) typeof(TenureResponseObject).GetProperty(fieldName).GetValue(tenure);
