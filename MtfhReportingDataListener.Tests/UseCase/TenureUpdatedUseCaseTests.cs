@@ -117,7 +117,7 @@ namespace MtfhReportingDataListener.Tests.UseCase
         }
 
         [Fact]
-        public void BuildTenureRecordCanSetOneValueToAGenericRecord()
+        public void BuildTenureRecordCanSetOneStringValueToAGenericRecord()
         {
             var schema = (RecordSchema) Avro.Schema.Parse(@"{
                 ""type"": ""record"",
@@ -144,7 +144,7 @@ namespace MtfhReportingDataListener.Tests.UseCase
 
 
         [Fact]
-        public void BuildTenureRecordCanSetMultipleValuesToAGenericRecord()
+        public void BuildTenureRecordCanSetMultipleStringsToAGenericRecord()
         {
             var schema = (RecordSchema) Avro.Schema.Parse(@"{
                 ""type"": ""record"",
@@ -174,6 +174,43 @@ namespace MtfhReportingDataListener.Tests.UseCase
             Assert.Equal(receivedRecord["Id"], expectedRecord["Id"].ToString());
             Assert.Equal(receivedRecord["PaymentReference"], expectedRecord["PaymentReference"]);
         }
-        //TODO - Check generic record has correct data
+
+        [Theory]
+        [InlineData("IsTenanted")]
+        public void BuildTenureRecordCanSetBooleanTypeValuesToAGenericRecord(string nullableBoolFieldName)
+        {
+            var schema = (RecordSchema) Avro.Schema.Parse(@$"{{
+                ""type"": ""record"",
+                ""name"": ""TenureInformation"",
+                ""fields"": [
+                   {{
+                     ""name"": ""IsActive"",
+                     ""type"": ""boolean""
+                   }},
+                   {{
+                     ""name"": ""{nullableBoolFieldName}"",
+                     ""type"": [""boolean"", ""null""]
+                   }}
+                ]
+            }}");
+
+            var tenure = _tenure;
+            var fieldValue = GetFieldValueFromStringName<bool>(nullableBoolFieldName, tenure);
+
+            var expectedRecord = new GenericRecord(schema);
+            expectedRecord.Add("IsActive", tenure.IsActive);
+            expectedRecord.Add(nullableBoolFieldName, fieldValue);
+
+            var receivedRecord = _sut.BuildTenureRecord(schema, tenure);
+
+
+            Assert.Equal(receivedRecord["IsActive"], expectedRecord["IsActive"]);
+            Assert.Equal(receivedRecord[nullableBoolFieldName], expectedRecord[nullableBoolFieldName]);
+        }
+
+        private T GetFieldValueFromStringName<T>(string fieldName, TenureResponseObject tenure)
+        {
+            return (T) typeof(TenureResponseObject).GetProperty(fieldName).GetValue(tenure);
+        }
     }
 }
