@@ -42,6 +42,8 @@ namespace MtfhReportingDataListener
             services.AddScoped<ITenureUpdatedUseCase, TenureUpdatedUseCase>();
 
             services.AddScoped<ITenureInfoApiGateway, TenureInfoApiGateway>();
+            services.AddScoped<IGlueGateway, GlueGateway>();
+            services.AddScoped<IKafkaGateway, KafkaGateway>();
 
             base.ConfigureServices(services);
         }
