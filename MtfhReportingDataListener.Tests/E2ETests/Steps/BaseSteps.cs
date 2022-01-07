@@ -10,6 +10,7 @@ using System.Collections.Generic;
 using System.Text.Json;
 using System.Threading.Tasks;
 using Xunit;
+using Amazon.Glue;
 
 namespace MtfhReportingDataListener.Tests.E2ETests.Steps
 {
@@ -47,12 +48,12 @@ namespace MtfhReportingDataListener.Tests.E2ETests.Steps
                            .Create();
         }
 
-        protected async Task TriggerFunction(Guid id)
+        protected async Task TriggerFunction(Guid id, IAmazonGlue glue)
         {
-            await TriggerFunction(CreateMessage(id)).ConfigureAwait(false);
+            await TriggerFunction(CreateMessage(id), glue).ConfigureAwait(false);
         }
 
-        protected async Task TriggerFunction(SQSEvent.SQSMessage message)
+        protected async Task TriggerFunction(SQSEvent.SQSMessage message, IAmazonGlue glue)
         {
             var mockLambdaLogger = new Mock<ILambdaLogger>();
             ILambdaContext lambdaContext = new TestLambdaContext()
@@ -66,7 +67,7 @@ namespace MtfhReportingDataListener.Tests.E2ETests.Steps
 
             Func<Task> func = async () =>
             {
-                var fn = new SqsFunction();
+                var fn = new SqsFunction(glue);
                 await fn.FunctionHandler(sqsEvent, lambdaContext).ConfigureAwait(false);
             };
 

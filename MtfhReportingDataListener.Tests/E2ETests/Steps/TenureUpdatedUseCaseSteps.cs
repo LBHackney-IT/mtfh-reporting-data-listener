@@ -25,9 +25,9 @@ namespace MtfhReportingDataListener.Tests.E2ETests.Steps
             _eventType = EventTypes.TenureUpdatedEvent;
         }
 
-        public async Task WhenTheFunctionIsTriggered(Guid id)
+        public async Task WhenTheFunctionIsTriggered(Guid id, IAmazonGlue glue)
         {
-            await TriggerFunction(id).ConfigureAwait(false);
+            await TriggerFunction(id, glue).ConfigureAwait(false);
         }
 
         public async Task WhenTheFunctionIsTriggered(SQSEvent.SQSMessage message)

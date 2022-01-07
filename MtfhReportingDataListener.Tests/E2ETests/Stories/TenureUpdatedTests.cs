@@ -5,6 +5,8 @@ using System.Collections.Generic;
 using System.Text;
 using TestStack.BDDfy;
 using Xunit;
+using Moq;
+using Amazon.Glue;
 
 namespace MtfhReportingDataListener.Tests.E2ETests.Stories
 {
@@ -16,14 +18,18 @@ namespace MtfhReportingDataListener.Tests.E2ETests.Stories
     public class TenureUpdatedTests : IDisposable
     {
         private readonly TenureFixture _tenureFixture;
+        private readonly MockSchemaRegistry _schemaRegistry;
         private readonly TenureUpdatedUseCaseSteps _steps;
         private readonly MockApplicationFactory _appFactory;
+        private readonly Mock<IAmazonGlue> _mockGlue;
 
         public TenureUpdatedTests(MockApplicationFactory appFactory)
         {
             _tenureFixture = new TenureFixture();
             _appFactory = appFactory;
             _steps = new TenureUpdatedUseCaseSteps();
+            _mockGlue = new Mock<IAmazonGlue>();
+            _schemaRegistry = new MockSchemaRegistry(_mockGlue);
         }
 
         public void Dispose()
@@ -46,9 +52,11 @@ namespace MtfhReportingDataListener.Tests.E2ETests.Stories
         [Fact]
         public void ListenerSavesTheUpdatedTenureToKafka()
         {
-            this.Given(g => _tenureFixture.GivenTenureHasBeenUpdated())
-               .When(w => _steps.WhenTheFunctionIsTriggered(_tenureFixture.TenureId))
-               .Then(t => _steps.ThenTheUpdatedDataIsSavedToKafka(_appFactory, _steps.TheMessage))
+
+            this.Given(g => _tenureFixture.GivenTenureHasBeenUpdated()) // Creates a tenure
+                .And(g => _schemaRegistry.GivenThereIsaMatchingSchemaInGlueRegistry()) // and Given there is a matching schema in glue registry -> create registryName, schemaArn, schemaName, schemaDefinition & setup mock
+               .When(w => _steps.WhenTheFunctionIsTriggered(_tenureFixture.TenureId, _mockGlue.Object)) // Calling the lambda
+               .Then(t => _steps.ThenTheUpdatedDataIsSavedToKafka(_appFactory, _steps.TheMessage)) // assertion -> registry & schema details
                .BDDfy();
         }
 

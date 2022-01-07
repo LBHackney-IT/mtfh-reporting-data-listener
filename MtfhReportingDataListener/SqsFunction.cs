@@ -12,6 +12,7 @@ using System;
 using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 using System.Threading.Tasks;
+using Amazon.Glue;
 
 // Assembly attribute to enable the Lambda function's JSON input to be converted into a .NET class.
 [assembly: LambdaSerializer(typeof(Amazon.Lambda.Serialization.SystemTextJson.DefaultLambdaJsonSerializer))]
@@ -24,13 +25,24 @@ namespace MtfhReportingDataListener
     [ExcludeFromCodeCoverage]
     public class SqsFunction : BaseFunction
     {
+        private IAmazonGlue _glue { get; set;}
         /// <summary>
         /// Default constructor. This constructor is used by Lambda to construct the instance. When invoked in a Lambda environment
         /// the AWS credentials will come from the IAM role associated with the function and the AWS region will be set to the
         /// region the Lambda function is executed in.
         /// </summary>
         public SqsFunction()
-        { }
+        {
+            _glue = new AmazonGlueClient();
+        }
+
+        /// <summary>
+        /// Constructor to be used by the E2E tests so that we can mock API calls to AWS Glue.
+        /// </summary>
+        public SqsFunction(IAmazonGlue glue)
+        {
+            _glue = glue;
+        }
 
         /// <summary>
         /// Use this method to perform any DI configuration required

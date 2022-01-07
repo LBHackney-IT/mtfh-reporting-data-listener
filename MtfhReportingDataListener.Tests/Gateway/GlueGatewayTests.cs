@@ -86,7 +86,7 @@ namespace MtfhReportingDataListener.Tests.Gateway
 
             _mockAmazonGlue.Setup(x =>
                 x.GetSchemaVersionAsync(
-                    It.Is<GetSchemaVersionRequest>(x=> MockGlueHelperMethods.CheckVersionRequestsEquivalent(expectedRequest,x)),
+                    It.Is<GetSchemaVersionRequest>(x => MockGlueHelperMethods.CheckVersionRequestsEquivalent(expectedRequest, x)),
                     It.IsAny<CancellationToken>()
                 )
             ).ReturnsAsync(response);
