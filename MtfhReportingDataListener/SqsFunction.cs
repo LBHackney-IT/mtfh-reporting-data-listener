@@ -57,6 +57,9 @@ namespace MtfhReportingDataListener
             services.AddScoped<IGlueGateway, GlueGateway>();
             services.AddScoped<IKafkaGateway, KafkaGateway>();
 
+            // register glue SDK
+            services.AddSingleton<IAmazonGlue>(_glue);
+
             base.ConfigureServices(services);
         }
 

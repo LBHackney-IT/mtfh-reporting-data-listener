@@ -56,15 +56,15 @@ namespace MtfhReportingDataListener.Tests.E2ETests.Stories
             this.Given(g => _tenureFixture.GivenTenureHasBeenUpdated()) // Creates a tenure
                 .And(g => _schemaRegistry.GivenThereIsaMatchingSchemaInGlueRegistry()) // and Given there is a matching schema in glue registry -> create registryName, schemaArn, schemaName, schemaDefinition & setup mock
                .When(w => _steps.WhenTheFunctionIsTriggered(_tenureFixture.TenureId, _mockGlue.Object)) // Calling the lambda
-               .Then(t => _steps.ThenTheUpdatedDataIsSavedToKafka(_appFactory, _steps.TheMessage)) // assertion -> registry & schema details
+               .Then(t => _steps.ThenTheUpdatedDataIsSavedToKafka(_steps.TheMessage, _schemaRegistry.SchemaDefinition)) // assertion -> registry & schema details
                .BDDfy();
         }
 
-        [Fact(Skip = "Not sure if this test is required")]
+        [Fact]
         public void ListenerNotFoundException()
         {
             this.Given(g => _tenureFixture.GivenNonExistingTenureHasBeenUpdated())
-               .When(w => _steps.WhenTheFunctionIsTriggered(_tenureFixture.TenureId))
+               .When(w => _steps.WhenTheFunctionIsTriggered(_tenureFixture.TenureId, _mockGlue.Object))
                .Then(t => _steps.ThenEntityNotFoundExceptionIsThrown(_tenureFixture.TenureId))
                .BDDfy();
         }

@@ -36,6 +36,9 @@ namespace MtfhReportingDataListener.UseCase
             if (tenure is null) throw new EntityNotFoundException<TenureResponseObject>(message.EntityId);
 
             // Get the schema
+            var schemaArn = "";
+            var registryName = "";
+            var schemaName = "";
             var schema = await _glueGateway.GetSchema("", "", "").ConfigureAwait(false);
 
             // (subject, version, Id, string) -> get from glue?

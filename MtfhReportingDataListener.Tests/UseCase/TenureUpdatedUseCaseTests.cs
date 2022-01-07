@@ -92,6 +92,39 @@ namespace MtfhReportingDataListener.Tests.UseCase
             _mockGateway.Verify(x => x.GetTenureInfoByIdAsync(_message.EntityId, _message.CorrelationId), Times.Once);
         }
 
+
+        [Fact]
+        public async Task ProcessMessageAsyncGetsTheSchemaFromGlue()
+        {
+            _mockGateway.Setup(x => x.GetTenureInfoByIdAsync(_message.EntityId, _message.CorrelationId))
+                        .ReturnsAsync(_tenure);
+            var mockSchemaResponse = new SchemaResponse
+            {
+                Schema = @"{
+                ""type"": ""record"",
+                ""name"": ""Person"",
+                ""fields"": [
+                   {
+                     ""name"": ""Id"",
+                     ""type"": ""string""
+                   },
+                ]
+                }"
+            };
+
+            var schemaArn = "arn:aws:glue:blah";
+            Environment.SetEnvironmentVariable("SCHEMA_ARN", schemaArn);
+            var registryName = _fixture.Create<string>();
+            Environment.SetEnvironmentVariable("REGISTRY_NAME", registryName);
+            var schemaName = _fixture.Create<string>();
+            Environment.SetEnvironmentVariable("SCHEMA_NAME", schemaName);
+
+            _mockGlue.Setup(x => x.GetSchema(registryName, schemaArn, schemaName)).ReturnsAsync(mockSchemaResponse).Verifiable();
+
+            await _sut.ProcessMessageAsync(_message).ConfigureAwait(false);
+            _mockGlue.Verify();
+        }
+
         [Fact]
         public async Task ProcessMessageAsyncSendsDataToKafka()
         {
@@ -114,7 +147,6 @@ namespace MtfhReportingDataListener.Tests.UseCase
 
             await _sut.ProcessMessageAsync(_message).ConfigureAwait(false);
             _mockKafka.Verify(x => x.SendDataToKafka("mtfh-reporting-data-listener", It.IsAny<GenericRecord>(), It.IsAny<Schema>()), Times.Once);
-            _mockGlue.Verify(x => x.GetSchema("", "", ""), Times.Once());
         }
 
         [Fact]

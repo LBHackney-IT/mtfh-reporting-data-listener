@@ -30,38 +30,14 @@ namespace MtfhReportingDataListener.Tests.E2ETests.Steps
             await TriggerFunction(id, glue).ConfigureAwait(false);
         }
 
-        public async Task WhenTheFunctionIsTriggered(SQSEvent.SQSMessage message)
-        {
-            await TriggerFunction(message).ConfigureAwait(false);
-        }
-
-        //Not sure if this is required
         public void ThenEntityNotFoundExceptionIsThrown(Guid id)
         {
             _lastException.Should().NotBeNull();
             _lastException.Should().BeOfType(typeof(EntityNotFoundException<TenureResponseObject>));
             (_lastException as EntityNotFoundException<TenureResponseObject>).Id.Should().Be(id);
         }
-        public void ThenTheUpdatedDataIsSavedToKafka(MockApplicationFactory mockApplicationFactory, SQSEvent.SQSMessage message)
+        public void ThenTheUpdatedDataIsSavedToKafka(SQSEvent.SQSMessage message, string schemaDefinition)
         {
-            //TODO
-            var registryName = "TenureSchema";
-            var schemaArn = "arn:aws:glue:mmh";
-            var schemaName = "MMH";
-            var schemaDefinition = @"{
-                ""type"": ""record"",
-                ""name"": ""TenureInformation"",
-                ""fields"": [
-                   {
-                     ""name"": ""Id"",
-                     ""type"": ""string"",
-                     ""logicalType"": ""uuid""
-                   }
-                ]
-            }";
-
-            mockApplicationFactory.MockAWSGlue(registryName, schemaArn, schemaName, schemaDefinition);
-
             var consumerconfig = new ConsumerConfig
             {
                 BootstrapServers = Environment.GetEnvironmentVariable("DATAPLATFORM_KAFKA_HOSTNAME"),
