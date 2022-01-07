@@ -25,18 +25,13 @@ namespace MtfhReportingDataListener.Tests.E2ETests.Steps
         public BaseSteps()
         { }
 
-        protected EntityEventSns CreateEvent(Guid tenureId, string eventType)
+        protected EntityEventSns CreateEvent(Guid tenureId)
         {
             return _fixture.Build<EntityEventSns>()
                            .With(x => x.EntityId, tenureId)
                            .With(x => x.EventType, _eventType)
                            .With(x => x.CorrelationId, _correlationId)
                            .Create();
-        }
-
-        protected SQSEvent.SQSMessage CreateMessage(Guid tenureId)
-        {
-            return CreateMessage(CreateEvent(tenureId, _eventType));
         }
 
         protected SQSEvent.SQSMessage CreateMessage(EntityEventSns eventSns)
@@ -48,12 +43,14 @@ namespace MtfhReportingDataListener.Tests.E2ETests.Steps
                            .Create();
         }
 
-        protected async Task TriggerFunction(Guid id, IAmazonGlue glue)
+        protected async Task<SQSEvent.SQSMessage> TriggerFunction(Guid id, IAmazonGlue glue)
         {
-            await TriggerFunction(CreateMessage(id), glue).ConfigureAwait(false);
+            var snsEvent = CreateEvent(id);
+            var message = CreateMessage(snsEvent);
+            return await TriggerFunction(message, glue).ConfigureAwait(false);
         }
 
-        protected async Task TriggerFunction(SQSEvent.SQSMessage message, IAmazonGlue glue)
+        protected async Task<SQSEvent.SQSMessage> TriggerFunction(SQSEvent.SQSMessage message, IAmazonGlue glue)
         {
             var mockLambdaLogger = new Mock<ILambdaLogger>();
             ILambdaContext lambdaContext = new TestLambdaContext()
@@ -72,6 +69,8 @@ namespace MtfhReportingDataListener.Tests.E2ETests.Steps
             };
 
             _lastException = await Record.ExceptionAsync(func);
+            return message;
+
         }
     }
 }

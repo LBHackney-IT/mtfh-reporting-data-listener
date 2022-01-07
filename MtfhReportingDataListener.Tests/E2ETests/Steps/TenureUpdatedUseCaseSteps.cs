@@ -26,8 +26,7 @@ namespace MtfhReportingDataListener.Tests.E2ETests.Steps
 
         public async Task WhenTheFunctionIsTriggered(Guid id, IAmazonGlue glue)
         {
-            await TriggerFunction(CreateMessage(id), glue).ConfigureAwait(false);
-            // await TriggerFunction(id, glue).ConfigureAwait(false);
+            TheMessage = await TriggerFunction(id, glue).ConfigureAwait(false);
         }
 
         public void ThenEntityNotFoundExceptionIsThrown(Guid id)

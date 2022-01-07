@@ -13,7 +13,7 @@ public class MockSchemaRegistry
     public string SchemaName { get; }
     public string SchemaDefinition { get; }
 
-    private Mock<IAmazonGlue> _mockGlue {get; set;}
+    private Mock<IAmazonGlue> _mockGlue { get; set; }
 
     public MockSchemaRegistry(Mock<IAmazonGlue> mockGlue)
     {
@@ -23,6 +23,7 @@ public class MockSchemaRegistry
         SchemaArn = "arn:aws:glue:my-schema-registry";
         SchemaDefinition = SmallTenureSchema();
         _mockGlue = mockGlue;
+        SetSchemaEnvVariables();
     }
 
 

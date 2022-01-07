@@ -13,6 +13,9 @@ using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 using System.Threading.Tasks;
 using Amazon.Glue;
+using MtfhReportingDataListener.Factories;
+using Hackney.Core.Http;
+using Confluent.SchemaRegistry;
 
 // Assembly attribute to enable the Lambda function's JSON input to be converted into a .NET class.
 [assembly: LambdaSerializer(typeof(Amazon.Lambda.Serialization.SystemTextJson.DefaultLambdaJsonSerializer))]
@@ -25,7 +28,7 @@ namespace MtfhReportingDataListener
     [ExcludeFromCodeCoverage]
     public class SqsFunction : BaseFunction
     {
-        private IAmazonGlue _glue { get; set;}
+        private IAmazonGlue _glue { get; set; }
         /// <summary>
         /// Default constructor. This constructor is used by Lambda to construct the instance. When invoked in a Lambda environment
         /// the AWS credentials will come from the IAM role associated with the function and the AWS region will be set to the
@@ -56,6 +59,10 @@ namespace MtfhReportingDataListener
             services.AddScoped<ITenureInfoApiGateway, TenureInfoApiGateway>();
             services.AddScoped<IGlueGateway, GlueGateway>();
             services.AddScoped<IKafkaGateway, KafkaGateway>();
+
+            // Transient because otherwise all gateway's that use it will get the same instance,
+            // which is not the desired result.
+            services.AddTransient<IApiGateway, ApiGateway>();
 
             // register glue SDK
             services.AddSingleton<IAmazonGlue>(_glue);
@@ -97,17 +104,12 @@ namespace MtfhReportingDataListener
             {
                 try
                 {
-                    IMessageProcessing processor = null;
-                    switch (entityEvent.EventType)
-                    {
-                        case EventTypes.TenureUpdatedEvent:
-                            {
-                                processor = ServiceProvider.GetService<ITenureUpdatedUseCase>();
-                                break;
-                            }
-                        default:
-                            throw new ArgumentException($"Unknown event type: {entityEvent.EventType} on message id: {message.MessageId}");
-                    }
+                    IMessageProcessing processor = entityEvent.CreateUseCaseForMessage(ServiceProvider);
+                    if (processor != null)
+                        await processor.ProcessMessageAsync(entityEvent).ConfigureAwait(false);
+                    else
+                        Logger.LogInformation($"No processors available for message so it will be ignored. " +
+                            $"Message id: {message.MessageId}; type: {entityEvent.EventType}; version: {entityEvent.Version}; entity id: {entityEvent.EntityId}");
 
                     await processor.ProcessMessageAsync(entityEvent).ConfigureAwait(false);
                 }

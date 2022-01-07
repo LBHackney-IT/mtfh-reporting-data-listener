@@ -11,6 +11,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Reflection;
 using System.Text.Json;
+using Confluent.SchemaRegistry;
 
 namespace MtfhReportingDataListener
 {
@@ -38,6 +39,7 @@ namespace MtfhReportingDataListener
             Configure(builder);
             Configuration = builder.Build();
             services.AddSingleton<IConfiguration>(Configuration);
+            services.AddSingleton<ISchemaRegistryClient>();
 
             services.ConfigureLambdaLogging(Configuration);
             services.AddLogCallAspect();
