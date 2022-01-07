@@ -44,7 +44,7 @@ namespace MtfhReportingDataListener.Tests.E2ETests.Fixtures
 
         public void GivenNonExistingTenureHasBeenUpdated()
         {
-            //Nothing to do here
+            TenureId = _fixture.Create<Guid>(); 
         }
     }
 }

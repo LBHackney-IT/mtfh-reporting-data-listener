@@ -36,10 +36,10 @@ namespace MtfhReportingDataListener.UseCase
             if (tenure is null) throw new EntityNotFoundException<TenureResponseObject>(message.EntityId);
 
             // Get the schema
-            var schemaArn = "";
-            var registryName = "";
-            var schemaName = "";
-            var schema = await _glueGateway.GetSchema("", "", "").ConfigureAwait(false);
+            var schemaArn = Environment.GetEnvironmentVariable("SCHEMA_ARN");
+            var registryName = Environment.GetEnvironmentVariable("REGISTRY_NAME");
+            var schemaName = Environment.GetEnvironmentVariable("SCHEMA_NAME");
+            var schema = await _glueGateway.GetSchema(registryName, schemaArn, schemaName).ConfigureAwait(false);
 
             // (subject, version, Id, string) -> get from glue?
             var schemaWithMetadata = new Confluent.SchemaRegistry.Schema("tenure", 1, 1, schema.Schema);

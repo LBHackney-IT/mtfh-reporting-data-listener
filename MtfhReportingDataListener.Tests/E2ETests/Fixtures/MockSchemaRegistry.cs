@@ -4,6 +4,7 @@ using Amazon.Glue;
 using Amazon.Glue.Model;
 using Moq;
 using AutoFixture;
+using System;
 
 public class MockSchemaRegistry
 {
@@ -25,7 +26,7 @@ public class MockSchemaRegistry
     }
 
 
-    public void GivenThereIsaMatchingSchemaInGlueRegistry()
+    public void GivenThereIsAMatchingSchemaInGlueRegistry()
     {
 
         var getSchemaRequest = new GetSchemaRequest()
@@ -65,7 +66,12 @@ public class MockSchemaRegistry
             )).ReturnsAsync(new GetSchemaVersionResponse { SchemaDefinition = SchemaDefinition });
     }
 
-
+    private void SetSchemaEnvVariables()
+    {
+        Environment.SetEnvironmentVariable("SCHEMA_ARN", SchemaArn);
+        Environment.SetEnvironmentVariable("REGISTRY_NAME", RegistryName);
+        Environment.SetEnvironmentVariable("SCHEMA_NAME", SchemaName);
+    }
     private string SmallTenureSchema()
     {
         return @"{
@@ -111,34 +117,35 @@ public class MockSchemaRegistry
                                     ]
                                 }
                             },
-                        {
-                            ""name"": ""FullName"",
-                            ""type"": ""string""
-                        },
-                        {
-                            ""name"": ""IsResponsible"",
-                            ""type"": ""boolean""
-                        },
-                        {
-                            ""name"": ""DateOfBirth"",
-                            ""type"": ""int"",
-                            ""logicalType"": ""date""
-                        },
-                        {
-                            ""name"": ""PersonTenureType"",
-                            ""type"": {
+                            {
+                                ""name"": ""FullName"",
+                                ""type"": ""string""
+                            },
+                            {
+                                ""name"": ""IsResponsible"",
+                                ""type"": ""boolean""
+                            },
+                            {
+                                ""name"": ""DateOfBirth"",
+                                ""type"": ""int"",
+                                ""logicalType"": ""date""
+                            },
+                            {
                                 ""name"": ""PersonTenureType"",
-                                ""type"": ""enum"",
-                                ""symbols"": [
-                                    ""Tenant"",
-                                    ""Leaseholder"",
-                                    ""Freeholder"",
-                                    ""HouseholdMember"",
-                                    ""Occupant""
-                                ]
+                                ""type"": {
+                                    ""name"": ""PersonTenureType"",
+                                    ""type"": ""enum"",
+                                    ""symbols"": [
+                                        ""Tenant"",
+                                        ""Leaseholder"",
+                                        ""Freeholder"",
+                                        ""HouseholdMember"",
+                                        ""Occupant""
+                                    ]
+                                }
                             }
-                        }
-                    ]
+                        ]
+                    }
                 }
             }
         ]}";

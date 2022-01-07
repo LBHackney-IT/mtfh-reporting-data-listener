@@ -6,7 +6,6 @@ using Confluent.Kafka.SyncOverAsync;
 using Confluent.SchemaRegistry.Serdes;
 using FluentAssertions;
 using Hackney.Shared.Tenure.Boundary.Response;
-using Moq;
 using MtfhReportingDataListener.Gateway;
 using MtfhReportingDataListener.Infrastructure.Exceptions;
 using System;
@@ -27,7 +26,8 @@ namespace MtfhReportingDataListener.Tests.E2ETests.Steps
 
         public async Task WhenTheFunctionIsTriggered(Guid id, IAmazonGlue glue)
         {
-            await TriggerFunction(id, glue).ConfigureAwait(false);
+            await TriggerFunction(CreateMessage(id), glue).ConfigureAwait(false);
+            // await TriggerFunction(id, glue).ConfigureAwait(false);
         }
 
         public void ThenEntityNotFoundExceptionIsThrown(Guid id)
@@ -58,6 +58,7 @@ namespace MtfhReportingDataListener.Tests.E2ETests.Steps
             {
                 consumer.Subscribe(topic);
                 var r = consumer.Consume(TimeSpan.FromSeconds(30));
+                Console.WriteLine(r?.Message.Value);
                 Assert.NotNull(r?.Message);
                 //Assert.Equal(message, r.Message.Value);
                 consumer.Close();
