@@ -16,12 +16,13 @@ namespace MtfhReportingDataListener.Tests.E2ETests.Stories
     public class TenureUpdatedTests : IDisposable
     {
         private readonly TenureFixture _tenureFixture;
-
         private readonly TenureUpdatedUseCaseSteps _steps;
+        private readonly MockApplicationFactory _appFactory;
 
         public TenureUpdatedTests(MockApplicationFactory appFactory)
         {
             _tenureFixture = new TenureFixture();
+            _appFactory = appFactory;
             _steps = new TenureUpdatedUseCaseSteps();
         }
 
@@ -47,7 +48,7 @@ namespace MtfhReportingDataListener.Tests.E2ETests.Stories
         {
             this.Given(g => _tenureFixture.GivenTenureHasBeenUpdated())
                .When(w => _steps.WhenTheFunctionIsTriggered(_tenureFixture.TenureId))
-               .Then(t => _steps.ThenTheUpdatedDataIsSavedToKafka())
+               .Then(t => _steps.ThenTheUpdatedDataIsSavedToKafka(_appFactory, _steps.TheMessage))
                .BDDfy();
         }
 

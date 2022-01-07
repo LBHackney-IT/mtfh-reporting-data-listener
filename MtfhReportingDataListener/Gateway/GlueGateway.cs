@@ -10,8 +10,8 @@ namespace MtfhReportingDataListener.Gateway
 {
     public class GlueGateway : IGlueGateway
     {
-        public AmazonGlueClient _amazonGlueClient;
-        public GlueGateway(AmazonGlueClient amazonGlueClient)
+        public IAmazonGlue _amazonGlueClient;
+        public GlueGateway(IAmazonGlue amazonGlueClient)
         {
             _amazonGlueClient = amazonGlueClient;
         }

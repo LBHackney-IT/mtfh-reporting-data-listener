@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using System.Threading;
 using AutoFixture;
 using FluentAssertions;
+using MtfhReportingDataListener.Tests.Helper;
 
 namespace MtfhReportingDataListener.Tests.Gateway
 {
@@ -15,12 +16,12 @@ namespace MtfhReportingDataListener.Tests.Gateway
     public class GlueGatewayTests
     {
         public readonly GlueGateway _gateway;
-        public readonly Mock<AmazonGlueClient> _mockAmazonGlue;
+        public readonly Mock<IAmazonGlue> _mockAmazonGlue;
         public readonly Fixture _fixture = new Fixture();
 
         public GlueGatewayTests()
         {
-            _mockAmazonGlue = new Mock<AmazonGlueClient>();
+            _mockAmazonGlue = new Mock<IAmazonGlue>();
             _gateway = new GlueGateway(_mockAmazonGlue.Object);
         }
 
@@ -39,7 +40,7 @@ namespace MtfhReportingDataListener.Tests.Gateway
                 }
             };
             var getSchemaResponse = _fixture.Create<GetSchemaResponse>();
-            _mockAmazonGlue.Setup(x => x.GetSchemaAsync(It.Is<GetSchemaRequest>(x => CheckRequestsEquivalent(getSchemaRequest, x)), It.IsAny<CancellationToken>()))
+            _mockAmazonGlue.Setup(x => x.GetSchemaAsync(It.Is<GetSchemaRequest>(x => MockGlueHelperMethods.CheckRequestsEquivalent(getSchemaRequest, x)), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(getSchemaResponse).Verifiable();
             _mockAmazonGlue.Setup(x => x.GetSchemaVersionAsync(
                     It.IsAny<GetSchemaVersionRequest>(),
@@ -63,6 +64,21 @@ namespace MtfhReportingDataListener.Tests.Gateway
                 SchemaName = "MMH"
             };
 
+            var expectedRequest = new GetSchemaVersionRequest
+            {
+                SchemaId = new SchemaId()
+                {
+                    RegistryName = "TenureSchema",
+                    SchemaArn = "arn:aws:glue:mmh",
+                    SchemaName = "MMH"
+                },
+                SchemaVersionNumber = new SchemaVersionNumber
+                {
+                    LatestVersion = true,
+                    VersionNumber = versionId
+                }
+            };
+
             _mockAmazonGlue.Setup(x => x.GetSchemaAsync(It.IsAny<GetSchemaRequest>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(getSchemaResponse);
 
@@ -70,7 +86,7 @@ namespace MtfhReportingDataListener.Tests.Gateway
 
             _mockAmazonGlue.Setup(x =>
                 x.GetSchemaVersionAsync(
-                    It.IsAny<GetSchemaVersionRequest>(),
+                    It.Is<GetSchemaVersionRequest>(x=> MockGlueHelperMethods.CheckVersionRequestsEquivalent(expectedRequest,x)),
                     It.IsAny<CancellationToken>()
                 )
             ).ReturnsAsync(response);
@@ -84,21 +100,6 @@ namespace MtfhReportingDataListener.Tests.Gateway
             };
 
             schemaDetails.Should().BeEquivalentTo(expectedSchemaResponse);
-        }
-
-        private static bool CheckRequestsEquivalent(GetSchemaRequest expectedRequest, GetSchemaRequest receivedRequest)
-        {
-            return receivedRequest.SchemaId.RegistryName == expectedRequest.SchemaId.RegistryName
-                && receivedRequest.SchemaId.SchemaArn == expectedRequest.SchemaId.SchemaArn
-                && receivedRequest.SchemaId.SchemaName == expectedRequest.SchemaId.SchemaName;
-        }
-        private static bool CheckVersionRequestsEquivalent(GetSchemaVersionRequest expectedRequest, GetSchemaVersionRequest receivedRequest)
-        {
-            return receivedRequest.SchemaId.RegistryName == expectedRequest.SchemaId.RegistryName
-                && receivedRequest.SchemaId.SchemaArn == expectedRequest.SchemaId.SchemaArn
-                && receivedRequest.SchemaId.SchemaName == expectedRequest.SchemaId.SchemaName
-                && receivedRequest.SchemaVersionNumber.LatestVersion == expectedRequest.SchemaVersionNumber.LatestVersion
-                && receivedRequest.SchemaVersionNumber.VersionNumber == expectedRequest.SchemaVersionNumber.VersionNumber;
         }
     }
 }
