@@ -16,6 +16,7 @@ using Amazon.Glue;
 using MtfhReportingDataListener.Factories;
 using Hackney.Core.Http;
 using Confluent.SchemaRegistry;
+using Microsoft.Extensions.Configuration;
 
 // Assembly attribute to enable the Lambda function's JSON input to be converted into a .NET class.
 [assembly: LambdaSerializer(typeof(Amazon.Lambda.Serialization.SystemTextJson.DefaultLambdaJsonSerializer))]
@@ -29,6 +30,8 @@ namespace MtfhReportingDataListener
     public class SqsFunction : BaseFunction
     {
         private IAmazonGlue _glue { get; set; }
+        protected IServiceProvider ServiceProvider { get; private set; }
+        protected ILogger Logger { get; private set; }
         /// <summary>
         /// Default constructor. This constructor is used by Lambda to construct the instance. When invoked in a Lambda environment
         /// the AWS credentials will come from the IAM role associated with the function and the AWS region will be set to the
@@ -37,6 +40,7 @@ namespace MtfhReportingDataListener
         public SqsFunction()
         {
             _glue = new AmazonGlueClient();
+            ConfigureServices();
         }
 
         /// <summary>
@@ -45,20 +49,26 @@ namespace MtfhReportingDataListener
         public SqsFunction(IAmazonGlue glue)
         {
             _glue = glue;
+            ConfigureServices();
         }
 
         /// <summary>
         /// Use this method to perform any DI configuration required
         /// </summary>
-        /// <param name="services"></param>
-        protected override void ConfigureServices(IServiceCollection services)
+        protected void ConfigureServices()
         {
+            var services = new ServiceCollection();
+
             services.AddHttpClient();
             services.AddScoped<ITenureUpdatedUseCase, TenureUpdatedUseCase>();
 
             services.AddScoped<ITenureInfoApiGateway, TenureInfoApiGateway>();
             services.AddScoped<IGlueGateway, GlueGateway>();
             services.AddScoped<IKafkaGateway, KafkaGateway>();
+            services.AddSingleton<IConfiguration>(Configuration);
+
+            services.ConfigureLambdaLogging(Configuration);
+            services.AddLogCallAspect();
 
             // Transient because otherwise all gateway's that use it will get the same instance,
             // which is not the desired result.
@@ -67,12 +77,17 @@ namespace MtfhReportingDataListener
             // register glue SDK
             services.AddSingleton<IAmazonGlue>(_glue);
 
-            base.ConfigureServices(services);
+            ServiceProvider = services.BuildServiceProvider();
+            ServiceProvider.UseLogCall();
+
+            Logger = ServiceProvider.GetRequiredService<ILogger<BaseFunction>>();
+            ConfigureServices(services);
+
         }
 
 
         /// <summary>
-        /// This method is called for every Lambda invocation. This method takes in an SQS event object and can be used 
+        /// This method is called for every Lambda invocation. This method takes in an SQS event object and can be used
         /// to respond to SQS messages.
         /// </summary>
         /// <param name="evnt"></param>

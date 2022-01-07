@@ -26,30 +26,15 @@ namespace MtfhReportingDataListener
         protected readonly static JsonSerializerOptions _jsonOptions = JsonOptions.CreateJsonOptions();
 
         protected IConfigurationRoot Configuration { get; }
-        protected IServiceProvider ServiceProvider { get; }
-        protected ILogger Logger { get; }
 
         internal BaseFunction()
         {
             AWSSDKHandler.RegisterXRayForAllServices();
 
-            var services = new ServiceCollection();
             var builder = new ConfigurationBuilder();
 
             Configure(builder);
             Configuration = builder.Build();
-            services.AddSingleton<IConfiguration>(Configuration);
-            services.AddSingleton<ISchemaRegistryClient>();
-
-            services.ConfigureLambdaLogging(Configuration);
-            services.AddLogCallAspect();
-
-            ConfigureServices(services);
-
-            ServiceProvider = services.BuildServiceProvider();
-            ServiceProvider.UseLogCall();
-
-            Logger = ServiceProvider.GetRequiredService<ILogger<BaseFunction>>();
         }
 
         /// <summary>
