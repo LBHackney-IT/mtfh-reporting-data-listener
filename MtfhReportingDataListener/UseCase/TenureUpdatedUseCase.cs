@@ -58,34 +58,20 @@ namespace MtfhReportingDataListener.UseCase
             {
                 Type tenureType = typeof(TenureResponseObject);
                 PropertyInfo propInfo = tenureType.GetProperty(field.Name);
-                var fieldValue = propInfo.GetValue(tenure);
 
-                if (field.Name == "Id" || field.Name == "PaymentReference")
+                var fieldValue = propInfo.GetValue(tenure);
+                var fieldtype = field.Schema.Tag.ToString();
+
+                if (fieldtype == "String")
                 {
                     record.Add(field.Name, fieldValue.ToString());
                     return;
                 }
 
-                var fieldtype = field.Schema.Tag.ToString();
                 record.Add(field.Name, fieldValue);
             });
 
             return record;
         }
-        // Null = 0,
-        // Boolean = 1,
-        // Int = 2,
-        // Long = 3,
-        // Float = 4,
-        // Double = 5,
-        // Bytes = 6,
-        // String = 7,
-        // Record = 8,
-        // Enumeration = 9,
-        // Array = 10,
-        // Map = 11,
-        // Union = 12,
-        // Fixed = 13,
-        // Error = 14
     }
 }

@@ -11,6 +11,7 @@ using Xunit;
 using Hackney.Shared.Tenure.Boundary.Response;
 using Hackney.Shared.Tenure.Domain;
 using System.Linq;
+using System.Collections.Generic;
 using System.Text.Json;
 using Avro;
 using Avro.Generic;
@@ -139,7 +140,7 @@ namespace MtfhReportingDataListener.Tests.UseCase
             var receivedRecord = _sut.BuildTenureRecord(schema, tenure);
 
 
-            Assert.Equal(receivedRecord["Id"], expectedRecord["Id"].ToString());
+            Assert.Equal(expectedRecord["Id"].ToString(), receivedRecord["Id"]);
         }
 
 
@@ -171,8 +172,8 @@ namespace MtfhReportingDataListener.Tests.UseCase
             var receivedRecord = _sut.BuildTenureRecord(schema, tenure);
 
 
-            Assert.Equal(receivedRecord["Id"], expectedRecord["Id"].ToString());
-            Assert.Equal(receivedRecord["PaymentReference"], expectedRecord["PaymentReference"]);
+            Assert.Equal(expectedRecord["Id"].ToString(), receivedRecord["Id"]);
+            Assert.Equal(expectedRecord["PaymentReference"], receivedRecord["PaymentReference"]);
         }
 
         [Theory]
@@ -204,8 +205,8 @@ namespace MtfhReportingDataListener.Tests.UseCase
             var receivedRecord = _sut.BuildTenureRecord(schema, tenure);
 
 
-            Assert.Equal(receivedRecord["IsActive"], expectedRecord["IsActive"]);
-            Assert.Equal(receivedRecord[nullableBoolFieldName], expectedRecord[nullableBoolFieldName]);
+            Assert.Equal(expectedRecord["IsActive"], receivedRecord["IsActive"]);
+            Assert.Equal(expectedRecord[nullableBoolFieldName], receivedRecord[nullableBoolFieldName]);
         }
 
         [Fact]
@@ -234,13 +235,12 @@ namespace MtfhReportingDataListener.Tests.UseCase
             expectedRecord.Add("EndOfTenureDate", _tenure.EndOfTenureDate);
 
             var receivedRecord = _sut.BuildTenureRecord(schema, tenure);
-            Assert.Equal(receivedRecord["StartOfTenureDate"], expectedRecord["StartOfTenureDate"]);
-            Assert.Equal(receivedRecord["EndOfTenureDate"], expectedRecord["EndOfTenureDate"]);
-
+            Assert.Equal(expectedRecord["StartOfTenureDate"], receivedRecord["StartOfTenureDate"]);
+            Assert.Equal(expectedRecord["EndOfTenureDate"], receivedRecord["EndOfTenureDate"]);
         }
 
         [Fact]
-        public void BuildTenureRecordCanSetNestedFieldType()
+        public void BuildTenureRecordCanSetNestedFields()
         {
             var schema = (RecordSchema) Avro.Schema.Parse(@"{
                     ""type"": ""record"",
@@ -253,20 +253,95 @@ namespace MtfhReportingDataListener.Tests.UseCase
                             ""name"": ""charge"",
                             ""fields"": [
                             {
-                                ""name"": ""Rent"",
-                                ""type"": ""float""
+                                ""name"": ""Code"",
+                                ""type"": ""string""
                             }]
                             }
                         }
                     ]
                 }");
 
-            var tenure = _tenure;
-            var expectedRecord =  new GenericRecord(schema);
-            expectedRecord.Add("TenureType.Rent", _tenure.TenureType);
+            var receivedRecord = _sut.BuildTenureRecord(schema, _tenure);
+            var receivedTenureType = (TenureType) receivedRecord["TenureType"];
 
-            var receivedRecord = _sut.BuildTenureRecord(schema, tenure);
-            Assert.Equal(receivedRecord["TenureType.Rent"], expectedRecord["TenureType.Rent"]);
+            Assert.Equal(_tenure.TenureType.Code, receivedTenureType.Code);
+        }
+
+        [Fact]
+        public void BuildTenureRecordCanSetLists()
+        {
+            var schema = (RecordSchema) Avro.Schema.Parse(@"{
+                ""type"": ""record"",
+                ""name"": ""TenureInformation"",
+                ""fields"": [
+                    {
+                        ""name"": ""HouseholdMembers"",
+                        ""type"": {
+                            ""type"": ""array"",
+                            ""items"": {
+                                ""name"": ""HouseholdMember"",
+                                ""type"": ""record"",
+                                ""fields"": [
+                                    {
+                                        ""name"": ""Id"",
+                                        ""type"": ""string"",
+                                        ""logicalType"": ""uuid""
+                                    }
+                                ]
+                            }
+                        }
+                    }
+                ]
+            }");
+
+            var receivedRecord = _sut.BuildTenureRecord(schema, _tenure);
+            var receivedHouseholdMembers = (List<HouseholdMembers>) receivedRecord["HouseholdMembers"];
+
+            Assert.Equal(_tenure.HouseholdMembers.First().Id, receivedHouseholdMembers.First().Id);
+        }
+
+        [Fact]
+        public void BuildTenureRecordCanAssignEnums()
+        {
+            var schema = (RecordSchema) Avro.Schema.Parse(@"{
+                ""type"": ""record"",
+                ""name"": ""TenureInformation"",
+                ""fields"": [
+                    {
+                        ""name"": ""HouseholdMembers"",
+                        ""type"": {
+                            ""type"": ""array"",
+                            ""items"": {
+                                ""name"": ""HouseholdMember"",
+                                ""type"": ""record"",
+                                ""fields"": [
+                                    {
+                                        ""name"": ""Id"",
+                                        ""type"": ""string"",
+                                        ""logicalType"": ""uuid""
+                                    },
+                                    {
+                                        ""name"": ""Type"",
+                                        ""type"": {
+                                            ""name"": ""HouseholdMembersType"",
+                                            ""type"": ""enum"",
+                                            ""symbols"": [
+                                                ""Person"",
+                                                ""Organization""
+                                            ]
+                                        }
+                                    }
+                                ]
+                            }
+                        }
+                    }
+                ]
+            }");
+
+            var receivedRecord = _sut.BuildTenureRecord(schema, _tenure);
+            var receivedHouseholdMembers = (List<HouseholdMembers>) receivedRecord["HouseholdMembers"];
+
+            Assert.Equal(_tenure.HouseholdMembers.First().Type, receivedHouseholdMembers.First().Type);
         }
 
         private T GetFieldValueFromStringName<T>(string fieldName, TenureResponseObject tenure)
