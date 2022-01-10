@@ -39,7 +39,8 @@ namespace MtfhReportingDataListener.Tests.E2ETests.Fixtures
                            .With(x => x.HouseholdMembers, hms)
                            .Create();
             TenureId = tenureResponseObject.Id;
-            return tenureResponseObject;
+            ResponseObject = tenureResponseObject;
+            return ResponseObject;
         }
 
         public void GivenNonExistingTenureHasBeenUpdated()

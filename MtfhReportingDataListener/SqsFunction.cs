@@ -70,9 +70,7 @@ namespace MtfhReportingDataListener
             services.ConfigureLambdaLogging(Configuration);
             services.AddLogCallAspect();
 
-            // Transient because otherwise all gateway's that use it will get the same instance,
-            // which is not the desired result.
-            services.AddTransient<IApiGateway, ApiGateway>();
+            services.AddApiGateway();
 
             // register glue SDK
             services.AddSingleton<IAmazonGlue>(_glue);
