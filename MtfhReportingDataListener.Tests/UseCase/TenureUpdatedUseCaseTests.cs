@@ -376,6 +376,25 @@ namespace MtfhReportingDataListener.Tests.UseCase
             Assert.Equal(_tenure.HouseholdMembers.First().Type, receivedHouseholdMembers.First().Type);
         }
 
+        [Fact]
+        public void LogsOutSchemaFieldNameWhenItDoesNotExistInTenure()
+        {
+            var schema = (RecordSchema) Avro.Schema.Parse(@"{
+                ""type"": ""record"",
+                ""name"": ""TenureInformation"",
+                ""fields"": [
+                   {
+                     ""name"": ""FieldNameNotInTenure"",
+                     ""type"": ""string"",
+                   },
+                ]
+            }");
+
+            Func<GenericRecord> receivedRecord = () => _sut.BuildTenureRecord(schema, _tenure);
+
+            receivedRecord.Should().NotThrow<NullReferenceException>();
+        }
+
         private T GetFieldValueFromStringName<T>(string fieldName, TenureResponseObject tenure)
         {
             return (T) typeof(TenureResponseObject).GetProperty(fieldName).GetValue(tenure);

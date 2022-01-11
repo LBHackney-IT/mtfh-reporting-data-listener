@@ -61,8 +61,14 @@ namespace MtfhReportingDataListener.UseCase
             {
                 Type tenureType = typeof(TenureResponseObject);
                 PropertyInfo propInfo = tenureType.GetProperty(field.Name);
+                if (propInfo == null)
+                {
+                    Console.WriteLine($"Field name: ${field.Name} not found in tenure");
+                    return;
+                }
 
                 var fieldValue = propInfo.GetValue(tenure);
+
                 var fieldtype = field.Schema.Tag.ToString();
 
                 if (fieldtype == "String")
