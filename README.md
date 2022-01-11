@@ -1,6 +1,19 @@
-# LBH Base Listener
+# MTFH Reporting Data Listener
 
-Base Listener is a boilerplate template application for creating for new Listener applications for LBH
+The aim of this listener is to implement an AWS Function that would recieve messages of any updates made to the TenureInformationApi and then save the relative data to Kafka. 
+
+Here is the process on how the data is saved to Kafka:
+1. When the TenureUpdateEvent is raised this listener is triggered
+2. The Listener calls the TenureInformationApi using a Shared Nuget Package to ensure that the Tenure sent through in the message exists 
+3. If the Tenure doesn't exist then the Listener throws an Exception 
+4. If the Tenure exists then the Listener gets the schema that has been generated in AWS Glue using [this repository][ADD LINK HERE]
+5. Then the details from the Schema are used the convert the generic record into an avro generic record.
+6. Lastly the data is sent to Kafka.
+   In order to send the data through to Kafka a SchemaRegistryClient is required. SchemaRegistery are seperate from your kafka brokers.The Kafka Producers publish the data to Kafka topics and communicates with the Schema Registry to send and recieve schemas that describe the data models for the messages simultaneously. Hence the SchemaRegistry is used to serialize the message and then save the serialize message to Kafka. 
+   We then use the Producer.Flush() to immediately send through the message to kafka. 
+
+[Here][ADD LINK HERE] is a diagram to give a visual representation of the process of the listener.
+
 
 ## Stack
 
