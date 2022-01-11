@@ -53,13 +53,15 @@ namespace MtfhReportingDataListener.UseCase
             _kafkaGateway.SendDataToKafka(topic, record, schemaWithMetadata);
         }
 
-        public GenericRecord BuildTenureRecord(RecordSchema schema, TenureResponseObject tenure)
+        public GenericRecord BuildTenureRecord(RecordSchema schema, TenureResponseObject tenureResponse)
         {
             var record = new GenericRecord(schema);
 
             schema.Fields.ForEach(field =>
             {
-                Type tenureType = typeof(TenureResponseObject);
+                var tenure = AsTenure(tenureResponse);
+
+                Type tenureType = typeof(Tenure);
                 PropertyInfo propInfo = tenureType.GetProperty(field.Name);
 
                 var fieldValue = propInfo.GetValue(tenure);
@@ -75,6 +77,88 @@ namespace MtfhReportingDataListener.UseCase
             });
 
             return record;
+        }
+
+        public class Tenure : TenureResponseObject
+        {
+            private int? _subletEndDate;
+            private int? _potentialEndDate;
+            private int? _evictionDate;
+            private DateTime? _successionDate;
+            public new int? SubletEndDate
+            {
+                get => _subletEndDate;
+                set
+                {
+                    _subletEndDate = UnixTimestampNullable(value);
+                }
+            }
+
+            public new int? PotentialEndDate
+            {
+                get => _potentialEndDate;
+                set
+                {
+                    _potentialEndDate = UnixTimestampNullable(value);
+                }
+            }
+
+            public new int? EvictionDate
+            {
+                get => _evictionDate;
+                set
+                {
+                    _evictionDate = UnixTimestampNullable(value);
+                }
+            }
+
+            public new DateTime? SuccessionDate
+            {
+                get => UnixTimestampNullable(_successionDate);
+                set
+                {
+                    _successionDate = value;
+                }
+            }
+
+            private int? UnixTimestampNullable(object obj)
+            {
+                var date = (DateTime?) obj;
+                return (int?) (date?.Subtract(new DateTime(1970, 1, 1)))?.TotalSeconds;
+            }
+        }
+
+        private int UnixTimestamp(object obj)
+        {
+            var date = (DateTime) obj;
+            return (int) (date.Subtract(new DateTime(1970, 1, 1))).TotalSeconds;
+        }
+
+        private int? UnixTimestampNullable(object obj)
+        {
+            var date = (DateTime?) obj;
+            return (int?) (date?.Subtract(new DateTime(1970, 1, 1)))?.TotalSeconds;
+        }
+
+        public Tenure AsTenure(TenureResponseObject tenureResponse)
+        {
+            var tenure = new Tenure();
+
+            PropertyInfo[] properties = tenure.GetType().GetProperties();
+            foreach (var property in properties)
+            {
+                try
+                {
+                    property.SetValue(tenure, property.GetValue(tenureResponse));
+                }
+                catch(Exception ex)
+                {
+                    Console.WriteLine($"Failing on {property.Name}");
+                    Console.WriteLine(ex.Message);
+                }
+            }
+
+            return tenure;
         }
     }
 }

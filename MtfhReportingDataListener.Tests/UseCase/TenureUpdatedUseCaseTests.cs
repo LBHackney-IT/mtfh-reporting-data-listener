@@ -208,6 +208,33 @@ namespace MtfhReportingDataListener.Tests.UseCase
             Assert.Equal(expectedRecord["PaymentReference"], receivedRecord["PaymentReference"]);
         }
 
+        [Fact]
+        public void BuildTenureRecordCanConvertDatesToUnixTimestamps()
+        {
+            var schema = (RecordSchema) Avro.Schema.Parse(@"{
+                ""type"": ""record"",
+                ""name"": ""TenureInformation"",
+                ""fields"": [
+                   {
+                     ""name"": ""Id"",
+                     ""type"": ""string"",
+                     ""logicalType"": ""uuid""
+                   },
+                   {
+                     ""name"": ""SuccessionDate"",
+                     ""type"": [""null"", ""int""]
+                   },
+                ]
+            }");
+
+            var tenure = _tenure;
+            tenure.SuccessionDate = new DateTime(1970, 01, 02);
+
+            var receivedRecord = _sut.BuildTenureRecord(schema, tenure);
+
+            Assert.Equal(86400, receivedRecord["SuccessionDate"]);
+        }
+
         [Theory]
         [InlineData("IsTenanted")]
         public void BuildTenureRecordCanSetBooleanTypeValuesToAGenericRecord(string nullableBoolFieldName)
