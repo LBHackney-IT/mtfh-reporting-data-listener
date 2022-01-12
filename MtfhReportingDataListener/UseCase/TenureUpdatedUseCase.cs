@@ -61,17 +61,36 @@ namespace MtfhReportingDataListener.UseCase
             var record = new GenericRecord(schema);
             schema.Fields.ForEach(field =>
             {
-                var type = item.GetType();
-                if (field.Name == "TenuredAssetType")
+                object fieldValue = null;
+                try
                 {
-                    Console.WriteLine(item);
-                    Console.WriteLine(item.GetType());
-                    Console.WriteLine(field.Name);
-                    Console.WriteLine(type.GetProperties());
+                    fieldValue = item.GetType().GetProperty(field.Name).GetValue(item);
                 }
-                var fieldValue = type.GetProperty(field.Name).GetValue(item);
-                var fieldType = field.Schema.Tag;
+                catch
+                {
+                    Console.WriteLine(field.Name);
+                    Console.WriteLine(item);
 
+                }
+                var fieldSchema = field.Schema;
+                var fieldType = fieldSchema.Tag;
+
+                if (fieldType == Schema.Type.Union)
+                {
+                    if (fieldValue == null)
+                    {
+                        record.Add(field.Name, null);
+                        return;
+                    }
+                    else
+                    {
+                        var jsonSchema = (JsonElement) JsonSerializer.Deserialize<object>(field.Schema.ToString());
+                        jsonSchema.TryGetProperty("type", out var unionList);
+                        var notNullSchema = unionList.EnumerateArray().First(type => type.ToString() != "null").ToString();
+                        fieldSchema = Schema.Parse(notNullSchema);
+                        fieldType = fieldSchema.Tag;
+                    }
+                }
 
                 if (fieldType == Schema.Type.String)
                 {
@@ -79,7 +98,7 @@ namespace MtfhReportingDataListener.UseCase
                 }
                 else if (fieldType == Schema.Type.Enumeration)
                 {
-                    record.Add(field.Name, new GenericEnum((EnumSchema) field.Schema, fieldValue.ToString()));
+                    record.Add(field.Name, new GenericEnum((EnumSchema) fieldSchema, fieldValue.ToString()));
                 }
                 else if (fieldValue.GetType() == typeof(DateTime))
                 {
@@ -91,7 +110,7 @@ namespace MtfhReportingDataListener.UseCase
 
                     var listRecords = fieldValueAsList.Select(listItem =>
                     {
-                        var jsonSchema = (JsonElement) JsonSerializer.Deserialize<object>(field.Schema.ToString());
+                        var jsonSchema = (JsonElement) JsonSerializer.Deserialize<object>(fieldSchema.ToString());
                         jsonSchema.TryGetProperty("items", out var itemsSchemaJson);
                         var itemsSchema = (RecordSchema) Schema.Parse(itemsSchemaJson.ToString());
                         return PopulateFields(listItem, itemsSchema);
@@ -101,7 +120,7 @@ namespace MtfhReportingDataListener.UseCase
                 }
                 else if (fieldType == Schema.Type.Record)
                 {
-                    record.Add(field.Name, PopulateFields(fieldValue, (RecordSchema) field.Schema));
+                    record.Add(field.Name, PopulateFields(fieldValue, (RecordSchema) fieldSchema));
                 }
                 else
                 {

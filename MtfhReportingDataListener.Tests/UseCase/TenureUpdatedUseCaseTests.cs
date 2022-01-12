@@ -477,17 +477,17 @@ namespace MtfhReportingDataListener.Tests.UseCase
                 {
                     ""name"": ""Type"",
                     ""type"": [{
-                    ""name"": ""TenuredAssetType"",
-                    ""type"": ""enum"",
-                    ""symbols"": [
-                        ""Block"",
-                        ""Concierge"",
-                        ""Dwelling"",
-                        ""LettableNonDwelling"",
-                        ""MediumRiseBlock"",
-                        ""NA"",
-                        ""TravellerSite""
-                    ]
+                        ""name"": ""TenuredAssetType"",
+                        ""type"": ""enum"",
+                        ""symbols"": [
+                            ""Block"",
+                            ""Concierge"",
+                            ""Dwelling"",
+                            ""LettableNonDwelling"",
+                            ""MediumRiseBlock"",
+                            ""NA"",
+                            ""TravellerSite""
+                        ]
                     }, ""null""]
                 }
                 ]
