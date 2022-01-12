@@ -49,7 +49,7 @@ namespace MtfhReportingDataListener.Tests.E2ETests.Stories
             }
         }
 
-        [Fact(Skip="")]
+        [Fact]
         public void ListenerSavesTheUpdatedTenureToKafka()
         {
 

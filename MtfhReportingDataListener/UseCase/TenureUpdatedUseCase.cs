@@ -5,13 +5,13 @@ using MtfhReportingDataListener.UseCase.Interfaces;
 using Hackney.Core.Logging;
 using System;
 using System.Threading.Tasks;
-using System.Reflection;
 using Hackney.Shared.Tenure.Boundary.Response;
 using Hackney.Shared.Tenure.Domain;
 using Avro;
 using Avro.Generic;
 using System.Linq;
 using System.Collections.Generic;
+using System.Text.Json;
 
 namespace MtfhReportingDataListener.UseCase
 {
@@ -56,38 +56,50 @@ namespace MtfhReportingDataListener.UseCase
             _kafkaGateway.SendDataToKafka(topic, record, schemaWithMetadata);
         }
 
-        public GenericRecord BuildTenureRecord(RecordSchema schema, TenureResponseObject tenureResponse)
+        public GenericRecord PopulateFields(object item, RecordSchema schema)
         {
             var record = new GenericRecord(schema);
-
             schema.Fields.ForEach(field =>
             {
-                Type tenureType = tenureResponse.GetType();
-                PropertyInfo propInfo = tenureType.GetProperty(field.Name);
-
-                var fieldValue = propInfo.GetValue(tenureResponse);
+                var fieldValue = item.GetType().GetProperty(field.Name).GetValue(item);
                 var fieldtype = field.Schema.Tag.ToString();
 
                 if (fieldtype == "String")
                 {
                     record.Add(field.Name, fieldValue.ToString());
-                    return;
                 }
-                if (fieldValue.GetType() == typeof(DateTime))
+                else if (fieldtype == "Enumeration")
+                {
+                    record.Add(field.Name, new GenericEnum((EnumSchema) field.Schema, fieldValue.ToString()));
+                }
+                else if (fieldValue.GetType() == typeof(DateTime))
                 {
                     record.Add(field.Name, UnixTimestampNullable(fieldValue));
-                    return;
                 }
-                if (field.Schema.Name == "array")
+                else if (field.Schema.Name == "array")
                 {
-                    var items = new List<GenericRecord>();
-                    (List<HouseholdMembers>) fieldValue
+                    var fieldValueAsList = (List<HouseholdMembers>) fieldValue;
 
+                    var listRecords = fieldValueAsList.Select(listItem => {
+                        var jsonSchema = (JsonElement) JsonSerializer.Deserialize<object>(field.Schema.ToString());
+                        jsonSchema.TryGetProperty("items", out var itemsSchemaJson);
+                        var itemsSchema = (RecordSchema) Schema.Parse(itemsSchemaJson.ToString());
+                        return PopulateFields(listItem, itemsSchema);
+                    }).ToArray();
+
+                    record.Add(field.Name, listRecords);
                 }
-                record.Add(field.Name, fieldValue);
+                else {
+                    record.Add(field.Name, fieldValue);
+                }
             });
 
             return record;
+        }
+
+        public GenericRecord BuildTenureRecord(RecordSchema schema, TenureResponseObject tenureResponse)
+        {
+            return PopulateFields(tenureResponse, schema);
         }
 
         private int UnixTimestamp(object obj)

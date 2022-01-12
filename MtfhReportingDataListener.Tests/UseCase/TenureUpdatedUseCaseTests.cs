@@ -268,36 +268,6 @@ namespace MtfhReportingDataListener.Tests.UseCase
             Assert.Equal(expectedRecord[nullableBoolFieldName], receivedRecord[nullableBoolFieldName]);
         }
 
-        // [Fact]
-        // public void BuildTenureRecordCanSetIntTypeValuesToAGenericRecord()
-        // {
-        //     var schema = (RecordSchema) Avro.Schema.Parse(@"{
-        //         ""type"": ""record"",
-        //         ""name"": ""TenureInformation"",
-        //         ""fields"": [
-        //            {
-        //              ""name"": ""StartOfTenureDate"",
-        //              ""type"": [""int"", ""null""],
-        //              ""logicalType"": ""date""
-        //            },
-        //            {
-        //              ""name"": ""EndOfTenureDate"",
-        //              ""type"": [""int"", ""null""],
-        //            },
-        //         ]
-        //     }");
-
-        //     var tenure = _tenure;
-
-        //     var expectedRecord = new GenericRecord(schema);
-        //     expectedRecord.Add("StartOfTenureDate", _tenure.StartOfTenureDate);
-        //     expectedRecord.Add("EndOfTenureDate", _tenure.EndOfTenureDate);
-
-        //     var receivedRecord = _sut.BuildTenureRecord(schema, tenure);
-        //     Assert.Equal(expectedRecord["StartOfTenureDate"], receivedRecord["StartOfTenureDate"]);
-        //     Assert.Equal(expectedRecord["EndOfTenureDate"], receivedRecord["EndOfTenureDate"]);
-        // }
-
         [Fact]
         public void BuildTenureRecordCanSetNestedFields()
         {
@@ -365,27 +335,23 @@ namespace MtfhReportingDataListener.Tests.UseCase
                 ]
             }");
 
-            // var receivedHouseholdMembers = (GenericRecord) receivedRecord["HouseholdMembers"];
 
-            // var householdMemberSchema = schema["HouseholdMembers"].Schema;
-            // Console.WriteLine(HouseholdMemberSchema.ToString());
-            // Console.WriteLine(HouseholdMemberSchema.Tag);
-            // var member = new ArraySchema(householdMemberSchema);
-            // var householdMembersSchema =  schema["HouseholdMembers"].Schema;
-            // Console.WriteLine(householdMembersSchema.ToString());
-            // Console.WriteLine(householdMembersSchema.GetType());
-            // Console.WriteLine(householdMembersSchema.Name);
-            // householdMembersSchema.Fields.ForEach(f => Console.WriteLine(f.Name));
             var expectedHouseholdMember = new GenericRecord(householdMemberSchema);
             expectedHouseholdMember.Add("Id", _tenure.HouseholdMembers.First().Id.ToString());
 
             var expectedRecord = new GenericRecord(schema);
-            expectedRecord.Add("HouseholdMembers", new List<GenericRecord>{expectedHouseholdMember});
+            expectedRecord.Add("HouseholdMembers", new GenericRecord[]{expectedHouseholdMember});
 
             var tenure = _tenure;
             tenure.HouseholdMembers = new List<HouseholdMembers>{tenure.HouseholdMembers.First()};
+
             var receivedRecord = _sut.BuildTenureRecord(schema, _tenure);
-            Assert.Equal(expectedRecord, receivedRecord);
+
+            receivedRecord["HouseholdMembers"].Should().BeOfType<GenericRecord[]>();
+
+            var firstRecord = ((GenericRecord[]) receivedRecord["HouseholdMembers"]).ToList().First();
+            firstRecord["Id"].Should().Be(_tenure.HouseholdMembers.First().Id.ToString());
+
         }
 
         [Fact]
@@ -415,7 +381,7 @@ namespace MtfhReportingDataListener.Tests.UseCase
                                             ""type"": ""enum"",
                                             ""symbols"": [
                                                 ""Person"",
-                                                ""Organization""
+                                                ""Organisation""
                                             ]
                                         }
                                     }
@@ -426,10 +392,54 @@ namespace MtfhReportingDataListener.Tests.UseCase
                 ]
             }");
 
-            var receivedRecord = _sut.BuildTenureRecord(schema, _tenure);
-            var receivedHouseholdMembers = (List<HouseholdMembers>) receivedRecord["HouseholdMembers"];
+            var householdMemberSchema = (RecordSchema) Avro.Schema.Parse(@"{
+                ""name"": ""HouseholdMember"",
+                ""type"": ""record"",
+                ""fields"": [
+                    {
+                        ""name"": ""Id"",
+                        ""type"": ""string"",
+                        ""logicalType"": ""uuid""
+                    },
+                     {
+                        ""name"": ""Type"",
+                        ""type"": {
+                            ""name"": ""HouseholdMembersType"",
+                            ""type"": ""enum"",
+                            ""symbols"": [
+                                ""Person"",
+                                ""Organisation""
+                            ]
+                        }
+                    }
+                ]
+            }");
 
-            Assert.Equal(_tenure.HouseholdMembers.First().Type, receivedHouseholdMembers.First().Type);
+            var enumSchema = (EnumSchema) Avro.Schema.Parse(@"{
+                ""name"": ""HouseholdMembersType"",
+                ""type"": ""enum"",
+                ""symbols"": [
+                    ""Person"",
+                    ""Organis   ation""
+                ]
+            }");
+
+
+            var tenure = _tenure;
+            tenure.HouseholdMembers = new List<HouseholdMembers>{tenure.HouseholdMembers.First()};
+            var receivedRecord = _sut.BuildTenureRecord(schema, tenure);
+
+            var receivedHouseholdMembers = (GenericRecord[]) receivedRecord["HouseholdMembers"];
+
+            var expectedHouseholdMember = new GenericRecord(householdMemberSchema);
+            expectedHouseholdMember.Add("Id", _tenure.HouseholdMembers.First().Id.ToString());
+            expectedHouseholdMember.Add("Type", new GenericEnum(enumSchema, _tenure.HouseholdMembers.First().Type.ToString()));
+
+            var expectedRecord = new GenericRecord(schema);
+            expectedRecord.Add("HouseholdMembers", new GenericRecord[]{expectedHouseholdMember});
+
+
+            Assert.Equal(new GenericRecord[]{expectedHouseholdMember}, receivedHouseholdMembers);
         }
 
         private T GetFieldValueFromStringName<T>(string fieldName, TenureResponseObject tenure)

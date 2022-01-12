@@ -114,7 +114,7 @@ public class MockSchemaRegistry
                                     ""type"": ""enum"",
                                     ""symbols"": [
                                         ""Person"",
-                                        ""Organization""
+                                        ""Organisation""
                                     ]
                                 }
                             },
