@@ -61,14 +61,23 @@ namespace MtfhReportingDataListener.UseCase
             var record = new GenericRecord(schema);
             schema.Fields.ForEach(field =>
             {
-                var fieldValue = item.GetType().GetProperty(field.Name).GetValue(item);
-                var fieldtype = field.Schema.Tag.ToString();
+                var type = item.GetType();
+                if (field.Name == "TenuredAssetType")
+                {
+                    Console.WriteLine(item);
+                    Console.WriteLine(item.GetType());
+                    Console.WriteLine(field.Name);
+                    Console.WriteLine(type.GetProperties());
+                }
+                var fieldValue = type.GetProperty(field.Name).GetValue(item);
+                var fieldType = field.Schema.Tag;
 
-                if (fieldtype == "String")
+
+                if (fieldType == Schema.Type.String)
                 {
                     record.Add(field.Name, fieldValue.ToString());
                 }
-                else if (fieldtype == "Enumeration")
+                else if (fieldType == Schema.Type.Enumeration)
                 {
                     record.Add(field.Name, new GenericEnum((EnumSchema) field.Schema, fieldValue.ToString()));
                 }
@@ -76,7 +85,7 @@ namespace MtfhReportingDataListener.UseCase
                 {
                     record.Add(field.Name, UnixTimestampNullable(fieldValue));
                 }
-                else if (field.Schema.Name == "array")
+                else if (fieldType == Schema.Type.Array)
                 {
                     var fieldValueAsList = (List<HouseholdMembers>) fieldValue;
 
@@ -89,6 +98,10 @@ namespace MtfhReportingDataListener.UseCase
                     }).ToArray();
 
                     record.Add(field.Name, listRecords);
+                }
+                else if (fieldType == Schema.Type.Record)
+                {
+                    record.Add(field.Name, PopulateFields(fieldValue, (RecordSchema) field.Schema));
                 }
                 else
                 {

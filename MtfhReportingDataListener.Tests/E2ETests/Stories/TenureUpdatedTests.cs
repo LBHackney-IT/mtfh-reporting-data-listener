@@ -53,10 +53,10 @@ namespace MtfhReportingDataListener.Tests.E2ETests.Stories
         public void ListenerSavesTheUpdatedTenureToKafka()
         {
 
-            this.Given(g => _tenureFixture.GivenTenureHasBeenUpdated()) // Creates a tenure
-                .And(g => _schemaRegistry.GivenThereIsAMatchingSchemaInGlueRegistry()) // and Given there is a matching schema in glue registry -> create registryName, schemaArn, schemaName, schemaDefinition & setup mock
-               .When(w => _steps.WhenTheFunctionIsTriggered(_tenureFixture.TenureId, _mockGlue.Object)) // Calling the lambda
-               .Then(t => _steps.ThenTheUpdatedDataIsSavedToKafka(_steps.TheMessage, _schemaRegistry.SchemaDefinition)) // assertion -> registry & schema details
+            this.Given(g => _tenureFixture.GivenTenureHasBeenUpdated())
+                .And(g => _schemaRegistry.GivenThereIsAMatchingSchemaInGlueRegistry())
+               .When(w => _steps.WhenTheFunctionIsTriggered(_tenureFixture.TenureId, _mockGlue.Object))
+               .Then(t => _steps.ThenTheUpdatedDataIsSavedToKafka(_steps.TheMessage, _schemaRegistry.SchemaDefinition))
                .BDDfy();
         }
 

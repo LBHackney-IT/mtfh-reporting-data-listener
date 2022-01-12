@@ -26,7 +26,6 @@ public class MockSchemaRegistry
         SetSchemaEnvVariables();
     }
 
-
     public void GivenThereIsAMatchingSchemaInGlueRegistry()
     {
 
@@ -147,6 +146,48 @@ public class MockSchemaRegistry
                             }
                         ]
                     }
+                }
+            },
+            {
+                ""name"": ""TenuredAsset"",
+                ""type"": {
+                    ""type"": ""record"",
+                    ""name"": ""TenuredAsset"",
+                    ""fields"": [
+                    {
+                        ""name"": ""Id"",
+                        ""type"": ""string"",
+                        ""logicalType"": ""uuid""
+                    },
+                    {
+                        ""name"": ""TenuredAssetType"",
+                        ""type"": [{
+                        ""name"": ""TenuredAssetType"",
+                        ""type"": ""enum"",
+                        ""symbols"": [
+                            ""Block"",
+                            ""Concierge"",
+                            ""Dwelling"",
+                            ""LettableNonDwelling"",
+                            ""MediumRiseBlock"",
+                            ""NA"",
+                            ""TravellerSite""
+                        ]
+                        }, ""null""]
+                    },
+                    {
+                        ""name"": ""FullAddress"",
+                        ""type"": ""string""
+                    },
+                    {
+                        ""name"": ""Uprn"",
+                        ""type"": ""string""
+                    },
+                    {
+                        ""name"": ""PropertyReference"",
+                        ""type"": ""string""
+                    }
+                    ]
                 }
             }
         ]}";

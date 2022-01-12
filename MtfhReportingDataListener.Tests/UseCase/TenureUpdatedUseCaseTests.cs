@@ -164,15 +164,10 @@ namespace MtfhReportingDataListener.Tests.UseCase
                 ]
             }");
 
-            var tenure = _tenure;
-
-            var expectedRecord = new GenericRecord(schema);
-            expectedRecord.Add("Id", _tenure.Id);
-
-            var receivedRecord = _sut.BuildTenureRecord(schema, tenure);
+            var receivedRecord = _sut.BuildTenureRecord(schema, _tenure);
 
 
-            Assert.Equal(expectedRecord["Id"].ToString(), receivedRecord["Id"]);
+            Assert.Equal(_tenure.Id.ToString(), receivedRecord["Id"]);
         }
 
 
@@ -195,17 +190,10 @@ namespace MtfhReportingDataListener.Tests.UseCase
                 ]
             }");
 
-            var tenure = _tenure;
+            var receivedRecord = _sut.BuildTenureRecord(schema, _tenure);
 
-            var expectedRecord = new GenericRecord(schema);
-            expectedRecord.Add("Id", _tenure.Id);
-            expectedRecord.Add("PaymentReference", _tenure.PaymentReference);
-
-            var receivedRecord = _sut.BuildTenureRecord(schema, tenure);
-
-
-            Assert.Equal(expectedRecord["Id"].ToString(), receivedRecord["Id"]);
-            Assert.Equal(expectedRecord["PaymentReference"], receivedRecord["PaymentReference"]);
+            Assert.Equal(_tenure.Id.ToString(), receivedRecord["Id"]);
+            Assert.Equal(_tenure.PaymentReference, receivedRecord["PaymentReference"]);
         }
 
         [Fact]
@@ -254,18 +242,13 @@ namespace MtfhReportingDataListener.Tests.UseCase
                 ]
             }}");
 
-            var tenure = _tenure;
-            var fieldValue = GetFieldValueFromStringName<bool>(nullableBoolFieldName, tenure);
+            var fieldValue = GetFieldValueFromStringName<bool>(nullableBoolFieldName, _tenure);
 
-            var expectedRecord = new GenericRecord(schema);
-            expectedRecord.Add("IsActive", tenure.IsActive);
-            expectedRecord.Add(nullableBoolFieldName, fieldValue);
-
-            var receivedRecord = _sut.BuildTenureRecord(schema, tenure);
+            var receivedRecord = _sut.BuildTenureRecord(schema, _tenure);
 
 
-            Assert.Equal(expectedRecord["IsActive"], receivedRecord["IsActive"]);
-            Assert.Equal(expectedRecord[nullableBoolFieldName], receivedRecord[nullableBoolFieldName]);
+            Assert.Equal(_tenure.IsActive, receivedRecord["IsActive"]);
+            Assert.Equal(fieldValue, receivedRecord[nullableBoolFieldName]);
         }
 
         [Fact]
@@ -291,9 +274,9 @@ namespace MtfhReportingDataListener.Tests.UseCase
                 }");
 
             var receivedRecord = _sut.BuildTenureRecord(schema, _tenure);
-            var receivedTenureType = (TenureType) receivedRecord["TenureType"];
+            var receivedTenureType = (GenericRecord) receivedRecord["TenureType"];
 
-            Assert.Equal(_tenure.TenureType.Code, receivedTenureType.Code);
+            Assert.Equal(_tenure.TenureType.Code, receivedTenureType["Code"]);
         }
 
         [Fact]
@@ -345,12 +328,12 @@ namespace MtfhReportingDataListener.Tests.UseCase
             var tenure = _tenure;
             tenure.HouseholdMembers = new List<HouseholdMembers> { tenure.HouseholdMembers.First() };
 
-            var receivedRecord = _sut.BuildTenureRecord(schema, _tenure);
+            var receivedRecord = _sut.BuildTenureRecord(schema, tenure);
 
             receivedRecord["HouseholdMembers"].Should().BeOfType<GenericRecord[]>();
 
             var firstRecord = ((GenericRecord[]) receivedRecord["HouseholdMembers"]).ToList().First();
-            firstRecord["Id"].Should().Be(_tenure.HouseholdMembers.First().Id.ToString());
+            firstRecord["Id"].Should().Be(tenure.HouseholdMembers.First().Id.ToString());
 
         }
 
@@ -442,6 +425,81 @@ namespace MtfhReportingDataListener.Tests.UseCase
             Assert.Equal(new GenericRecord[] { expectedHouseholdMember }, receivedHouseholdMembers);
         }
 
+        [Fact]
+        public void BuildTenureCanHandleNestedObjects()
+        {
+            var schema = (RecordSchema) Avro.Schema.Parse(@"{
+                ""type"": ""record"",
+                ""name"": ""TenureInformation"",
+                ""fields"": [
+                    {
+                    ""name"": ""TenuredAsset"",
+                    ""type"": {
+                        ""type"": ""record"",
+                        ""name"": ""TenuredAsset"",
+                        ""fields"": [
+                        {
+                            ""name"": ""Id"",
+                            ""type"": ""string"",
+                            ""logicalType"": ""uuid""
+                        },
+                        {
+                            ""name"": ""TenuredAssetType"",
+                            ""type"": [{
+                            ""name"": ""TenuredAssetType"",
+                            ""type"": ""enum"",
+                            ""symbols"": [
+                                ""Block"",
+                                ""Concierge"",
+                                ""Dwelling"",
+                                ""LettableNonDwelling"",
+                                ""MediumRiseBlock"",
+                                ""NA"",
+                                ""TravellerSite""
+                            ]
+                            }, ""null""]
+                        },
+                        ]
+                    }
+                }
+                ]
+            }");
+
+            var tenuredAssetSchema = (RecordSchema) Avro.Schema.Parse(@"{
+                ""type"": ""record"",
+                ""name"": ""TenuredAsset"",
+                ""fields"": [
+                {
+                    ""name"": ""Id"",
+                    ""type"": ""string"",
+                    ""logicalType"": ""uuid""
+                },
+                {
+                    ""name"": ""Type"",
+                    ""type"": [{
+                    ""name"": ""TenuredAssetType"",
+                    ""type"": ""enum"",
+                    ""symbols"": [
+                        ""Block"",
+                        ""Concierge"",
+                        ""Dwelling"",
+                        ""LettableNonDwelling"",
+                        ""MediumRiseBlock"",
+                        ""NA"",
+                        ""TravellerSite""
+                    ]
+                    }, ""null""]
+                }
+                ]
+            }");
+
+            var receivedRecord = _sut.BuildTenureRecord(schema, _tenure);
+            receivedRecord["TenuredAsset"].Should().BeOfType<GenericRecord>();
+
+            ((GenericRecord) receivedRecord["TenuredAsset"])["Id"].Should().Be(_tenure.TenuredAsset.Id);
+            ((GenericRecord) receivedRecord["TenuredAsset"])["TenuredAssetType"].Should().Be(_tenure.TenuredAsset.Type);
+
+        }
         private T GetFieldValueFromStringName<T>(string fieldName, TenureResponseObject tenure)
         {
             return (T) typeof(TenureResponseObject).GetProperty(fieldName).GetValue(tenure);
