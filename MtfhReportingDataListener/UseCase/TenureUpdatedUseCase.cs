@@ -80,7 +80,8 @@ namespace MtfhReportingDataListener.UseCase
                 {
                     var fieldValueAsList = (List<HouseholdMembers>) fieldValue;
 
-                    var listRecords = fieldValueAsList.Select(listItem => {
+                    var listRecords = fieldValueAsList.Select(listItem =>
+                    {
                         var jsonSchema = (JsonElement) JsonSerializer.Deserialize<object>(field.Schema.ToString());
                         jsonSchema.TryGetProperty("items", out var itemsSchemaJson);
                         var itemsSchema = (RecordSchema) Schema.Parse(itemsSchemaJson.ToString());
@@ -89,7 +90,8 @@ namespace MtfhReportingDataListener.UseCase
 
                     record.Add(field.Name, listRecords);
                 }
-                else {
+                else
+                {
                     record.Add(field.Name, fieldValue);
                 }
             });

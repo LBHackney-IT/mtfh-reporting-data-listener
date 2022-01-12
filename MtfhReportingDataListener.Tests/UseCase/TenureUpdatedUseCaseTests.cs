@@ -340,10 +340,10 @@ namespace MtfhReportingDataListener.Tests.UseCase
             expectedHouseholdMember.Add("Id", _tenure.HouseholdMembers.First().Id.ToString());
 
             var expectedRecord = new GenericRecord(schema);
-            expectedRecord.Add("HouseholdMembers", new GenericRecord[]{expectedHouseholdMember});
+            expectedRecord.Add("HouseholdMembers", new GenericRecord[] { expectedHouseholdMember });
 
             var tenure = _tenure;
-            tenure.HouseholdMembers = new List<HouseholdMembers>{tenure.HouseholdMembers.First()};
+            tenure.HouseholdMembers = new List<HouseholdMembers> { tenure.HouseholdMembers.First() };
 
             var receivedRecord = _sut.BuildTenureRecord(schema, _tenure);
 
@@ -426,7 +426,7 @@ namespace MtfhReportingDataListener.Tests.UseCase
 
 
             var tenure = _tenure;
-            tenure.HouseholdMembers = new List<HouseholdMembers>{tenure.HouseholdMembers.First()};
+            tenure.HouseholdMembers = new List<HouseholdMembers> { tenure.HouseholdMembers.First() };
             var receivedRecord = _sut.BuildTenureRecord(schema, tenure);
 
             var receivedHouseholdMembers = (GenericRecord[]) receivedRecord["HouseholdMembers"];
@@ -436,10 +436,10 @@ namespace MtfhReportingDataListener.Tests.UseCase
             expectedHouseholdMember.Add("Type", new GenericEnum(enumSchema, _tenure.HouseholdMembers.First().Type.ToString()));
 
             var expectedRecord = new GenericRecord(schema);
-            expectedRecord.Add("HouseholdMembers", new GenericRecord[]{expectedHouseholdMember});
+            expectedRecord.Add("HouseholdMembers", new GenericRecord[] { expectedHouseholdMember });
 
 
-            Assert.Equal(new GenericRecord[]{expectedHouseholdMember}, receivedHouseholdMembers);
+            Assert.Equal(new GenericRecord[] { expectedHouseholdMember }, receivedHouseholdMembers);
         }
 
         private T GetFieldValueFromStringName<T>(string fieldName, TenureResponseObject tenure)
