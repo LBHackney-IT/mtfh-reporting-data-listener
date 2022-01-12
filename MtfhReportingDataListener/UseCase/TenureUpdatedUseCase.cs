@@ -7,8 +7,11 @@ using System;
 using System.Threading.Tasks;
 using System.Reflection;
 using Hackney.Shared.Tenure.Boundary.Response;
+using Hackney.Shared.Tenure.Domain;
 using Avro;
 using Avro.Generic;
+using System.Linq;
+using System.Collections.Generic;
 
 namespace MtfhReportingDataListener.UseCase
 {
@@ -59,12 +62,10 @@ namespace MtfhReportingDataListener.UseCase
 
             schema.Fields.ForEach(field =>
             {
-                var tenure = AsTenure(tenureResponse);
-
-                Type tenureType = typeof(Tenure);
+                Type tenureType = tenureResponse.GetType();
                 PropertyInfo propInfo = tenureType.GetProperty(field.Name);
 
-                var fieldValue = propInfo.GetValue(tenure);
+                var fieldValue = propInfo.GetValue(tenureResponse);
                 var fieldtype = field.Schema.Tag.ToString();
 
                 if (fieldtype == "String")
@@ -72,60 +73,21 @@ namespace MtfhReportingDataListener.UseCase
                     record.Add(field.Name, fieldValue.ToString());
                     return;
                 }
+                if (fieldValue.GetType() == typeof(DateTime))
+                {
+                    record.Add(field.Name, UnixTimestampNullable(fieldValue));
+                    return;
+                }
+                if (field.Schema.Name == "array")
+                {
+                    var items = new List<GenericRecord>();
+                    (List<HouseholdMembers>) fieldValue
 
+                }
                 record.Add(field.Name, fieldValue);
             });
 
             return record;
-        }
-
-        public class Tenure : TenureResponseObject
-        {
-            private int? _subletEndDate;
-            private int? _potentialEndDate;
-            private int? _evictionDate;
-            private DateTime? _successionDate;
-            public new int? SubletEndDate
-            {
-                get => _subletEndDate;
-                set
-                {
-                    _subletEndDate = UnixTimestampNullable(value);
-                }
-            }
-
-            public new int? PotentialEndDate
-            {
-                get => _potentialEndDate;
-                set
-                {
-                    _potentialEndDate = UnixTimestampNullable(value);
-                }
-            }
-
-            public new int? EvictionDate
-            {
-                get => _evictionDate;
-                set
-                {
-                    _evictionDate = UnixTimestampNullable(value);
-                }
-            }
-
-            public new DateTime? SuccessionDate
-            {
-                get => UnixTimestampNullable(_successionDate);
-                set
-                {
-                    _successionDate = value;
-                }
-            }
-
-            private int? UnixTimestampNullable(object obj)
-            {
-                var date = (DateTime?) obj;
-                return (int?) (date?.Subtract(new DateTime(1970, 1, 1)))?.TotalSeconds;
-            }
         }
 
         private int UnixTimestamp(object obj)
@@ -138,27 +100,6 @@ namespace MtfhReportingDataListener.UseCase
         {
             var date = (DateTime?) obj;
             return (int?) (date?.Subtract(new DateTime(1970, 1, 1)))?.TotalSeconds;
-        }
-
-        public Tenure AsTenure(TenureResponseObject tenureResponse)
-        {
-            var tenure = new Tenure();
-
-            PropertyInfo[] properties = tenure.GetType().GetProperties();
-            foreach (var property in properties)
-            {
-                try
-                {
-                    property.SetValue(tenure, property.GetValue(tenureResponse));
-                }
-                catch(Exception ex)
-                {
-                    Console.WriteLine($"Failing on {property.Name}");
-                    Console.WriteLine(ex.Message);
-                }
-            }
-
-            return tenure;
         }
     }
 }
