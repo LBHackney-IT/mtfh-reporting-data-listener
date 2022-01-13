@@ -152,7 +152,7 @@ namespace MtfhReportingDataListener.Tests.UseCase
         [Fact]
         public void BuildTenureRecordCanSetOneStringValueToAGenericRecord()
         {
-            var schema = (RecordSchema) Avro.Schema.Parse(@"{
+            var schema = @"{
                 ""type"": ""record"",
                 ""name"": ""TenureInformation"",
                 ""fields"": [
@@ -162,10 +162,9 @@ namespace MtfhReportingDataListener.Tests.UseCase
                      ""logicalType"": ""uuid""
                    }
                 ]
-            }");
+            }";
 
             var receivedRecord = _sut.BuildTenureRecord(schema, _tenure);
-
 
             Assert.Equal(_tenure.Id.ToString(), receivedRecord["Id"]);
         }
@@ -174,7 +173,7 @@ namespace MtfhReportingDataListener.Tests.UseCase
         [Fact]
         public void BuildTenureRecordCanSetMultipleStringsToAGenericRecord()
         {
-            var schema = (RecordSchema) Avro.Schema.Parse(@"{
+            var schema = @"{
                 ""type"": ""record"",
                 ""name"": ""TenureInformation"",
                 ""fields"": [
@@ -188,7 +187,7 @@ namespace MtfhReportingDataListener.Tests.UseCase
                      ""type"": ""string""
                    },
                 ]
-            }");
+            }";
 
             var receivedRecord = _sut.BuildTenureRecord(schema, _tenure);
 
@@ -199,7 +198,7 @@ namespace MtfhReportingDataListener.Tests.UseCase
         [Fact]
         public void BuildTenureRecordCanConvertDatesToUnixTimestamps()
         {
-            var schema = (RecordSchema) Avro.Schema.Parse(@"{
+            var schema = @"{
                 ""type"": ""record"",
                 ""name"": ""TenureInformation"",
                 ""fields"": [
@@ -213,7 +212,7 @@ namespace MtfhReportingDataListener.Tests.UseCase
                      ""type"": [""null"", ""int""]
                    },
                 ]
-            }");
+            }";
 
             var tenure = _tenure;
             tenure.SuccessionDate = new DateTime(1970, 01, 02);
@@ -227,7 +226,7 @@ namespace MtfhReportingDataListener.Tests.UseCase
         [InlineData("IsTenanted")]
         public void BuildTenureRecordCanSetBooleanTypeValuesToAGenericRecord(string nullableBoolFieldName)
         {
-            var schema = (RecordSchema) Avro.Schema.Parse(@$"{{
+            var schema = @$"{{
                 ""type"": ""record"",
                 ""name"": ""TenureInformation"",
                 ""fields"": [
@@ -240,12 +239,11 @@ namespace MtfhReportingDataListener.Tests.UseCase
                      ""type"": [""boolean"", ""null""]
                    }}
                 ]
-            }}");
+            }}";
 
             var fieldValue = GetFieldValueFromStringName<bool>(nullableBoolFieldName, _tenure);
 
             var receivedRecord = _sut.BuildTenureRecord(schema, _tenure);
-
 
             Assert.Equal(_tenure.IsActive, receivedRecord["IsActive"]);
             Assert.Equal(fieldValue, receivedRecord[nullableBoolFieldName]);
@@ -254,7 +252,7 @@ namespace MtfhReportingDataListener.Tests.UseCase
         [Fact]
         public void BuildTenureRecordCanSetNestedFields()
         {
-            var schema = (RecordSchema) Avro.Schema.Parse(@"{
+            var schema = @"{
                     ""type"": ""record"",
                     ""name"": ""TenureInformation"",
                     ""fields"": [
@@ -271,7 +269,7 @@ namespace MtfhReportingDataListener.Tests.UseCase
                             }
                         }
                     ]
-                }");
+                }";
 
             var receivedRecord = _sut.BuildTenureRecord(schema, _tenure);
             var receivedTenureType = (GenericRecord) receivedRecord["TenureType"];
@@ -282,7 +280,7 @@ namespace MtfhReportingDataListener.Tests.UseCase
         [Fact]
         public void BuildTenureRecordCanSetLists()
         {
-            var schema = (RecordSchema) Avro.Schema.Parse(@"{
+            var schema = @"{
                 ""type"": ""record"",
                 ""name"": ""TenureInformation"",
                 ""fields"": [
@@ -304,32 +302,12 @@ namespace MtfhReportingDataListener.Tests.UseCase
                         }
                     }
                 ]
-            }");
-
-            var householdMemberSchema = (RecordSchema) Avro.Schema.Parse(@"{
-                ""name"": ""HouseholdMember"",
-                ""type"": ""record"",
-                ""fields"": [
-                    {
-                        ""name"": ""Id"",
-                        ""type"": ""string"",
-                        ""logicalType"": ""uuid""
-                    }
-                ]
-            }");
-
-
-            var expectedHouseholdMember = new GenericRecord(householdMemberSchema);
-            expectedHouseholdMember.Add("Id", _tenure.HouseholdMembers.First().Id.ToString());
-
-            var expectedRecord = new GenericRecord(schema);
-            expectedRecord.Add("HouseholdMembers", new GenericRecord[] { expectedHouseholdMember });
+            }";
 
             var tenure = _tenure;
             tenure.HouseholdMembers = new List<HouseholdMembers> { tenure.HouseholdMembers.First() };
 
             var receivedRecord = _sut.BuildTenureRecord(schema, tenure);
-
             receivedRecord["HouseholdMembers"].Should().BeOfType<GenericRecord[]>();
 
             var firstRecord = ((GenericRecord[]) receivedRecord["HouseholdMembers"]).ToList().First();
@@ -340,7 +318,7 @@ namespace MtfhReportingDataListener.Tests.UseCase
         [Fact]
         public void BuildTenureRecordCanAssignEnums()
         {
-            var schema = (RecordSchema) Avro.Schema.Parse(@"{
+            var schema = @"{
                 ""type"": ""record"",
                 ""name"": ""TenureInformation"",
                 ""fields"": [
@@ -373,62 +351,21 @@ namespace MtfhReportingDataListener.Tests.UseCase
                         }
                     }
                 ]
-            }");
-
-            var householdMemberSchema = (RecordSchema) Avro.Schema.Parse(@"{
-                ""name"": ""HouseholdMember"",
-                ""type"": ""record"",
-                ""fields"": [
-                    {
-                        ""name"": ""Id"",
-                        ""type"": ""string"",
-                        ""logicalType"": ""uuid""
-                    },
-                     {
-                        ""name"": ""Type"",
-                        ""type"": {
-                            ""name"": ""HouseholdMembersType"",
-                            ""type"": ""enum"",
-                            ""symbols"": [
-                                ""Person"",
-                                ""Organisation""
-                            ]
-                        }
-                    }
-                ]
-            }");
-
-            var enumSchema = (EnumSchema) Avro.Schema.Parse(@"{
-                ""name"": ""HouseholdMembersType"",
-                ""type"": ""enum"",
-                ""symbols"": [
-                    ""Person"",
-                    ""Organis   ation""
-                ]
-            }");
-
+            }";
 
             var tenure = _tenure;
             tenure.HouseholdMembers = new List<HouseholdMembers> { tenure.HouseholdMembers.First() };
             var receivedRecord = _sut.BuildTenureRecord(schema, tenure);
+            var receivedHouseholdMember = ((GenericRecord[]) receivedRecord["HouseholdMembers"])[0];
 
-            var receivedHouseholdMembers = (GenericRecord[]) receivedRecord["HouseholdMembers"];
-
-            var expectedHouseholdMember = new GenericRecord(householdMemberSchema);
-            expectedHouseholdMember.Add("Id", _tenure.HouseholdMembers.First().Id.ToString());
-            expectedHouseholdMember.Add("Type", new GenericEnum(enumSchema, _tenure.HouseholdMembers.First().Type.ToString()));
-
-            var expectedRecord = new GenericRecord(schema);
-            expectedRecord.Add("HouseholdMembers", new GenericRecord[] { expectedHouseholdMember });
-
-
-            Assert.Equal(new GenericRecord[] { expectedHouseholdMember }, receivedHouseholdMembers);
+            receivedHouseholdMember["Id"].Should().Be(_tenure.HouseholdMembers.First().Id.ToString());
+            ((GenericEnum) receivedHouseholdMember["Type"]).Value.Should().Be(_tenure.HouseholdMembers.First().Type.ToString());
         }
 
         [Fact]
         public void BuildTenureCanHandleNestedObjects()
         {
-            var schema = (RecordSchema) Avro.Schema.Parse(@"{
+            var schema = @"{
                 ""type"": ""record"",
                 ""name"": ""TenureInformation"",
                 ""fields"": [
@@ -463,7 +400,7 @@ namespace MtfhReportingDataListener.Tests.UseCase
                     }
                 }
                 ]
-            }");
+            }";
 
             var receivedRecord = _sut.BuildTenureRecord(schema, _tenure);
             var receivedRecordEnum = (GenericEnum) ((GenericRecord) receivedRecord["TenuredAsset"])["Type"];

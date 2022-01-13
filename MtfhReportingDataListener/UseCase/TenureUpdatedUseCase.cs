@@ -33,33 +33,32 @@ namespace MtfhReportingDataListener.UseCase
         {
             if (message is null) throw new ArgumentNullException(nameof(message));
 
-            // Get the tenure
             var tenure = await _tenureInfoApi.GetTenureInfoByIdAsync(message.EntityId, message.CorrelationId)
                                              .ConfigureAwait(false);
             if (tenure is null) throw new EntityNotFoundException<TenureResponseObject>(message.EntityId);
 
-            // Get the schema
             var schemaArn = Environment.GetEnvironmentVariable("SCHEMA_ARN");
             var registryName = Environment.GetEnvironmentVariable("REGISTRY_NAME");
             var schemaName = Environment.GetEnvironmentVariable("SCHEMA_NAME");
             var schema = await _glueGateway.GetSchema(registryName, schemaArn, schemaName).ConfigureAwait(false);
 
-            // (subject, version, Id, string) -> get from glue?
             var schemaWithMetadata = new Confluent.SchemaRegistry.Schema("tenure", 1, 1, schema.Schema);
-            var logMessageSchema = (RecordSchema) Schema.Parse(schema.Schema);
 
-            // build record here
-            var record = BuildTenureRecord(logMessageSchema, tenure);
+            var record = BuildTenureRecord(schema.Schema, tenure);
 
-            // Send the data in Kafka
             var topic = "mtfh-reporting-data-listener";
             _kafkaGateway.SendDataToKafka(topic, record, schemaWithMetadata);
         }
 
-        public GenericRecord PopulateFields(object item, RecordSchema schema)
+        public GenericRecord BuildTenureRecord(string schema, TenureResponseObject tenureResponse)
         {
-            var record = new GenericRecord(schema);
-            schema.Fields.ForEach(field =>
+            return PopulateFields(tenureResponse, Schema.Parse(schema));
+        }
+
+        public GenericRecord PopulateFields(object item, Schema schema)
+        {
+            var record = new GenericRecord((RecordSchema) schema);
+            ((RecordSchema) schema).Fields.ForEach(field =>
             {
                 var fieldValue = item.GetType().GetProperty(field.Name).GetValue(item);
                 var fieldSchema = field.Schema;
@@ -72,14 +71,9 @@ namespace MtfhReportingDataListener.UseCase
                         record.Add(field.Name, null);
                         return;
                     }
-                    else
-                    {
-                        var jsonSchema = (JsonElement) JsonSerializer.Deserialize<object>(field.Schema.ToString());
-                        jsonSchema.TryGetProperty("type", out var unionList);
-                        var notNullSchema = unionList.EnumerateArray().First(type => type.ToString() != "null").ToString();
-                        fieldSchema = Schema.Parse(notNullSchema);
-                        fieldType = fieldSchema.Tag;
-                    }
+
+                    fieldSchema = GetNonNullablePartOfNullableSchema(field.Schema);
+                    fieldType = fieldSchema.Tag;
                 }
 
                 if (fieldType == Schema.Type.String)
@@ -97,20 +91,14 @@ namespace MtfhReportingDataListener.UseCase
                 else if (fieldType == Schema.Type.Array)
                 {
                     var fieldValueAsList = (List<HouseholdMembers>) fieldValue;
+                    var itemsSchema = GetSchemaForArrayItems(fieldSchema);
+                    var recordsList = fieldValueAsList.Select(listItem => PopulateFields(listItem, itemsSchema)).ToArray();
 
-                    var listRecords = fieldValueAsList.Select(listItem =>
-                    {
-                        var jsonSchema = (JsonElement) JsonSerializer.Deserialize<object>(fieldSchema.ToString());
-                        jsonSchema.TryGetProperty("items", out var itemsSchemaJson);
-                        var itemsSchema = (RecordSchema) Schema.Parse(itemsSchemaJson.ToString());
-                        return PopulateFields(listItem, itemsSchema);
-                    }).ToArray();
-
-                    record.Add(field.Name, listRecords);
+                    record.Add(field.Name, recordsList);
                 }
                 else if (fieldType == Schema.Type.Record)
                 {
-                    record.Add(field.Name, PopulateFields(fieldValue, (RecordSchema) fieldSchema));
+                    record.Add(field.Name, PopulateFields(fieldValue, fieldSchema));
                 }
                 else
                 {
@@ -121,15 +109,19 @@ namespace MtfhReportingDataListener.UseCase
             return record;
         }
 
-        public GenericRecord BuildTenureRecord(RecordSchema schema, TenureResponseObject tenureResponse)
+        private Schema GetSchemaForArrayItems(Schema arraySchema)
         {
-            return PopulateFields(tenureResponse, schema);
+            var jsonSchema = (JsonElement) JsonSerializer.Deserialize<object>(arraySchema.ToString());
+            jsonSchema.TryGetProperty("items", out var itemsSchemaJson);
+            return Schema.Parse(itemsSchemaJson.ToString());
         }
 
-        private int UnixTimestamp(object obj)
+        private Schema GetNonNullablePartOfNullableSchema(Schema nullableSchema)
         {
-            var date = (DateTime) obj;
-            return (int) (date.Subtract(new DateTime(1970, 1, 1))).TotalSeconds;
+            var jsonSchema = (JsonElement) JsonSerializer.Deserialize<object>(nullableSchema.ToString());
+            jsonSchema.TryGetProperty("type", out var unionList);
+            var notNullSchema = unionList.EnumerateArray().First(type => type.ToString() != "null").ToString();
+            return Schema.Parse(notNullSchema);
         }
 
         private int? UnixTimestampNullable(object obj)
