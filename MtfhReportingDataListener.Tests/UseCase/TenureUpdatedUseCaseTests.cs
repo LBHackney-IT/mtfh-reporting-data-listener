@@ -444,7 +444,7 @@ namespace MtfhReportingDataListener.Tests.UseCase
                             ""logicalType"": ""uuid""
                         },
                         {
-                            ""name"": ""TenuredAssetType"",
+                            ""name"": ""Type"",
                             ""type"": [{
                             ""name"": ""TenuredAssetType"",
                             ""type"": ""enum"",
@@ -465,39 +465,12 @@ namespace MtfhReportingDataListener.Tests.UseCase
                 ]
             }");
 
-            var tenuredAssetSchema = (RecordSchema) Avro.Schema.Parse(@"{
-                ""type"": ""record"",
-                ""name"": ""TenuredAsset"",
-                ""fields"": [
-                {
-                    ""name"": ""Id"",
-                    ""type"": ""string"",
-                    ""logicalType"": ""uuid""
-                },
-                {
-                    ""name"": ""Type"",
-                    ""type"": [{
-                        ""name"": ""TenuredAssetType"",
-                        ""type"": ""enum"",
-                        ""symbols"": [
-                            ""Block"",
-                            ""Concierge"",
-                            ""Dwelling"",
-                            ""LettableNonDwelling"",
-                            ""MediumRiseBlock"",
-                            ""NA"",
-                            ""TravellerSite""
-                        ]
-                    }, ""null""]
-                }
-                ]
-            }");
-
             var receivedRecord = _sut.BuildTenureRecord(schema, _tenure);
+            var receivedRecordEnum = (GenericEnum) ((GenericRecord) receivedRecord["TenuredAsset"])["Type"];
             receivedRecord["TenuredAsset"].Should().BeOfType<GenericRecord>();
 
-            ((GenericRecord) receivedRecord["TenuredAsset"])["Id"].Should().Be(_tenure.TenuredAsset.Id);
-            ((GenericRecord) receivedRecord["TenuredAsset"])["TenuredAssetType"].Should().Be(_tenure.TenuredAsset.Type);
+            ((GenericRecord) receivedRecord["TenuredAsset"])["Id"].Should().Be(_tenure.TenuredAsset.Id.ToString());
+            receivedRecordEnum.Value.Should().Be(_tenure.TenuredAsset.Type.ToString());
 
         }
         private T GetFieldValueFromStringName<T>(string fieldName, TenureResponseObject tenure)

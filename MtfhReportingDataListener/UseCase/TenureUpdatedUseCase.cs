@@ -61,17 +61,7 @@ namespace MtfhReportingDataListener.UseCase
             var record = new GenericRecord(schema);
             schema.Fields.ForEach(field =>
             {
-                object fieldValue = null;
-                try
-                {
-                    fieldValue = item.GetType().GetProperty(field.Name).GetValue(item);
-                }
-                catch
-                {
-                    Console.WriteLine(field.Name);
-                    Console.WriteLine(item);
-
-                }
+                var fieldValue = item.GetType().GetProperty(field.Name).GetValue(item);
                 var fieldSchema = field.Schema;
                 var fieldType = fieldSchema.Tag;
 
