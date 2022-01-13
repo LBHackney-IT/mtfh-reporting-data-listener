@@ -56,7 +56,7 @@ namespace MtfhReportingDataListener.Tests.E2ETests.Stories
             this.Given(g => _tenureFixture.GivenTenureHasBeenUpdated())
                 .And(g => _schemaRegistry.GivenThereIsAMatchingSchemaInGlueRegistry())
                .When(w => _steps.WhenTheFunctionIsTriggered(_tenureFixture.TenureId, _mockGlue.Object))
-               .Then(t => _steps.ThenTheUpdatedDataIsSavedToKafka(_steps.TheMessage, _schemaRegistry.SchemaDefinition))
+               .Then(t => _steps.ThenTheUpdatedDataIsSavedToKafka(_schemaRegistry.SchemaDefinition, _tenureFixture.ResponseObject))
                .BDDfy();
         }
 

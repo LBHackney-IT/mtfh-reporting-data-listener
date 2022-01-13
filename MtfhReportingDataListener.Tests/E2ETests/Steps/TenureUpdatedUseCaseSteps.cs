@@ -11,6 +11,7 @@ using MtfhReportingDataListener.Infrastructure.Exceptions;
 using System;
 using System.Threading.Tasks;
 using Xunit;
+using System.Linq;
 
 namespace MtfhReportingDataListener.Tests.E2ETests.Steps
 {
@@ -35,7 +36,7 @@ namespace MtfhReportingDataListener.Tests.E2ETests.Steps
             _lastException.Should().BeOfType(typeof(EntityNotFoundException<TenureResponseObject>));
             (_lastException as EntityNotFoundException<TenureResponseObject>).Id.Should().Be(id);
         }
-        public void ThenTheUpdatedDataIsSavedToKafka(SQSEvent.SQSMessage message, string schemaDefinition)
+        public void ThenTheUpdatedDataIsSavedToKafka(string schemaDefinition, TenureResponseObject tenure)
         {
             var consumerconfig = new ConsumerConfig
             {
@@ -55,15 +56,43 @@ namespace MtfhReportingDataListener.Tests.E2ETests.Steps
                 .Build()
             )
             {
-                consumer.Subscribe(topic);
-                var r = consumer.Consume(TimeSpan.FromSeconds(30));
-                Console.WriteLine(r?.Message.Value);
-                Assert.NotNull(r?.Message);
-                //Assert.Equal(message, r.Message.Value);
-                consumer.Close();
+                try
+                {
+                    consumer.Subscribe(topic);
+                    var r = consumer.Consume(TimeSpan.FromSeconds(30));
+                    Assert.NotNull(r?.Message);
+                    var receivedRecord = (GenericRecord) r.Message.Value;
+                    CheckRecord(receivedRecord, tenure);
+                }
+                finally
+                {
+                    consumer.Close();
+                }
             }
         }
 
+        private void CheckRecord(GenericRecord receivedRecord, TenureResponseObject tenure)
+        {
+            receivedRecord["Id"].Should().Be(tenure.Id.ToString());
+            receivedRecord["PaymentReference"].Should().Be(tenure.PaymentReference);
+            receivedRecord["SuccessionDate"].Should().Be((int?) (tenure.SuccessionDate?.Subtract(new DateTime(1970, 1, 1)))?.TotalSeconds);
 
+
+            var tenuredAsset = (GenericRecord) receivedRecord["TenuredAsset"];
+            tenuredAsset["Id"].Should().Be(tenure.TenuredAsset.Id.ToString());
+            ((GenericEnum) tenuredAsset["Type"]).Value.Should().Be(tenure.TenuredAsset.Type.ToString());
+            tenuredAsset["FullAddress"].Should().Be(tenure.TenuredAsset.FullAddress);
+            tenuredAsset["Uprn"].Should().Be(tenure.TenuredAsset.Uprn);
+            tenuredAsset["PropertyReference"].Should().Be(tenure.TenuredAsset.PropertyReference);
+
+            var receivedMember = (GenericRecord) ((object[]) receivedRecord["HouseholdMembers"])[0];
+            var expectedMember = tenure.HouseholdMembers.FirstOrDefault(mem => mem.Id.ToString() == receivedMember["Id"].ToString());
+            expectedMember.Should().NotBeNull();
+            ((GenericEnum) receivedMember["Type"]).Value.Should().Be(expectedMember.Type.ToString());
+            receivedMember["FullName"].Should().Be(expectedMember.FullName);
+            receivedMember["IsResponsible"].Should().Be(expectedMember.IsResponsible);
+            receivedMember["DateOfBirth"].Should().Be((int) expectedMember.DateOfBirth.Subtract(new DateTime(1970, 1, 1)).TotalSeconds);
+            ((GenericEnum) receivedMember["PersonTenureType"]).Value.Should().Be(expectedMember.PersonTenureType.ToString());
+        }
     }
 }
