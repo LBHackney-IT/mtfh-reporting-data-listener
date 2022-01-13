@@ -410,6 +410,26 @@ namespace MtfhReportingDataListener.Tests.UseCase
             receivedRecordEnum.Value.Should().Be(_tenure.TenuredAsset.Type.ToString());
 
         }
+
+        [Fact]
+        public void LogsOutSchemaFieldNameWhenItDoesNotExistInTenure()
+        {
+            var schema = @"{
+                ""type"": ""record"",
+                ""name"": ""TenureInformation"",
+                ""fields"": [
+                   {
+                     ""name"": ""FieldNameNotInTenure"",
+                     ""type"": ""string"",
+                   },
+                ]
+            }";
+
+            Func<GenericRecord> receivedRecord = () => _sut.BuildTenureRecord(schema, _tenure);
+
+            receivedRecord.Should().NotThrow<NullReferenceException>();
+        }
+
         private T GetFieldValueFromStringName<T>(string fieldName, TenureResponseObject tenure)
         {
             return (T) typeof(TenureResponseObject).GetProperty(fieldName).GetValue(tenure);

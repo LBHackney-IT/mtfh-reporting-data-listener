@@ -12,6 +12,7 @@ using Avro.Generic;
 using System.Linq;
 using System.Collections.Generic;
 using System.Text.Json;
+using System.Reflection;
 
 namespace MtfhReportingDataListener.UseCase
 {
@@ -60,9 +61,16 @@ namespace MtfhReportingDataListener.UseCase
             var record = new GenericRecord((RecordSchema) schema);
             ((RecordSchema) schema).Fields.ForEach(field =>
             {
-                var fieldValue = item.GetType().GetProperty(field.Name).GetValue(item);
+                PropertyInfo propInfo = item.GetType().GetProperty(field.Name);
+                if (propInfo == null)
+                {
+                    Console.WriteLine($"Field name: {field.Name} not found in {item}");
+                    return;
+                }
+
+                var fieldValue = propInfo.GetValue(item);
                 var fieldSchema = field.Schema;
-                var fieldType = fieldSchema.Tag;
+                var fieldType = field.Schema.Tag;
 
                 if (fieldType == Schema.Type.Union)
                 {
