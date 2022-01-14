@@ -164,11 +164,10 @@ namespace MtfhReportingDataListener.Tests.UseCase
                 ]
             }";
 
-            var receivedRecord = _sut.BuildTenureRecord(schema, _tenure);
+            var receivedRecord = ExecuteBuildTenureRecord(schema, _tenure);
 
             Assert.Equal(_tenure.Id.ToString(), receivedRecord["Id"]);
         }
-
 
         [Fact]
         public void BuildTenureRecordCanSetMultipleStringsToAGenericRecord()
@@ -189,7 +188,7 @@ namespace MtfhReportingDataListener.Tests.UseCase
                 ]
             }";
 
-            var receivedRecord = _sut.BuildTenureRecord(schema, _tenure);
+            var receivedRecord = ExecuteBuildTenureRecord(schema, _tenure);
 
             Assert.Equal(_tenure.Id.ToString(), receivedRecord["Id"]);
             Assert.Equal(_tenure.PaymentReference, receivedRecord["PaymentReference"]);
@@ -217,7 +216,7 @@ namespace MtfhReportingDataListener.Tests.UseCase
             var tenure = _tenure;
             tenure.SuccessionDate = new DateTime(1970, 01, 02);
 
-            var receivedRecord = _sut.BuildTenureRecord(schema, tenure);
+            var receivedRecord = ExecuteBuildTenureRecord(schema, tenure);
 
             Assert.Equal(86400, receivedRecord["SuccessionDate"]);
         }
@@ -243,7 +242,7 @@ namespace MtfhReportingDataListener.Tests.UseCase
 
             var fieldValue = GetFieldValueFromStringName<bool>(nullableBoolFieldName, _tenure);
 
-            var receivedRecord = _sut.BuildTenureRecord(schema, _tenure);
+            var receivedRecord = ExecuteBuildTenureRecord(schema, _tenure);
 
             Assert.Equal(_tenure.IsActive, receivedRecord["IsActive"]);
             Assert.Equal(fieldValue, receivedRecord[nullableBoolFieldName]);
@@ -271,7 +270,7 @@ namespace MtfhReportingDataListener.Tests.UseCase
                     ]
                 }";
 
-            var receivedRecord = _sut.BuildTenureRecord(schema, _tenure);
+            var receivedRecord = ExecuteBuildTenureRecord(schema, _tenure);
             var receivedTenureType = (GenericRecord) receivedRecord["TenureType"];
 
             Assert.Equal(_tenure.TenureType.Code, receivedTenureType["Code"]);
@@ -307,7 +306,7 @@ namespace MtfhReportingDataListener.Tests.UseCase
             var tenure = _tenure;
             tenure.HouseholdMembers = new List<HouseholdMembers> { tenure.HouseholdMembers.First() };
 
-            var receivedRecord = _sut.BuildTenureRecord(schema, tenure);
+            var receivedRecord = ExecuteBuildTenureRecord(schema, tenure);
             receivedRecord["HouseholdMembers"].Should().BeOfType<GenericRecord[]>();
 
             var firstRecord = ((GenericRecord[]) receivedRecord["HouseholdMembers"]).ToList().First();
@@ -355,7 +354,7 @@ namespace MtfhReportingDataListener.Tests.UseCase
 
             var tenure = _tenure;
             tenure.HouseholdMembers = new List<HouseholdMembers> { tenure.HouseholdMembers.First() };
-            var receivedRecord = _sut.BuildTenureRecord(schema, tenure);
+            var receivedRecord = ExecuteBuildTenureRecord(schema, tenure);
             var receivedHouseholdMember = ((GenericRecord[]) receivedRecord["HouseholdMembers"])[0];
 
             receivedHouseholdMember["Id"].Should().Be(_tenure.HouseholdMembers.First().Id.ToString());
@@ -402,7 +401,7 @@ namespace MtfhReportingDataListener.Tests.UseCase
                 ]
             }";
 
-            var receivedRecord = _sut.BuildTenureRecord(schema, _tenure);
+            var receivedRecord = ExecuteBuildTenureRecord(schema, _tenure);
             var receivedRecordEnum = (GenericEnum) ((GenericRecord) receivedRecord["TenuredAsset"])["Type"];
             receivedRecord["TenuredAsset"].Should().BeOfType<GenericRecord>();
 
@@ -425,7 +424,7 @@ namespace MtfhReportingDataListener.Tests.UseCase
                 ]
             }";
 
-            Func<GenericRecord> receivedRecord = () => _sut.BuildTenureRecord(schema, _tenure);
+            Func<GenericRecord> receivedRecord = () => ExecuteBuildTenureRecord(schema, _tenure);
 
             receivedRecord.Should().NotThrow<NullReferenceException>();
         }
@@ -433,6 +432,11 @@ namespace MtfhReportingDataListener.Tests.UseCase
         private T GetFieldValueFromStringName<T>(string fieldName, TenureResponseObject tenure)
         {
             return (T) typeof(TenureResponseObject).GetProperty(fieldName).GetValue(tenure);
+        }
+
+        private GenericRecord ExecuteBuildTenureRecord(string schema, TenureResponseObject tenure)
+        {
+            return _sut.BuildTenureRecord(schema, _tenure);
         }
     }
 }
