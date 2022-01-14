@@ -6,13 +6,12 @@ using Hackney.Core.Logging;
 using System;
 using System.Threading.Tasks;
 using Hackney.Shared.Tenure.Boundary.Response;
-using Hackney.Shared.Tenure.Domain;
 using Avro;
 using Avro.Generic;
 using System.Linq;
-using System.Collections.Generic;
 using System.Text.Json;
 using System.Reflection;
+using Newtonsoft.Json;
 
 namespace MtfhReportingDataListener.UseCase
 {
@@ -64,7 +63,7 @@ namespace MtfhReportingDataListener.UseCase
                 PropertyInfo propInfo = item.GetType().GetProperty(field.Name);
                 if (propInfo == null)
                 {
-                    Console.WriteLine($"Field name: {field.Name} not found in {item}");
+                    Console.WriteLine($"Field name: {field.Name} not found in {item} with type {item.GetType()}");
                     return;
                 }
 
@@ -98,9 +97,11 @@ namespace MtfhReportingDataListener.UseCase
                 }
                 else if (fieldType == Schema.Type.Array)
                 {
-                    var fieldValueAsList = (List<HouseholdMembers>) fieldValue;
+                    var itemsType = fieldValue.GetType().GetGenericArguments().FirstOrDefault();
                     var itemsSchema = GetSchemaForArrayItems(fieldSchema);
-                    var recordsList = fieldValueAsList.Select(listItem => PopulateFields(listItem, itemsSchema)).ToArray();
+
+                    var fieldValueAsList = ((JsonElement) System.Text.Json.JsonSerializer.Deserialize<object>(JsonConvert.SerializeObject(fieldValue))).EnumerateArray();
+                    var recordsList = fieldValueAsList.Select(listItem => PopulateFields(JsonConvert.DeserializeObject(listItem.ToString(), itemsType), itemsSchema)).ToArray();
 
                     record.Add(field.Name, recordsList);
                 }
@@ -119,14 +120,14 @@ namespace MtfhReportingDataListener.UseCase
 
         private Schema GetSchemaForArrayItems(Schema arraySchema)
         {
-            var jsonSchema = (JsonElement) JsonSerializer.Deserialize<object>(arraySchema.ToString());
+            var jsonSchema = (JsonElement) System.Text.Json.JsonSerializer.Deserialize<object>(arraySchema.ToString());
             jsonSchema.TryGetProperty("items", out var itemsSchemaJson);
             return Schema.Parse(itemsSchemaJson.ToString());
         }
 
         private Schema GetNonNullablePartOfNullableSchema(Schema nullableSchema)
         {
-            var jsonSchema = (JsonElement) JsonSerializer.Deserialize<object>(nullableSchema.ToString());
+            var jsonSchema = (JsonElement) System.Text.Json.JsonSerializer.Deserialize<object>(nullableSchema.ToString());
             jsonSchema.TryGetProperty("type", out var unionList);
             var notNullSchema = unionList.EnumerateArray().First(type => type.ToString() != "null").ToString();
             return Schema.Parse(notNullSchema);
