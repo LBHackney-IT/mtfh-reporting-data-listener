@@ -11,6 +11,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Reflection;
 using System.Text.Json;
+using Confluent.SchemaRegistry;
 
 namespace MtfhReportingDataListener
 {
@@ -25,33 +26,15 @@ namespace MtfhReportingDataListener
         protected readonly static JsonSerializerOptions _jsonOptions = JsonOptions.CreateJsonOptions();
 
         protected IConfigurationRoot Configuration { get; }
-        protected IServiceProvider ServiceProvider { get; }
-        protected ILogger Logger { get; }
 
         internal BaseFunction()
         {
             AWSSDKHandler.RegisterXRayForAllServices();
 
-            var services = new ServiceCollection();
             var builder = new ConfigurationBuilder();
 
             Configure(builder);
             Configuration = builder.Build();
-            services.AddSingleton<IConfiguration>(Configuration);
-
-            services.ConfigureLambdaLogging(Configuration);
-            services.AddLogCallAspect();
-
-            ConfigureServices(services);
-
-            // TODO - Remove if not using DynamoDb
-            if (Configuration.GetValue<bool>("DynamoDb_LocalMode"))
-                AWSXRayRecorder.Instance.ContextMissingStrategy = ContextMissingStrategy.LOG_ERROR;
-
-            ServiceProvider = services.BuildServiceProvider();
-            ServiceProvider.UseLogCall();
-
-            Logger = ServiceProvider.GetRequiredService<ILogger<BaseFunction>>();
         }
 
         /// <summary>

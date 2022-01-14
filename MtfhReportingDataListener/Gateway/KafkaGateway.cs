@@ -1,8 +1,10 @@
 using Confluent.Kafka;
+using Confluent.Kafka.SyncOverAsync;
+using Confluent.SchemaRegistry.Serdes;
 using MtfhReportingDataListener.Gateway.Interfaces;
 using System;
-using System.Collections.Generic;
-using System.Text;
+using Avro.Generic;
+using Confluent.SchemaRegistry;
 
 namespace MtfhReportingDataListener.Gateway
 {
@@ -10,44 +12,42 @@ namespace MtfhReportingDataListener.Gateway
     {
         public bool Success { get; set; }
     }
+
     public class KafkaGateway : IKafkaGateway
     {
-        public KafkaGateway() { }
-        public IsSuccessful SendDataToKafka(string message, string topic)
+        public IsSuccessful SendDataToKafka(string topic, GenericRecord message, Schema schema)
         {
             var config = new ProducerConfig
             {
                 BootstrapServers = Environment.GetEnvironmentVariable("DATAPLATFORM_KAFKA_HOSTNAME"),
-                ClientId = "mtfh-reporting-data-listener"
+                ClientId = "mtfh-reporting-data-listener",
             };
 
-
-            DeliveryReport<string, string> deliveryReport = null;
-
-            using (var producer = new ProducerBuilder<string, string>(config).Build())
+            DeliveryReport<string, GenericRecord> deliveryReport = null;
+            Action<DeliveryReport<string, GenericRecord>> handleProduceErrors = (report) =>
             {
-                producer.Produce(topic,
-                                new Message<string, string>
-                                {
-                                    Key = Guid.NewGuid().ToString(),
-                                    Value = message
-                                },
-                (report) =>
+                deliveryReport = report;
+                if (deliveryReport.Error.Code != ErrorCode.NoError)
                 {
-                    deliveryReport = report;
-                    if (deliveryReport.Error.Code != ErrorCode.NoError)
-                    {
-                        throw new Exception(deliveryReport.Error.Reason);
-                    }
-                    else
-                    {
-                        Console.WriteLine($"Produced message to: {deliveryReport.TopicPartitionOffset}");
-                    }
-                });
+                    throw new Exception(deliveryReport.Error.Reason);
+                }
+                else
+                {
+                    Console.WriteLine($"Produced message to: {deliveryReport.TopicPartitionOffset}");
+                }
+            };
 
+            var schemaRegistryClient = new SchemaRegistryClient(schema);
 
+            using (var producer = new ProducerBuilder<string, GenericRecord>(config)
+                .SetValueSerializer(new AvroSerializer<GenericRecord>(schemaRegistryClient).AsSyncOverAsync())
+                .Build()
+            )
+            {
+                producer.Produce(topic, new Message<string, GenericRecord> { Value = message }, handleProduceErrors);
                 producer.Flush(TimeSpan.FromSeconds(10));
             }
+
             return new IsSuccessful
             {
                 Success = deliveryReport?.Error?.Code == ErrorCode.NoError

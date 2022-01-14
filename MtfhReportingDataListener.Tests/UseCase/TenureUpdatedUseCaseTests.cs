@@ -1,6 +1,5 @@
 using AutoFixture;
 using MtfhReportingDataListener.Boundary;
-using MtfhReportingDataListener.Domain;
 using MtfhReportingDataListener.Gateway.Interfaces;
 using MtfhReportingDataListener.Infrastructure.Exceptions;
 using MtfhReportingDataListener.UseCase;
@@ -12,7 +11,11 @@ using Xunit;
 using Hackney.Shared.Tenure.Boundary.Response;
 using Hackney.Shared.Tenure.Domain;
 using System.Linq;
+using System.Collections.Generic;
 using System.Text.Json;
+using Avro;
+using Avro.Generic;
+using Schema = Confluent.SchemaRegistry.Schema;
 
 namespace MtfhReportingDataListener.Tests.UseCase
 {
@@ -21,8 +24,8 @@ namespace MtfhReportingDataListener.Tests.UseCase
     {
         private readonly Mock<ITenureInfoApiGateway> _mockGateway;
         private readonly Mock<IKafkaGateway> _mockKafka;
+        private readonly Mock<IGlueGateway> _mockGlue;
         private readonly TenureUpdatedUseCase _sut;
-        private readonly DomainEntity _domainEntity;
         private readonly TenureResponseObject _tenure;
 
         private readonly EntityEventSns _message;
@@ -35,19 +38,18 @@ namespace MtfhReportingDataListener.Tests.UseCase
 
             _mockGateway = new Mock<ITenureInfoApiGateway>();
             _mockKafka = new Mock<IKafkaGateway>();
-            _sut = new TenureUpdatedUseCase(_mockGateway.Object, _mockKafka.Object);
+            _mockGlue = new Mock<IGlueGateway>();
+            _sut = new TenureUpdatedUseCase(_mockGateway.Object, _mockKafka.Object, _mockGlue.Object);
 
-            _domainEntity = _fixture.Create<DomainEntity>();
 
             _tenure = CreateTenure();
-            _message = CreateMessage(_domainEntity.Id);
+            _message = CreateMessage();
 
         }
 
-        private EntityEventSns CreateMessage(Guid id, string eventType = EventTypes.TenureUpdatedEvent)
+        private EntityEventSns CreateMessage(string eventType = EventTypes.TenureUpdatedEvent)
         {
             return _fixture.Build<EntityEventSns>()
-                           .With(x => x.EntityId, id)
                            .With(x => x.EventType, eventType)
                            .Create();
         }
@@ -74,7 +76,7 @@ namespace MtfhReportingDataListener.Tests.UseCase
         {
             _mockGateway.Setup(x => x.GetTenureInfoByIdAsync(_message.EntityId, _message.CorrelationId)).ReturnsAsync((TenureResponseObject) null);
             Func<Task> func = async () => await _sut.ProcessMessageAsync(null).ConfigureAwait(false);
-            func.Should().ThrowAsync<EntityNotFoundException<DomainEntity>>();
+            func.Should().ThrowAsync<EntityNotFoundException<TenureResponseObject>>();
         }
 
         [Fact]
@@ -90,19 +92,347 @@ namespace MtfhReportingDataListener.Tests.UseCase
             _mockGateway.Verify(x => x.GetTenureInfoByIdAsync(_message.EntityId, _message.CorrelationId), Times.Once);
         }
 
+
         [Fact]
-        public async Task ProcessMessageAsyncSuccess()
+        public async Task ProcessMessageAsyncGetsTheSchemaFromGlue()
         {
-            var jsonTenure = JsonSerializer.Serialize(_tenure);
             _mockGateway.Setup(x => x.GetTenureInfoByIdAsync(_message.EntityId, _message.CorrelationId))
                         .ReturnsAsync(_tenure);
+            var mockSchemaResponse = new SchemaResponse
+            {
+                Schema = @"{
+                ""type"": ""record"",
+                ""name"": ""Person"",
+                ""fields"": [
+                   {
+                     ""name"": ""Id"",
+                     ""type"": ""string""
+                   },
+                ]
+                }"
+            };
+
+            var schemaArn = "arn:aws:glue:blah";
+            Environment.SetEnvironmentVariable("SCHEMA_ARN", schemaArn);
+            var registryName = _fixture.Create<string>();
+            Environment.SetEnvironmentVariable("REGISTRY_NAME", registryName);
+            var schemaName = _fixture.Create<string>();
+            Environment.SetEnvironmentVariable("SCHEMA_NAME", schemaName);
+
+            _mockGlue.Setup(x => x.GetSchema(registryName, schemaArn, schemaName)).ReturnsAsync(mockSchemaResponse).Verifiable();
 
             await _sut.ProcessMessageAsync(_message).ConfigureAwait(false);
-            _mockKafka.Verify(x => x.SendDataToKafka(jsonTenure, "mtfh-reporting-data-listener"), Times.Once);
+            _mockGlue.Verify();
+        }
 
+        [Fact]
+        public async Task ProcessMessageAsyncSendsDataToKafka()
+        {
+            _mockGateway.Setup(x => x.GetTenureInfoByIdAsync(_message.EntityId, _message.CorrelationId))
+                        .ReturnsAsync(_tenure);
+            var mockSchemaResponse = new SchemaResponse
+            {
+                Schema = @"{
+                ""type"": ""record"",
+                ""name"": ""Person"",
+                ""fields"": [
+                   {
+                     ""name"": ""Id"",
+                     ""type"": ""string""
+                   },
+                ]
+                }"
+            };
+            _mockGlue.Setup(x => x.GetSchema(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>())).ReturnsAsync(mockSchemaResponse);
+
+            await _sut.ProcessMessageAsync(_message).ConfigureAwait(false);
+            _mockKafka.Verify(x => x.SendDataToKafka("mtfh-reporting-data-listener", It.IsAny<GenericRecord>(), It.IsAny<Schema>()), Times.Once);
+        }
+
+        [Fact]
+        public void BuildTenureRecordCanSetOneStringValueToAGenericRecord()
+        {
+            var schema = @"{
+                ""type"": ""record"",
+                ""name"": ""TenureInformation"",
+                ""fields"": [
+                   {
+                     ""name"": ""Id"",
+                     ""type"": ""string"",
+                     ""logicalType"": ""uuid""
+                   }
+                ]
+            }";
+
+            var receivedRecord = _sut.BuildTenureRecord(schema, _tenure);
+
+            Assert.Equal(_tenure.Id.ToString(), receivedRecord["Id"]);
         }
 
 
+        [Fact]
+        public void BuildTenureRecordCanSetMultipleStringsToAGenericRecord()
+        {
+            var schema = @"{
+                ""type"": ""record"",
+                ""name"": ""TenureInformation"",
+                ""fields"": [
+                   {
+                     ""name"": ""Id"",
+                     ""type"": ""string"",
+                     ""logicalType"": ""uuid""
+                   },
+                   {
+                     ""name"": ""PaymentReference"",
+                     ""type"": ""string""
+                   },
+                ]
+            }";
 
+            var receivedRecord = _sut.BuildTenureRecord(schema, _tenure);
+
+            Assert.Equal(_tenure.Id.ToString(), receivedRecord["Id"]);
+            Assert.Equal(_tenure.PaymentReference, receivedRecord["PaymentReference"]);
+        }
+
+        [Fact]
+        public void BuildTenureRecordCanConvertDatesToUnixTimestamps()
+        {
+            var schema = @"{
+                ""type"": ""record"",
+                ""name"": ""TenureInformation"",
+                ""fields"": [
+                   {
+                     ""name"": ""Id"",
+                     ""type"": ""string"",
+                     ""logicalType"": ""uuid""
+                   },
+                   {
+                     ""name"": ""SuccessionDate"",
+                     ""type"": [""null"", ""int""]
+                   },
+                ]
+            }";
+
+            var tenure = _tenure;
+            tenure.SuccessionDate = new DateTime(1970, 01, 02);
+
+            var receivedRecord = _sut.BuildTenureRecord(schema, tenure);
+
+            Assert.Equal(86400, receivedRecord["SuccessionDate"]);
+        }
+
+        [Theory]
+        [InlineData("IsTenanted")]
+        public void BuildTenureRecordCanSetBooleanTypeValuesToAGenericRecord(string nullableBoolFieldName)
+        {
+            var schema = @$"{{
+                ""type"": ""record"",
+                ""name"": ""TenureInformation"",
+                ""fields"": [
+                   {{
+                     ""name"": ""IsActive"",
+                     ""type"": ""boolean""
+                   }},
+                   {{
+                     ""name"": ""{nullableBoolFieldName}"",
+                     ""type"": [""boolean"", ""null""]
+                   }}
+                ]
+            }}";
+
+            var fieldValue = GetFieldValueFromStringName<bool>(nullableBoolFieldName, _tenure);
+
+            var receivedRecord = _sut.BuildTenureRecord(schema, _tenure);
+
+            Assert.Equal(_tenure.IsActive, receivedRecord["IsActive"]);
+            Assert.Equal(fieldValue, receivedRecord[nullableBoolFieldName]);
+        }
+
+        [Fact]
+        public void BuildTenureRecordCanSetNestedFields()
+        {
+            var schema = @"{
+                    ""type"": ""record"",
+                    ""name"": ""TenureInformation"",
+                    ""fields"": [
+                       {
+                         ""name"": ""TenureType"",
+                         ""type"": {
+                            ""type"": ""record"",
+                            ""name"": ""charge"",
+                            ""fields"": [
+                            {
+                                ""name"": ""Code"",
+                                ""type"": ""string""
+                            }]
+                            }
+                        }
+                    ]
+                }";
+
+            var receivedRecord = _sut.BuildTenureRecord(schema, _tenure);
+            var receivedTenureType = (GenericRecord) receivedRecord["TenureType"];
+
+            Assert.Equal(_tenure.TenureType.Code, receivedTenureType["Code"]);
+        }
+
+        [Fact]
+        public void BuildTenureRecordCanSetLists()
+        {
+            var schema = @"{
+                ""type"": ""record"",
+                ""name"": ""TenureInformation"",
+                ""fields"": [
+                    {
+                        ""name"": ""HouseholdMembers"",
+                        ""type"": {
+                            ""type"": ""array"",
+                            ""items"": {
+                                ""name"": ""HouseholdMember"",
+                                ""type"": ""record"",
+                                ""fields"": [
+                                    {
+                                        ""name"": ""Id"",
+                                        ""type"": ""string"",
+                                        ""logicalType"": ""uuid""
+                                    }
+                                ]
+                            }
+                        }
+                    }
+                ]
+            }";
+
+            var tenure = _tenure;
+            tenure.HouseholdMembers = new List<HouseholdMembers> { tenure.HouseholdMembers.First() };
+
+            var receivedRecord = _sut.BuildTenureRecord(schema, tenure);
+            receivedRecord["HouseholdMembers"].Should().BeOfType<GenericRecord[]>();
+
+            var firstRecord = ((GenericRecord[]) receivedRecord["HouseholdMembers"]).ToList().First();
+            firstRecord["Id"].Should().Be(tenure.HouseholdMembers.First().Id.ToString());
+
+        }
+
+        [Fact]
+        public void BuildTenureRecordCanAssignEnums()
+        {
+            var schema = @"{
+                ""type"": ""record"",
+                ""name"": ""TenureInformation"",
+                ""fields"": [
+                    {
+                        ""name"": ""HouseholdMembers"",
+                        ""type"": {
+                            ""type"": ""array"",
+                            ""items"": {
+                                ""name"": ""HouseholdMember"",
+                                ""type"": ""record"",
+                                ""fields"": [
+                                    {
+                                        ""name"": ""Id"",
+                                        ""type"": ""string"",
+                                        ""logicalType"": ""uuid""
+                                    },
+                                    {
+                                        ""name"": ""Type"",
+                                        ""type"": {
+                                            ""name"": ""HouseholdMembersType"",
+                                            ""type"": ""enum"",
+                                            ""symbols"": [
+                                                ""Person"",
+                                                ""Organisation""
+                                            ]
+                                        }
+                                    }
+                                ]
+                            }
+                        }
+                    }
+                ]
+            }";
+
+            var tenure = _tenure;
+            tenure.HouseholdMembers = new List<HouseholdMembers> { tenure.HouseholdMembers.First() };
+            var receivedRecord = _sut.BuildTenureRecord(schema, tenure);
+            var receivedHouseholdMember = ((GenericRecord[]) receivedRecord["HouseholdMembers"])[0];
+
+            receivedHouseholdMember["Id"].Should().Be(_tenure.HouseholdMembers.First().Id.ToString());
+            ((GenericEnum) receivedHouseholdMember["Type"]).Value.Should().Be(_tenure.HouseholdMembers.First().Type.ToString());
+        }
+
+        [Fact]
+        public void BuildTenureCanHandleNestedObjects()
+        {
+            var schema = @"{
+                ""type"": ""record"",
+                ""name"": ""TenureInformation"",
+                ""fields"": [
+                    {
+                    ""name"": ""TenuredAsset"",
+                    ""type"": {
+                        ""type"": ""record"",
+                        ""name"": ""TenuredAsset"",
+                        ""fields"": [
+                        {
+                            ""name"": ""Id"",
+                            ""type"": ""string"",
+                            ""logicalType"": ""uuid""
+                        },
+                        {
+                            ""name"": ""Type"",
+                            ""type"": [{
+                            ""name"": ""TenuredAssetType"",
+                            ""type"": ""enum"",
+                            ""symbols"": [
+                                ""Block"",
+                                ""Concierge"",
+                                ""Dwelling"",
+                                ""LettableNonDwelling"",
+                                ""MediumRiseBlock"",
+                                ""NA"",
+                                ""TravellerSite""
+                            ]
+                            }, ""null""]
+                        },
+                        ]
+                    }
+                }
+                ]
+            }";
+
+            var receivedRecord = _sut.BuildTenureRecord(schema, _tenure);
+            var receivedRecordEnum = (GenericEnum) ((GenericRecord) receivedRecord["TenuredAsset"])["Type"];
+            receivedRecord["TenuredAsset"].Should().BeOfType<GenericRecord>();
+
+            ((GenericRecord) receivedRecord["TenuredAsset"])["Id"].Should().Be(_tenure.TenuredAsset.Id.ToString());
+            receivedRecordEnum.Value.Should().Be(_tenure.TenuredAsset.Type.ToString());
+
+        }
+
+        [Fact]
+        public void LogsOutSchemaFieldNameWhenItDoesNotExistInTenure()
+        {
+            var schema = @"{
+                ""type"": ""record"",
+                ""name"": ""TenureInformation"",
+                ""fields"": [
+                   {
+                     ""name"": ""FieldNameNotInTenure"",
+                     ""type"": ""string"",
+                   },
+                ]
+            }";
+
+            Func<GenericRecord> receivedRecord = () => _sut.BuildTenureRecord(schema, _tenure);
+
+            receivedRecord.Should().NotThrow<NullReferenceException>();
+        }
+
+        private T GetFieldValueFromStringName<T>(string fieldName, TenureResponseObject tenure)
+        {
+            return (T) typeof(TenureResponseObject).GetProperty(fieldName).GetValue(tenure);
+        }
     }
 }

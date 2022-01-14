@@ -1,12 +1,11 @@
-using Confluent.Kafka;
-using System;
-using System.Collections.Generic;
-using System.Text;
+using Avro.Generic;
+using Confluent.SchemaRegistry;
 
 namespace MtfhReportingDataListener.Gateway.Interfaces
 {
     public interface IKafkaGateway
     {
-        IsSuccessful SendDataToKafka(string message, string topic);
+        IsSuccessful SendDataToKafka(string topic, GenericRecord record, Schema schema);
     }
+
 }
