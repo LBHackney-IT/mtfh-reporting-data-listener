@@ -4,7 +4,7 @@ The aim of this listener is to implement an AWS Function that would recieve mess
 
 Here is the process on how the data is saved to Kafka:
 1. When the TenureUpdateEvent is raised this listener is triggered
-2. The Listener calls the TenureInformationApi using a Shared Nuget Package to ensure that the Tenure sent through in the message exists, [Here][Api-Gateway] is a ReadME the explains how the listner calls the TenureInformationApi.
+2. The Listener calls the TenureInformationApi using a Shared Nuget Package to ensure that the Tenure sent through in the message exists. [Here][Api-Gateway] is a ReadME the explains how the listner calls the TenureInformationApi.
 3. If the Tenure doesn't exist then the Listener throws an Exception 
 4. If the Tenure exists then the Listener gets the schema that has been generated in AWS Glue using [this repository][ADD LINK HERE]
 5. Then the details from the Schema are used the convert the schema into an avro generic record.
@@ -83,9 +83,9 @@ Here is the process on how the data is saved to Kafka:
 
     ```
 
-6. Lastly the record created above is then send through to Kafka.
-   In order to send the data through to Kafka a SchemaRegistryClient is required. SchemaRegistery are seperate from your kafka brokers.The Kafka Producers publish the data to Kafka topics and communicates with the Schema Registry to send and recieve schemas that describe the data models for the messages simultaneously. Hence the SchemaRegistry is used to serialize the message and then save the serialize message to Kafka. 
-   We then use the Producer.Flush() to immediately send through the message to kafka. 
+6. Lastly the record created above is then sent through to Kafka.
+   In order to send the data through to Kafka a SchemaRegistryClient is required. SchemaRegistery are seperate from your Kafka brokers.The Kafka Producers publish the data to Kafka topics and communicates with the Schema Registry to send and recieve schemas that describe the data models for the messages simultaneously. Hence the SchemaRegistry is used to serialize the message and then save the serialize message to Kafka. 
+   We then use the Producer.Flush() to immediately send through the message to Kafka. 
 
 [Here][ADD LINK HERE] is a diagram to give a visual representation of the process of the listener.
 
