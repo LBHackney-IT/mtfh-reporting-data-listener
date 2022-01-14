@@ -27,11 +27,11 @@ functions:
       DATAPLATFORM_KAFKA_HOSTNAME: ${ssm:/housing-tl/${self:provider.stage}/dataplatform-kafka-hostname}
       SCHEMA_ARN: ${ssm:/housing-tl/${self:provider.stage}/dataplatform-tenure-schema-arn}
       REGISTRY_NAME: ${ssm:/housing-tl/${self:provider.stage}/dataplatform-schema-registry-name}
-      SCHEMA_NAME: ${ssm:/housing-tl/${self:provider.stage}/dataplatform-tenure-schema-name}
+      SCHEMA_NAME: ${ssm:/housing-tl/${self:provider.stage}/dataplatform-tenure-schema-name}  
     events:
       ## Specify the parameter containing the queue arn used to trigget the lambda function here
       ## This will have been defined in the terraform configuration
-       - sqs: ${ssm:/sqs-queue/${self:provider.stage}/tenures/arn} 
+       - sqs: ${ssm:/sqs-queue/${self:provider.stage}/mtfhreportingdata/arn} 
       
 resources:
   Resources:
