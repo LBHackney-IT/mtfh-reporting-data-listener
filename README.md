@@ -87,7 +87,7 @@ Here is the process on how the data is saved to Kafka:
    In order to send the data through to Kafka a SchemaRegistryClient is required. SchemaRegistery are seperate from your Kafka brokers.The Kafka Producers publish the data to Kafka topics and communicates with the Schema Registry to send and recieve schemas that describe the data models for the messages simultaneously. Hence the SchemaRegistry is used to serialize the message and then save the serialize message to Kafka. 
    We then use the Producer.Flush() to immediately send through the message to Kafka. 
 
-[Here][ADD LINK HERE] is a diagram to give a visual representation of the process of the listener.
+[Here][diagram] is a diagram to give a visual representation of the process of the listener.
 
 
 ## Stack
@@ -208,3 +208,4 @@ $ make test
 [docker-download]: https://www.docker.com/products/docker-desktop
 [AWS-CLI]: https://aws.amazon.com/cli/
 [Api-Gateway]: https://github.com/LBHackney-IT/lbh-core/blob/release/Hackney.Core/Hackney.Core.Http/README.md#ApiGateway
+[diagram]: https://drive.google.com/file/d/1KbF9gcmf0LOvr7w2fE_fxTd1lcccPilr/view?usp=sharing
