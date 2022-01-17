@@ -31,7 +31,7 @@ locals {
 
 terraform {
   backend "s3" {
-    bucket  = "terraform-state-housing-development"
+    bucket  = "terraform-state-devscratch"
     encrypt = true
     region  = "eu-west-2"
     key     = "services/mtfh-reporting-data-listener/state"
@@ -41,8 +41,21 @@ terraform {
 # This is the parameter containing the arn of the topic to which we want to subscribe
 # This will have been created by the service the generates the events in which we are interested
 
-data "aws_ssm_parameter" "tenure_sns_topic_arn" {
-  name = "/sns-topic/development/tenure/arn"
+resource "aws_sns_topic" "tenure_changes" {
+  name = "mtfh-tenure-updates-development.fifo"
+  fifo_topic = true
+}
+
+resource "aws_kms_key" "tenure_changes" {
+  description = "mtfh data listener test KMS key"
+
+  deletion_window_in_days = 10
+  enable_key_rotation     = true
+}
+
+resource "aws_kms_alias" "key_alias" {
+  name          = lower("alias/mtfh-test-data-listener-key")
+  target_key_id = aws_kms_key.tenure_changes.key_id
 }
 
 # This is the definition of the dead letter queue used whem message processsing fails for a given message
@@ -51,7 +64,7 @@ resource "aws_sqs_queue" "mtfh_reporting_data_dead_letter_queue" {
   name                              = "mtfhreportingdatadeadletterqueue.fifo"
   fifo_queue                        = true
   content_based_deduplication       = true
-  kms_master_key_id                 = "alias/housing-development-cmk"
+  kms_master_key_id                 = "alias/mtfh-test-data-listener-key"
   kms_data_key_reuse_period_seconds = 300
 }
 
@@ -62,7 +75,7 @@ resource "aws_sqs_queue" "mtfh_reporting_data_queue" {
   name                              = "mtfhreportingdataqueue.fifo"
   fifo_queue                        = true
   content_based_deduplication       = true
-  kms_master_key_id                 = "alias/housing-development-cmk" # This is a custom key
+  kms_master_key_id                 = "alias/mtfh-test-data-listener-key" # This is a custom key
   kms_data_key_reuse_period_seconds = 300
   redrive_policy = jsonencode({
     deadLetterTargetArn = aws_sqs_queue.mtfh_reporting_data_dead_letter_queue.arn,
@@ -87,7 +100,7 @@ resource "aws_sqs_queue_policy" "mtfh_reporting_data_queue_policy" {
               "Resource": "${aws_sqs_queue.mtfh_reporting_data_queue.arn}",
               "Condition": {
               "ArnEquals": {
-                  "aws:SourceArn": "${data.aws_ssm_parameter.tenure_sns_topic_arn.value}"
+                  "aws:SourceArn": "${aws_sns_topic.tenure_changes.arn}"
               }
               }
           }          
@@ -99,7 +112,7 @@ resource "aws_sqs_queue_policy" "mtfh_reporting_data_queue_policy" {
 # This is the subscription definition that tells the topic which queue to use
 
 resource "aws_sns_topic_subscription" "mtfh_reporting_data_queue_subscribe_to_tenure_sns" {
-  topic_arn            = data.aws_ssm_parameter.tenure_sns_topic_arn.value
+  topic_arn            = aws_sns_topic.tenure_changes.arn
   protocol             = "sqs"
   endpoint             = aws_sqs_queue.mtfh_reporting_data_queue.arn
   raw_message_delivery = true
