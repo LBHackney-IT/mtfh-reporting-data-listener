@@ -3,11 +3,12 @@
 This listener implements an AWS Lambda Function that recieves messages when any updates are made to the TenureInformationApi and sends the updates to a Kafka queue. 
 
 Here is the process on how the data is saved to Kafka:
-1. When the TenureUpdateEvent is raised this listener is triggered
+1. When one of the events in from [this switch statement][usecase-factory] is raised then this listener is triggered
 2. The listener calls the [TenureInformationApi][tenure-api-github] using a Shared Nuget Package to ensure that the Tenure sent through in the message exists and to get the details of the tenure. [The ReadME][Api-Gateway] for this package explains how the listener calls the TenureInformationApi.
      - If the Tenure doesn't exist then the listener throws an Exception 
 3. The listener will then get the schema from AWS Glue Schema registry managed in [this repository][ADD LINK HERE]
 4. Then using this schema an AVRO generic record is created using holding the tenure details retrieved from the tenure API.
+
    Kafka only accepts the following data type; `byte[], Bytebuffer, Double, Integer, Long, String`. If you need to send through other data type you will first need to serialize the data into one of these types. Below are some code examples of how we have done this.
 
    **Nullable types (Union)**:
@@ -227,3 +228,4 @@ $ make test
 [Api-Gateway]: https://github.com/LBHackney-IT/lbh-core/blob/release/Hackney.Core/Hackney.Core.Http/README.md#ApiGateway
 [diagram]: https://drive.google.com/file/d/1KbF9gcmf0LOvr7w2fE_fxTd1lcccPilr/view?usp=sharing
 [tenure-api-github]: https://github.com/LBHackney-IT/tenure-api
+[usecase-factory]: /MtfhReportingDataListener/Factories/UseCaseFactory.cs
