@@ -15,7 +15,6 @@ using System.Threading.Tasks;
 using Amazon.Glue;
 using MtfhReportingDataListener.Factories;
 using Hackney.Core.Http;
-using Confluent.SchemaRegistry;
 using Microsoft.Extensions.Configuration;
 
 // Assembly attribute to enable the Lambda function's JSON input to be converted into a .NET class.

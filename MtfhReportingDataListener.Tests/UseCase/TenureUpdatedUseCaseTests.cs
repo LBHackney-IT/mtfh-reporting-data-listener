@@ -3,6 +3,7 @@ using MtfhReportingDataListener.Boundary;
 using MtfhReportingDataListener.Gateway.Interfaces;
 using MtfhReportingDataListener.Infrastructure.Exceptions;
 using MtfhReportingDataListener.UseCase;
+using MtfhReportingDataListener.Domain;
 using FluentAssertions;
 using Moq;
 using System;
@@ -13,7 +14,6 @@ using Hackney.Shared.Tenure.Domain;
 using System.Linq;
 using System.Collections.Generic;
 using System.Text.Json;
-using Avro;
 using Avro.Generic;
 using Schema = Confluent.SchemaRegistry.Schema;
 
@@ -434,9 +434,71 @@ namespace MtfhReportingDataListener.Tests.UseCase
             return (T) typeof(TenureResponseObject).GetProperty(fieldName).GetValue(tenure);
         }
 
-        private GenericRecord ExecuteBuildTenureRecord(string schema, TenureResponseObject tenure)
+        private GenericRecord ExecuteBuildTenureRecord(string tenureSchema, TenureResponseObject tenure)
         {
-            return _sut.BuildTenureRecord(schema, _tenure);
+            var schema = @$"{{
+                ""type"": ""record"",
+                ""name"": ""TenureAPIChangeEvent"",
+                ""namespace"": ""MMH"",
+                ""fields"": [
+                    {{
+                        ""name"": ""Id"",
+                        ""type"": ""string"",
+                        ""logicalType"": ""uuid""
+                    }},
+                    {{
+                        ""name"": ""EventType"",
+                        ""type"": ""string""
+                    }},
+                    {{
+                        ""name"": ""SourceDomain"",
+                        ""type"": ""string""
+                    }},
+                    {{
+                        ""name"": ""SourceSystem"",
+                        ""type"": ""string""
+                    }},
+                    {{
+                        ""name"": ""Version"",
+                        ""type"": ""string""
+                    }},
+                    {{
+                        ""name"": ""CorrelationId"",
+                        ""type"": ""string"",
+                        ""logicalType"": ""uuid""
+                    }},
+                    {{
+                        ""name"": ""DateTime"",
+                        ""type"": ""int"",
+                        ""logicalType"": ""date""
+                    }},
+                    {{
+                        ""name"": ""User"",
+                        ""type"": {{
+                            ""type"": ""record"",
+                            ""name"": ""User"",
+                            ""fields"": [
+                                {{
+                                    ""name"": ""Name"",
+                                    ""type"": ""string""
+                                }},
+                                {{
+                                    ""name"": ""Email"",
+                                    ""type"": ""string""
+                                }}
+                            ]
+                        }}
+                    }},
+                    {{
+                        ""name"": ""Tenure"",
+                        ""type"": {tenureSchema}
+                    }}
+                ]
+            }}";
+            var tenureChangeEvent = _fixture.Create<TenureChangeEvent>();
+            tenureChangeEvent.Tenure = _tenure;
+            var record = _sut.BuildTenureRecord(schema, tenureChangeEvent);
+            return (GenericRecord) record["Tenure"];
         }
     }
 }
