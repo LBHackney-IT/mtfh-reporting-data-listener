@@ -1,17 +1,32 @@
 # MTFH Reporting Data Listener
 
-The aim of this listener is to implement an AWS Function that would recieve messages of any updates made to the TenureInformationApi and then save the relative data to Kafka. 
+This listener implements an AWS Lambda Function that recieves messages when any updates are made to the TenureInformationApi and sends the updates to a Kafka queue. 
 
 Here is the process on how the data is saved to Kafka:
 1. When the TenureUpdateEvent is raised this listener is triggered
-2. The Listener calls the TenureInformationApi using a Shared Nuget Package to ensure that the Tenure sent through in the message exists. [Here][Api-Gateway] is a ReadME the explains how the listner calls the TenureInformationApi.
-3. If the Tenure doesn't exist then the Listener throws an Exception 
-4. If the Tenure exists then the Listener gets the schema that has been generated in AWS Glue using [this repository][ADD LINK HERE]
-5. Then the details from the Schema are used the convert the schema into an avro generic record.
-   Kafka only accepts the following data type; `byte[], Bytebuffer, Double, Integer, Long, String`, if you would like to send through other data type you will first need to convert the data type that is acceptable. Some of the common data types are below with examples of how you can convert it:
+2. The listener calls the [TenureInformationApi][tenure-api-github] using a Shared Nuget Package to ensure that the Tenure sent through in the message exists and to get the details of the tenure. [The ReadME][Api-Gateway] for this package explains how the listener calls the TenureInformationApi.
+     - If the Tenure doesn't exist then the listener throws an Exception 
+3. The listener will then get the schema from AWS Glue Schema registry managed in [this repository][ADD LINK HERE]
+4. Then using this schema an AVRO generic record is created using holding the tenure details retrieved from the tenure API.
+   Kafka only accepts the following data type; `byte[], Bytebuffer, Double, Integer, Long, String`. If you need to send through other data type you will first need to serialize the data into one of these types. Below are some code examples of how we have done this.
 
-   Nullable type (Union):
+   **Nullable types (Union)**:
+
+   Here we check whether the field value is null, assign null if it is.
+   If not, remove the nullable part from the schema and continue as normal.
+
    ```csharp
+        if (fieldValue == null)
+        {
+            record.Add(field.Name, null);
+            return;
+        }
+
+        fieldSchema = GetNonNullablePartOfNullableSchema(field.Schema);
+        fieldType = fieldSchema.Tag;
+
+        ...
+
         private Schema GetNonNullablePartOfNullableSchema(Schema nullableSchema)
         {
             var jsonSchema = (JsonElement) JsonSerializer.Deserialize<object>(nullableSchema.ToString());
@@ -21,13 +36,15 @@ Here is the process on how the data is saved to Kafka:
         }
    ```
 
-   Enum:
+   **Enums**:
 
    ```csharp 
         new GenericEnum((EnumSchema) fieldSchema, fieldValue.ToString())
    ```
 
-   DateTime:
+   **DateTime Objects**:
+
+   Converts to a int holding a Unix timestamp.
 
     ```csharp
         private int? UnixTimestampNullable(object obj)
@@ -37,7 +54,7 @@ Here is the process on how the data is saved to Kafka:
         }
     ```
 
-    Array:
+    **Arrays**:
 
     ```csharp
         var fieldValueAsList = (List<ExampleList>) fieldValue;
@@ -53,7 +70,7 @@ Here is the process on how the data is saved to Kafka:
         }
     ``` 
 
-    Once the data types have been converted you can create the Generic Record by adding each value to the record, this can be done through the use of a For Loop:
+    Once the data types have been converted you can create the Generic Record by adding each value to the record, this can be done through the use of a for loop & reflection:
 
     ```csharp
 
@@ -87,7 +104,7 @@ Here is the process on how the data is saved to Kafka:
    In order to send the data through to Kafka a SchemaRegistryClient is required. SchemaRegistery are seperate from your Kafka brokers.The Kafka Producers publish the data to Kafka topics and communicates with the Schema Registry to send and recieve schemas that describe the data models for the messages simultaneously. Hence the SchemaRegistry is used to serialize the message and then save the serialize message to Kafka. 
    We then use the Producer.Flush() to immediately send through the message to Kafka. 
 
-[Here][diagram] is a diagram to give a visual representation of the process of the listener.
+See [this diagram][diagram] for a visual representation of the process of the listener.
 
 
 ## Stack
@@ -209,3 +226,4 @@ $ make test
 [AWS-CLI]: https://aws.amazon.com/cli/
 [Api-Gateway]: https://github.com/LBHackney-IT/lbh-core/blob/release/Hackney.Core/Hackney.Core.Http/README.md#ApiGateway
 [diagram]: https://drive.google.com/file/d/1KbF9gcmf0LOvr7w2fE_fxTd1lcccPilr/view?usp=sharing
+[tenure-api-github]: https://github.com/LBHackney-IT/tenure-api
