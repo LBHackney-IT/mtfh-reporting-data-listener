@@ -228,4 +228,4 @@ $ make test
 [Api-Gateway]: https://github.com/LBHackney-IT/lbh-core/blob/release/Hackney.Core/Hackney.Core.Http/README.md#ApiGateway
 [diagram]: https://drive.google.com/file/d/1KbF9gcmf0LOvr7w2fE_fxTd1lcccPilr/view?usp=sharing
 [tenure-api-github]: https://github.com/LBHackney-IT/tenure-api
-[usecase-factory]: /MtfhReportingDataListener/Factories/UseCaseFactory.cs
+[usecase-factory]: /MtfhReportingDataListener/Factories/UseCaseFactory.cs#L16
