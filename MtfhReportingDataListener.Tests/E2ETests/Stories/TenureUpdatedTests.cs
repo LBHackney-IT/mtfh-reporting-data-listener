@@ -1,8 +1,6 @@
 using MtfhReportingDataListener.Tests.E2ETests.Fixtures;
 using MtfhReportingDataListener.Tests.E2ETests.Steps;
 using System;
-using System.Collections.Generic;
-using System.Text;
 using TestStack.BDDfy;
 using Xunit;
 using Moq;
