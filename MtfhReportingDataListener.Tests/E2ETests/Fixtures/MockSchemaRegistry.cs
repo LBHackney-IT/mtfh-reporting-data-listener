@@ -8,9 +8,7 @@ using System;
 
 public class MockSchemaRegistry
 {
-    public string RegistryName { get; }
     public string SchemaArn { get; }
-    public string SchemaName { get; }
     public string SchemaDefinition { get; }
 
     private Mock<IAmazonGlue> _mockGlue { get; set; }
@@ -18,8 +16,6 @@ public class MockSchemaRegistry
     public MockSchemaRegistry(Mock<IAmazonGlue> mockGlue)
     {
         var fixture = new Fixture();
-        RegistryName = fixture.Create<string>();
-        SchemaName = fixture.Create<string>();
         SchemaArn = "arn:aws:glue:my-schema-registry";
         SchemaDefinition = SmallTenureSchema();
         _mockGlue = mockGlue;
@@ -34,9 +30,7 @@ public class MockSchemaRegistry
             SchemaId = new SchemaId()
             {
 
-                RegistryName = RegistryName,
                 SchemaArn = SchemaArn,
-                SchemaName = SchemaName
             }
         };
 
@@ -52,9 +46,7 @@ public class MockSchemaRegistry
         var getSchemaResponse = new GetSchemaResponse()
         {
             LatestSchemaVersion = getSchemaVersion.SchemaVersionNumber.VersionNumber,
-            RegistryName = RegistryName,
             SchemaArn = SchemaArn,
-            SchemaName = SchemaName
         };
 
         _mockGlue.Setup(x => x.GetSchemaAsync(It.Is<GetSchemaRequest>(x => MockGlueHelperMethods.CheckRequestsEquivalent(getSchemaRequest, x)), It.IsAny<CancellationToken>()))
@@ -69,8 +61,6 @@ public class MockSchemaRegistry
     private void SetSchemaEnvVariables()
     {
         Environment.SetEnvironmentVariable("SCHEMA_ARN", SchemaArn);
-        Environment.SetEnvironmentVariable("REGISTRY_NAME", RegistryName);
-        Environment.SetEnvironmentVariable("SCHEMA_NAME", SchemaName);
     }
     private string SmallTenureSchema()
     {
@@ -248,7 +238,7 @@ public class MockSchemaRegistry
                         ]
                     }
                 }
-            }
+            ]
         }";
     }
 }

@@ -26,12 +26,13 @@ lint:
 	dotnet tool update -g dotnet-format --version 5.1.250801
 	dotnet format
 
-./MtfhReportingDataListener/bin/release/netcoreapp3.1/mtfh-reporting-data-listener.zip:
+.PHONY: build-lambda
+build-lambda:
 	chmod +x ./MtfhReportingDataListener/build.sh
 	cd ./MtfhReportingDataListener && ./build.sh
 
 .PHONY: deploy-sls
-deploy-sls: ./MtfhReportingDataListener/bin/release/netcoreapp3.1/mtfh-reporting-data-listener.zip
+deploy-sls: build-lambda
 	cd ./MtfhReportingDataListener/ && aws-vault exec hackney-dev-scratch -- sls deploy --stage development --conceal
 
 .PHONY: deploy-tf
