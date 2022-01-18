@@ -3,8 +3,6 @@ using Hackney.Core.Logging;
 using Hackney.Shared.Tenure.Boundary.Response;
 using MtfhReportingDataListener.Gateway.Interfaces;
 using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace MtfhReportingDataListener.Gateway

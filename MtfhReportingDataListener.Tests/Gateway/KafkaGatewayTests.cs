@@ -1,16 +1,14 @@
-using AutoFixture;
 using Confluent.Kafka;
+using Confluent.Kafka.SyncOverAsync;
+using Confluent.SchemaRegistry.Serdes;
 using FluentAssertions;
-using Moq;
-using MtfhReportingDataListener.Boundary;
-using MtfhReportingDataListener.Domain;
 using MtfhReportingDataListener.Gateway;
 using MtfhReportingDataListener.Gateway.Interfaces;
 using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Text.Json;
 using Xunit;
+using Avro;
+using Avro.Generic;
+using Schema = Avro.Schema;
 
 namespace MtfhReportingDataListener.Tests.Gateway
 {
@@ -18,16 +16,10 @@ namespace MtfhReportingDataListener.Tests.Gateway
     public class KafkaGatewayTests : MockApplicationFactory
     {
         private readonly IKafkaGateway _gateway;
-        private readonly string _message;
-        private readonly DomainEntity _domainEntity;
-        private readonly Fixture _fixture = new Fixture();
 
         public KafkaGatewayTests()
         {
             _gateway = new KafkaGateway();
-            _domainEntity = _fixture.Create<DomainEntity>();
-
-            _message = _fixture.Create<string>();
         }
 
         [Fact]
@@ -39,18 +31,40 @@ namespace MtfhReportingDataListener.Tests.Gateway
                 GroupId = "4c659d6b-4739-4579-9698-a27d1aaa397d",
                 AutoOffsetReset = AutoOffsetReset.Earliest
             };
+
             var topic = "mtfh-reporting-data-listener";
-            var result = _gateway.SendDataToKafka(_message, topic);
+
+            var schemaString = @"{
+                 ""type"": ""record"",
+                 ""name"": ""Person"",
+                 ""fields"": [
+                   {
+                     ""name"": ""firstName"",
+                     ""type"": ""string""
+                   }
+                 ]
+               }";
+
+            var schema = (RecordSchema) Schema.Parse(schemaString);
+            GenericRecord message = new GenericRecord(schema);
+            message.Add("firstName", "Tom");
+            var schemaWithMetadata = new Confluent.SchemaRegistry.Schema("tenure", 1, 1, schemaString);
+            var result = _gateway.SendDataToKafka(topic, message, schemaWithMetadata);
             result.Success.Should().BeTrue();
-            using (var consumer = new ConsumerBuilder<Ignore, string>(consumerconfig).Build())
+
+            var schemaRegistryClient = new SchemaRegistryClient(schemaWithMetadata);
+
+            using (var consumer = new ConsumerBuilder<Ignore, GenericRecord>(consumerconfig)
+                .SetValueDeserializer(new AvroDeserializer<GenericRecord>(schemaRegistryClient).AsSyncOverAsync())
+                .Build()
+            )
             {
                 consumer.Subscribe("mtfh-reporting-data-listener");
                 var r = consumer.Consume(TimeSpan.FromSeconds(30));
                 Assert.NotNull(r?.Message);
-                Assert.Equal(_message, r.Message.Value);
+                Assert.Equal(message, r.Message.Value);
                 consumer.Close();
             }
         }
-
     }
 }

@@ -3,7 +3,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using System;
-using System.Collections.Generic;
+
 
 namespace MtfhReportingDataListener.Tests
 {
@@ -53,5 +53,6 @@ namespace MtfhReportingDataListener.Tests
 
                LogCallAspectFixture.SetupLogCallAspect();
            });
+
     }
 }
