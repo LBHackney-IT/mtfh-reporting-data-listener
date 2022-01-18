@@ -1,5 +1,3 @@
-using Amazon.XRay.Recorder.Core;
-using Amazon.XRay.Recorder.Core.Strategies;
 using Amazon.XRay.Recorder.Handlers.AwsSdk;
 using MtfhReportingDataListener.Infrastructure;
 using Hackney.Core.Logging;
@@ -11,7 +9,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Reflection;
 using System.Text.Json;
-using Confluent.SchemaRegistry;
+using Amazon.Glue;
 
 namespace MtfhReportingDataListener
 {
@@ -24,17 +22,39 @@ namespace MtfhReportingDataListener
     public abstract class BaseFunction
     {
         protected readonly static JsonSerializerOptions _jsonOptions = JsonOptions.CreateJsonOptions();
+        protected IAmazonGlue Glue { get; set; }
 
-        protected IConfigurationRoot Configuration { get; }
+        protected IConfigurationRoot Configuration { get; private set; }
 
-        internal BaseFunction()
+        protected IServiceProvider ServiceProvider { get; private set; }
+        protected ILogger Logger { get; private set; }
+
+        internal BaseFunction(IAmazonGlue glue = null)
+        {
+            Glue = glue ?? new AmazonGlueClient();
+            Construct();
+        }
+
+        private void Construct()
         {
             AWSSDKHandler.RegisterXRayForAllServices();
 
+            var services = new ServiceCollection();
             var builder = new ConfigurationBuilder();
 
             Configure(builder);
             Configuration = builder.Build();
+            services.AddSingleton<IConfiguration>(Configuration);
+
+            services.ConfigureLambdaLogging(Configuration);
+            services.AddLogCallAspect();
+
+            ConfigureServices(services);
+
+            ServiceProvider = services.BuildServiceProvider();
+            ServiceProvider.UseLogCall();
+
+            Logger = ServiceProvider.GetRequiredService<ILogger<BaseFunction>>();
         }
 
         /// <summary>

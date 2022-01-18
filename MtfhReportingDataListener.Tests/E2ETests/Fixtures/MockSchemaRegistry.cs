@@ -248,7 +248,7 @@ public class MockSchemaRegistry
                         ]
                     }
                 }
-            }
+            ]
         }";
     }
 }

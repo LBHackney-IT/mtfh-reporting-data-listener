@@ -33,10 +33,7 @@ namespace MtfhReportingDataListener.Tests.Gateway
             {
                 SchemaId = new SchemaId()
                 {
-
-                    RegistryName = "TenureSchema",
                     SchemaArn = "arn:aws:glue:mmh",
-                    SchemaName = "MMH"
                 }
             };
             var getSchemaResponse = _fixture.Create<GetSchemaResponse>();
@@ -47,7 +44,7 @@ namespace MtfhReportingDataListener.Tests.Gateway
                     It.IsAny<CancellationToken>()
                 )).ReturnsAsync(new GetSchemaVersionResponse { SchemaDefinition = "schema" });
 
-            await _gateway.GetSchema("TenureSchema", "arn:aws:glue:mmh", "MMH").ConfigureAwait(false);
+            await _gateway.GetSchema("arn:aws:glue:mmh").ConfigureAwait(false);
             _mockAmazonGlue.Verify();
         }
 
@@ -91,7 +88,7 @@ namespace MtfhReportingDataListener.Tests.Gateway
                 )
             ).ReturnsAsync(response);
 
-            var schemaDetails = await _gateway.GetSchema("TenureSchema", "arn:aws:glue:mmh", "MMH").ConfigureAwait(false);
+            var schemaDetails = await _gateway.GetSchema("arn:aws:glue:mmh").ConfigureAwait(false);
 
             var expectedSchemaResponse = new SchemaResponse
             {

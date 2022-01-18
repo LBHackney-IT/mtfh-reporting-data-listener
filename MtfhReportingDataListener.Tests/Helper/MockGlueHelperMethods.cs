@@ -1,7 +1,4 @@
 using Amazon.Glue.Model;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace MtfhReportingDataListener.Tests.Helper
 {
@@ -10,15 +7,11 @@ namespace MtfhReportingDataListener.Tests.Helper
 
         public static bool CheckRequestsEquivalent(GetSchemaRequest expectedRequest, GetSchemaRequest receivedRequest)
         {
-            return receivedRequest.SchemaId.RegistryName == expectedRequest.SchemaId.RegistryName
-                && receivedRequest.SchemaId.SchemaArn == expectedRequest.SchemaId.SchemaArn
-                && receivedRequest.SchemaId.SchemaName == expectedRequest.SchemaId.SchemaName;
+            return receivedRequest.SchemaId.SchemaArn == expectedRequest.SchemaId.SchemaArn;
         }
         public static bool CheckVersionRequestsEquivalent(GetSchemaVersionRequest expectedRequest, GetSchemaVersionRequest receivedRequest)
         {
-            return receivedRequest.SchemaId.RegistryName == expectedRequest.SchemaId.RegistryName
-                && receivedRequest.SchemaId.SchemaArn == expectedRequest.SchemaId.SchemaArn
-                && receivedRequest.SchemaId.SchemaName == expectedRequest.SchemaId.SchemaName
+            return receivedRequest.SchemaId.SchemaArn == expectedRequest.SchemaId.SchemaArn
                 && receivedRequest.SchemaVersionNumber.LatestVersion == expectedRequest.SchemaVersionNumber.LatestVersion
                 && receivedRequest.SchemaVersionNumber.VersionNumber == expectedRequest.SchemaVersionNumber.VersionNumber;
         }

@@ -4,7 +4,7 @@ namespace MtfhReportingDataListener.Gateway.Interfaces
 {
     public interface IGlueGateway
     {
-        Task<SchemaResponse> GetSchema(string registryName, string schemaArn, string schemaName);
+        Task<SchemaResponse> GetSchema(string schemaArn);
     }
 
     public class SchemaResponse
