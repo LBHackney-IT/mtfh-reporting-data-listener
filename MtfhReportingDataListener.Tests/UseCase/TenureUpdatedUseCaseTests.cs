@@ -114,12 +114,8 @@ namespace MtfhReportingDataListener.Tests.UseCase
 
             var schemaArn = "arn:aws:glue:blah";
             Environment.SetEnvironmentVariable("SCHEMA_ARN", schemaArn);
-            var registryName = _fixture.Create<string>();
-            Environment.SetEnvironmentVariable("REGISTRY_NAME", registryName);
-            var schemaName = _fixture.Create<string>();
-            Environment.SetEnvironmentVariable("SCHEMA_NAME", schemaName);
 
-            _mockGlue.Setup(x => x.GetSchema(registryName, schemaArn, schemaName)).ReturnsAsync(mockSchemaResponse).Verifiable();
+            _mockGlue.Setup(x => x.GetSchema(schemaArn)).ReturnsAsync(mockSchemaResponse).Verifiable();
 
             await _sut.ProcessMessageAsync(_message).ConfigureAwait(false);
             _mockGlue.Verify();
@@ -143,7 +139,7 @@ namespace MtfhReportingDataListener.Tests.UseCase
                 ]
                 }"
             };
-            _mockGlue.Setup(x => x.GetSchema(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>())).ReturnsAsync(mockSchemaResponse);
+            _mockGlue.Setup(x => x.GetSchema(It.IsAny<string>())).ReturnsAsync(mockSchemaResponse);
 
             await _sut.ProcessMessageAsync(_message).ConfigureAwait(false);
             _mockKafka.Verify(x => x.SendDataToKafka("mtfh-reporting-data-listener", It.IsAny<GenericRecord>(), It.IsAny<Schema>()), Times.Once);

@@ -26,8 +26,6 @@ functions:
       TenureApiToken: ${ssm:/housing-tl/${self:provider.stage}/tenure-api-token}
       DATAPLATFORM_KAFKA_HOSTNAME: ${ssm:/housing-tl/${self:provider.stage}/dataplatform-kafka-hostname}
       SCHEMA_ARN: ${ssm:/housing-tl/${self:provider.stage}/dataplatform-tenure-schema-arn}
-      REGISTRY_NAME: ${ssm:/housing-tl/${self:provider.stage}/dataplatform-schema-registry-name}
-      SCHEMA_NAME: ${ssm:/housing-tl/${self:provider.stage}/dataplatform-tenure-schema-name}  
     events:
       ## Specify the parameter containing the queue arn used to trigget the lambda function here
       ## This will have been defined in the terraform configuration
@@ -100,6 +98,14 @@ resources:
                     - "sqs:SendMessage"
                     - "kms:Decrypt"
                   Resource: "*"
+          - PolicyName: glueSchemaRegistry
+            PolicyDocument:
+              Version: '2012-10-17'
+              Statement:
+                - Effect: Allow
+                  Action:
+                    - "glue:Get*"
+                  Resource: ${ssm:/housing-tl/${self:provider.stage}/dataplatform-tenure-schema-arn} 
 
 custom:
   vpc:

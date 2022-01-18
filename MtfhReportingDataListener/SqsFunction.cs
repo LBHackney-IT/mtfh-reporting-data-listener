@@ -28,36 +28,23 @@ namespace MtfhReportingDataListener
     [ExcludeFromCodeCoverage]
     public class SqsFunction : BaseFunction
     {
-        private IAmazonGlue _glue { get; set; }
-        protected IServiceProvider ServiceProvider { get; private set; }
-        protected ILogger Logger { get; private set; }
         /// <summary>
         /// Default constructor. This constructor is used by Lambda to construct the instance. When invoked in a Lambda environment
         /// the AWS credentials will come from the IAM role associated with the function and the AWS region will be set to the
         /// region the Lambda function is executed in.
         /// </summary>
-        public SqsFunction()
-        {
-            _glue = new AmazonGlueClient();
-            ConfigureServices();
-        }
+        public SqsFunction() { }
 
         /// <summary>
         /// Constructor to be used by the E2E tests so that we can mock API calls to AWS Glue.
         /// </summary>
-        public SqsFunction(IAmazonGlue glue)
-        {
-            _glue = glue;
-            ConfigureServices();
-        }
+        public SqsFunction(IAmazonGlue glue) : base(glue) { }
 
         /// <summary>
         /// Use this method to perform any DI configuration required
         /// </summary>
-        protected void ConfigureServices()
+        protected override void ConfigureServices(IServiceCollection services)
         {
-            var services = new ServiceCollection();
-
             services.AddHttpClient();
             services.AddScoped<ITenureUpdatedUseCase, TenureUpdatedUseCase>();
 
@@ -66,20 +53,11 @@ namespace MtfhReportingDataListener
             services.AddScoped<IKafkaGateway, KafkaGateway>();
             services.AddSingleton<IConfiguration>(Configuration);
 
-            services.ConfigureLambdaLogging(Configuration);
-            services.AddLogCallAspect();
-
             services.AddApiGateway();
 
             // register glue SDK
-            services.AddSingleton<IAmazonGlue>(_glue);
-
-            ServiceProvider = services.BuildServiceProvider();
-            ServiceProvider.UseLogCall();
-
-            Logger = ServiceProvider.GetRequiredService<ILogger<BaseFunction>>();
-            ConfigureServices(services);
-
+            services.AddSingleton<IAmazonGlue>(Glue);
+            base.ConfigureServices(services);
         }
 
 

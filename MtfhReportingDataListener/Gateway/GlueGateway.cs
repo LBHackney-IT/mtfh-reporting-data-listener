@@ -13,10 +13,10 @@ namespace MtfhReportingDataListener.Gateway
             _amazonGlueClient = amazonGlueClient;
         }
 
-        public async Task<SchemaResponse> GetSchema(string registryName, string schemaArn, string schemaName)
+        public async Task<SchemaResponse> GetSchema(string schemaArn)
         {
-            var latestVersionNumber = await GetLastestSchemaVersionNumber(registryName, schemaArn, schemaName).ConfigureAwait(false);
-            var SchemaDefinition = await GetSchemaDefinition(registryName, schemaArn, schemaName, latestVersionNumber).ConfigureAwait(false);
+            var latestVersionNumber = await GetLastestSchemaVersionNumber(schemaArn).ConfigureAwait(false);
+            var SchemaDefinition = await GetSchemaDefinition(schemaArn, latestVersionNumber).ConfigureAwait(false);
 
             return new SchemaResponse
             {
@@ -25,17 +25,13 @@ namespace MtfhReportingDataListener.Gateway
             };
         }
 
-        private async Task<string> GetSchemaDefinition(string registryName, string schemaArn, string schemaName, long versionNumber)
+        private async Task<string> GetSchemaDefinition(string schemaArn, long versionNumber)
         {
             var schemaVersionRequest = new GetSchemaVersionRequest()
             {
                 SchemaId = new SchemaId()
                 {
-
-                    RegistryName = registryName,
                     SchemaArn = schemaArn,
-                    SchemaName = schemaName
-
                 },
                 SchemaVersionNumber = new SchemaVersionNumber()
                 {
@@ -50,17 +46,13 @@ namespace MtfhReportingDataListener.Gateway
 
 
 
-        private async Task<long> GetLastestSchemaVersionNumber(string registryName, string schemaArn, string schemaName)
+        private async Task<long> GetLastestSchemaVersionNumber(string schemaArn)
         {
             var schemaRequest = new GetSchemaRequest()
             {
                 SchemaId = new SchemaId()
                 {
-
-                    RegistryName = registryName,
                     SchemaArn = schemaArn,
-                    SchemaName = schemaName
-
                 }
             };
 
