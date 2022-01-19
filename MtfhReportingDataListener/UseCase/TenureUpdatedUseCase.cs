@@ -92,7 +92,6 @@ namespace MtfhReportingDataListener.UseCase
                         record.Add(field.Name, null);
                         return;
                     }
-
                     fieldSchema = GetNonNullablePartOfNullableSchema(field.Schema);
                     fieldType = fieldSchema.Tag;
                 }
