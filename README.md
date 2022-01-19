@@ -102,7 +102,7 @@ Here is the process on how the data is saved to Kafka:
     ```
 
 6. Lastly the record created above is then sent through to Kafka.
-   In order to send the data through to Kafka a SchemaRegistryClient is required. SchemaRegistery are seperate from your Kafka brokers.The Kafka Producers publish the data to Kafka topics and communicates with the Schema Registry to send and recieve schemas that describe the data models for the messages simultaneously. Hence the SchemaRegistry is used to serialize the message and then save the serialize message to Kafka. 
+   In order to send the data through to Kafka a SchemaRegistryClient is required. SchemaRegistery are seperate from your Kafka brokers. The Kafka Producers publish the data to Kafka topics and communicates with the Schema Registry to send and receive schemas that describe the data models for the messages simultaneously. Hence the SchemaRegistry is used to serialize the message and then save the serialize message to Kafka. 
    We then use the `Producer.Flush(TimeSpan.FromSeconds(10))` to immediately send through the message to Kafka. There is a 10 seconds maximum timeout, this wouldn't hang the listener for 10 seconds every time.Instead, It will wait until either all the messages have been sent or 10 seconds pass. If we remove the 10 seconds then it would wait forever until all the messages have been sent, which we don't want as if there is an issue, it could just hang until the lambda timeout.
 
 See [this diagram][diagram] for a visual representation of the process of the listener.
