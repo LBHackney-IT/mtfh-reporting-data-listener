@@ -7,7 +7,7 @@ Here is the process on how the data is saved to Kafka:
 2. The listener calls the [TenureInformationApi][tenure-api-github] using a Shared Nuget Package to ensure that the Tenure sent through in the message exists and to get the details of the tenure. [The ReadME][Api-Gateway] for this package explains how the listener calls the TenureInformationApi.
      - If the Tenure doesn't exist then the listener throws an Exception 
 3. The listener will then get the schema from AWS Glue Schema registry managed in [this repository][ADD LINK HERE]
-4. Then using this schema an AVRO generic record is created using holding the tenure details retrieved from the tenure API.
+4. Then using this schema, an AVRO generic record is created holding the tenure details retrieved from the tenure API.
 
    Kafka only accepts the following data types; `byte[], Bytebuffer, Double, Integer, Long, String`. If you need to send through other data types you will first need to serialize the data into one of these types. Below are some code examples of how we have done this.
 
