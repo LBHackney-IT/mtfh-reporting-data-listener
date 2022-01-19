@@ -3,17 +3,23 @@
 This listener implements an AWS Lambda Function that recieves messages when any updates are made to the TenureInformationApi and sends the updates to a Kafka queue. 
 
 Here is the process on how the data is saved to Kafka:
+
+### Retrieving data from the API
 1. When one of the events in [this switch statement][usecase-factory] is raised then this listener is triggered
-2. The listener calls the [TenureInformationApi][tenure-api-github] using a Shared Nuget Package to ensure that the Tenure sent through in the message exists and to get the details of the tenure. [The ReadME][Api-Gateway] for this package explains how the listener calls the TenureInformationApi.
+2. The listener can then call the relevant API to retrieve the data the needs to be saved. You could potentially use [this Shared NuGet Package][nuget] to make calls to any APIs.[This ReadME][Api-Gateway] explains how the listener calls the relative API.
      - If the Tenure doesn't exist then the listener throws an Exception 
+
+### Get Schema from AWS Glue
 3. The listener will then get the schema from AWS Glue Schema registry managed in [this repository][ADD LINK HERE]
+
+### Convert data to Avro
 4. Then using this schema, an AVRO generic record is created holding the tenure details retrieved from the tenure API.
 
    Kafka only accepts the following data types; `byte[], Bytebuffer, Double, Integer, Long, String`. If you need to send through other data types you will first need to serialize the data into one of these types. Below are some code examples of how we have done this.
 
    **Nullable types (Union)**:
 
-   Here we check whether the field value is null, assign null if it is.
+   Here we check whether the field value is null, assign null if it is. This needs to be done as Kafka doesn't accept empty strings.
    If not, remove the nullable part from the schema and continue as normal.
 
    ```csharp
@@ -102,7 +108,10 @@ Here is the process on how the data is saved to Kafka:
     ```
 
 6. Lastly the record created above is then sent through to Kafka.
+   ### Schema Registry
    In order to send the data through to Kafka a SchemaRegistryClient is required. SchemaRegistery are seperate from your Kafka brokers. The Kafka Producers publish the data to Kafka topics and communicates with the Schema Registry to send and receive schemas that describe the data models for the messages simultaneously. Hence the SchemaRegistry is used to serialize the message and then save the serialize message to Kafka. 
+
+   ### Send Data to Kafka 
    We then use the `Producer.Flush(TimeSpan.FromSeconds(10))` to immediately send through the message to Kafka. There is a 10 seconds maximum timeout on the listener. This would mean that it will wait until either all the messages have been sent or 10 seconds have passed. If a maximum timeout is not set then it would wait until all the messages have been sent, and in the event there is an issue whilst sending messages, it will likely hang until the lambda timeout which we don't want.
 
 See [this diagram][diagram] for a visual representation of the process of the listener.
@@ -229,3 +238,4 @@ $ make test
 [diagram]: https://drive.google.com/file/d/1KbF9gcmf0LOvr7w2fE_fxTd1lcccPilr/view?usp=sharing
 [tenure-api-github]: https://github.com/LBHackney-IT/tenure-api
 [usecase-factory]: /MtfhReportingDataListener/Factories/UseCaseFactory.cs#L16
+[nuget]: https://github.com/LBHackney-IT/lbh-core/blob/release/Hackney.Core/Hackney.Core.Http/ApiGateway.cs
