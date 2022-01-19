@@ -33,7 +33,7 @@ namespace MtfhReportingDataListener
         /// the AWS credentials will come from the IAM role associated with the function and the AWS region will be set to the
         /// region the Lambda function is executed in.
         /// </summary>
-        public SqsFunction () { }
+        public SqsFunction() { }
         /// <summary>
         /// Contstructor used in E2E tests.
         /// </summary>

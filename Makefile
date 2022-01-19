@@ -25,21 +25,3 @@ lint:
 	-dotnet tool install -g dotnet-format --version 5.1.250801
 	dotnet tool update -g dotnet-format --version 5.1.250801
 	dotnet format
-
-.PHONY: build-lambda
-build-lambda:
-	chmod +x ./MtfhReportingDataListener/build.sh
-	cd ./MtfhReportingDataListener && ./build.sh
-
-.PHONY: deploy-sls
-deploy-sls: build-lambda
-	cd ./MtfhReportingDataListener/ && aws-vault exec hackney-dev-scratch -- sls deploy --stage development --conceal
-
-.PHONY: deploy-tf
-deploy-tf:
-	cd terraform/development && aws-vault exec hackney-dev-scratch -- terraform init
-	cd terraform/development && aws-vault exec hackney-dev-scratch -- terraform apply
-
-.PHONY: deploy-dev
-deploy-dev: deploy-tf deploy-sls
-	
