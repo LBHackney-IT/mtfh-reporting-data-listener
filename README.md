@@ -9,7 +9,7 @@ Here is the process on how the data is saved to Kafka:
 3. The listener will then get the schema from AWS Glue Schema registry managed in [this repository][ADD LINK HERE]
 4. Then using this schema an AVRO generic record is created using holding the tenure details retrieved from the tenure API.
 
-   Kafka only accepts the following data type; `byte[], Bytebuffer, Double, Integer, Long, String`. If you need to send through other data type you will first need to serialize the data into one of these types. Below are some code examples of how we have done this.
+   Kafka only accepts the following data types; `byte[], Bytebuffer, Double, Integer, Long, String`. If you need to send through other data types you will first need to serialize the data into one of these types. Below are some code examples of how we have done this.
 
    **Nullable types (Union)**:
 
