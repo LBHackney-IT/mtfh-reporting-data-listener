@@ -8,6 +8,7 @@ using FluentAssertions;
 using Hackney.Shared.Tenure.Boundary.Response;
 using MtfhReportingDataListener.Gateway;
 using MtfhReportingDataListener.Infrastructure.Exceptions;
+using MtfhReportingDataListener.Factories;
 using System;
 using System.Threading.Tasks;
 using Xunit;
@@ -25,7 +26,7 @@ namespace MtfhReportingDataListener.Tests.E2ETests.Steps
             _eventType = EventTypes.TenureUpdatedEvent;
         }
 
-        public async Task WhenTheFunctionIsTriggered(Guid id, IAmazonGlue glue)
+        public async Task WhenTheFunctionIsTriggered(Guid id, IGlueFactory glue)
         {
             TheMessage = await TriggerFunction(id, glue).ConfigureAwait(false);
         }

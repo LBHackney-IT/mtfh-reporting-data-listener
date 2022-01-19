@@ -3,6 +3,7 @@ using Amazon.Glue.Model;
 using Moq;
 using MtfhReportingDataListener.Gateway;
 using MtfhReportingDataListener.Gateway.Interfaces;
+using MtfhReportingDataListener.Factories;
 using Xunit;
 using System.Threading.Tasks;
 using System.Threading;
@@ -22,7 +23,9 @@ namespace MtfhReportingDataListener.Tests.Gateway
         public GlueGatewayTests()
         {
             _mockAmazonGlue = new Mock<IAmazonGlue>();
-            _gateway = new GlueGateway(_mockAmazonGlue.Object);
+            var mockGlueWrapper = new Mock<IGlueFactory>();
+            mockGlueWrapper.Setup(x => x.GlueClient()).ReturnsAsync(_mockAmazonGlue.Object);
+            _gateway = new GlueGateway(mockGlueWrapper.Object);
         }
 
 

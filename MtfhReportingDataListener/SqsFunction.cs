@@ -33,12 +33,10 @@ namespace MtfhReportingDataListener
         /// the AWS credentials will come from the IAM role associated with the function and the AWS region will be set to the
         /// region the Lambda function is executed in.
         /// </summary>
-        public SqsFunction() { }
-
-        /// <summary>
-        /// Constructor to be used by the E2E tests so that we can mock API calls to AWS Glue.
-        /// </summary>
-        public SqsFunction(IAmazonGlue glue) : base(glue) { }
+        /// <param name="glue">
+        /// This paramter will only be used in E2E tests so that we can mock out the glue SDK.
+        /// </param>
+        public SqsFunction(IGlueFactory glue = null) : base(glue) { }
 
         /// <summary>
         /// Use this method to perform any DI configuration required
@@ -55,8 +53,7 @@ namespace MtfhReportingDataListener
 
             services.AddApiGateway();
 
-            // register glue SDK
-            services.AddSingleton<IAmazonGlue>(Glue);
+            services.AddSingleton<IGlueFactory>(Glue);
             base.ConfigureServices(services);
         }
 
