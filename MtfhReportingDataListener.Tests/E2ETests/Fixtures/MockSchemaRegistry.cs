@@ -43,7 +43,7 @@ public class MockSchemaRegistry
                 It.Is<GetSchemaVersionRequest>(x => MockGlueHelperMethods.CheckVersionRequestsEquivalent(getSchemaVersion, x)),
                 It.IsAny<CancellationToken>()
             )).ReturnsAsync(new GetSchemaVersionResponse { SchemaDefinition = SchemaDefinition, VersionNumber = 2 });
-        
+
         _mockGlue.Setup(x => x.GlueClient()).ReturnsAsync(mockGlueSdk.Object);
     }
 
