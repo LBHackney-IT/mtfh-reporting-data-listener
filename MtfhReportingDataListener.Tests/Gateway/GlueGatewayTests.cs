@@ -28,61 +28,28 @@ namespace MtfhReportingDataListener.Tests.Gateway
             _gateway = new GlueGateway(mockGlueWrapper.Object);
         }
 
-
-        [Fact]
-        public async Task VerifyTheSchemaDetailsAreRetrievedFromGlue()
-        {
-            var getSchemaRequest = new GetSchemaRequest()
-            {
-                SchemaId = new SchemaId()
-                {
-                    SchemaArn = "arn:aws:glue:mmh",
-                }
-            };
-            var getSchemaResponse = _fixture.Create<GetSchemaResponse>();
-            _mockAmazonGlue.Setup(x => x.GetSchemaAsync(It.Is<GetSchemaRequest>(x => MockGlueHelperMethods.CheckRequestsEquivalent(getSchemaRequest, x)), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(getSchemaResponse).Verifiable();
-            _mockAmazonGlue.Setup(x => x.GetSchemaVersionAsync(
-                    It.IsAny<GetSchemaVersionRequest>(),
-                    It.IsAny<CancellationToken>()
-                )).ReturnsAsync(new GetSchemaVersionResponse { SchemaDefinition = "schema" });
-
-            await _gateway.GetSchema("arn:aws:glue:mmh").ConfigureAwait(false);
-            _mockAmazonGlue.Verify();
-        }
-
         [Theory]
         [InlineData("goodnight moon", 4)]
         [InlineData("hello world", 7)]
         public async Task VerifyGettingTheSchemaStringForTheLatestVersion(string schema, int versionId)
         {
-            var getSchemaResponse = new GetSchemaResponse()
-            {
-                LatestSchemaVersion = versionId,
-                RegistryName = "TenureSchema",
-                SchemaArn = "arn:aws:glue:mmh",
-                SchemaName = "MMH"
-            };
-
             var expectedRequest = new GetSchemaVersionRequest
             {
                 SchemaId = new SchemaId()
                 {
-                    RegistryName = "TenureSchema",
                     SchemaArn = "arn:aws:glue:mmh",
-                    SchemaName = "MMH"
                 },
                 SchemaVersionNumber = new SchemaVersionNumber
                 {
                     LatestVersion = true,
-                    VersionNumber = versionId
                 }
             };
 
-            _mockAmazonGlue.Setup(x => x.GetSchemaAsync(It.IsAny<GetSchemaRequest>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(getSchemaResponse);
-
-            var response = new GetSchemaVersionResponse { SchemaDefinition = schema };
+            var response = new GetSchemaVersionResponse
+            {
+                SchemaDefinition = schema,
+                VersionNumber = versionId
+            };
 
             _mockAmazonGlue.Setup(x =>
                 x.GetSchemaVersionAsync(

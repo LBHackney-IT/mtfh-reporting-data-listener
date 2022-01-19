@@ -99,14 +99,14 @@ resources:
                     - "sqs:SendMessage"
                     - "kms:Decrypt"
                   Resource: "*"
-          - PolicyName: glueSchemaRegistry
+          - PolicyName: assumeGlueRole
             PolicyDocument:
               Version: '2012-10-17'
               Statement:
                 - Effect: Allow
                   Action:
-                    - "glue:Get*"
-                  Resource: ${ssm:/housing-tl/${self:provider.stage}/dataplatform-tenure-schema-arn} 
+                    - "sts:AssumeRole"
+                  Resource: ${ssm:/housing-tl/${self:provider.stage}/dataplatform-role-arn-to-access-glue-registry}
 
 custom:
   vpc:

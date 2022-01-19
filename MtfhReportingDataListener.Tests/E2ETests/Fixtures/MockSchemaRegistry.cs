@@ -27,37 +27,22 @@ public class MockSchemaRegistry
     {
         var mockGlueSdk = new Mock<IAmazonGlue>();
 
-        var getSchemaRequest = new GetSchemaRequest()
+        var getSchemaVersion = new GetSchemaVersionRequest()
         {
             SchemaId = new SchemaId()
             {
-
-                SchemaArn = SchemaArn,
-            }
-        };
-
-        var getSchemaVersion = new GetSchemaVersionRequest()
-        {
-            SchemaId = getSchemaRequest.SchemaId,
+                SchemaArn = SchemaArn
+            },
             SchemaVersionNumber = new SchemaVersionNumber()
             {
                 LatestVersion = true,
-                VersionNumber = 2
             }
         };
-        var getSchemaResponse = new GetSchemaResponse()
-        {
-            LatestSchemaVersion = getSchemaVersion.SchemaVersionNumber.VersionNumber,
-            SchemaArn = SchemaArn,
-        };
-
-        mockGlueSdk.Setup(x => x.GetSchemaAsync(It.Is<GetSchemaRequest>(x => MockGlueHelperMethods.CheckRequestsEquivalent(getSchemaRequest, x)), It.IsAny<CancellationToken>()))
-                       .ReturnsAsync(getSchemaResponse);
 
         mockGlueSdk.Setup(x => x.GetSchemaVersionAsync(
                 It.Is<GetSchemaVersionRequest>(x => MockGlueHelperMethods.CheckVersionRequestsEquivalent(getSchemaVersion, x)),
                 It.IsAny<CancellationToken>()
-            )).ReturnsAsync(new GetSchemaVersionResponse { SchemaDefinition = SchemaDefinition });
+            )).ReturnsAsync(new GetSchemaVersionResponse { SchemaDefinition = SchemaDefinition, VersionNumber = 2 });
         
         _mockGlue.Setup(x => x.GlueClient()).ReturnsAsync(mockGlueSdk.Object);
     }
