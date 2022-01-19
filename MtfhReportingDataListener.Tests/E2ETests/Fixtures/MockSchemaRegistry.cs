@@ -1,4 +1,5 @@
 using MtfhReportingDataListener.Tests.Helper;
+using MtfhReportingDataListener.Factories;
 using System.Threading;
 using Amazon.Glue;
 using Amazon.Glue.Model;
@@ -11,9 +12,9 @@ public class MockSchemaRegistry
     public string SchemaArn { get; }
     public string SchemaDefinition { get; }
 
-    private Mock<IAmazonGlue> _mockGlue { get; set; }
+    private Mock<IGlueFactory> _mockGlue { get; set; }
 
-    public MockSchemaRegistry(Mock<IAmazonGlue> mockGlue)
+    public MockSchemaRegistry(Mock<IGlueFactory> mockGlue)
     {
         var fixture = new Fixture();
         SchemaArn = "arn:aws:glue:my-schema-registry";
@@ -24,6 +25,7 @@ public class MockSchemaRegistry
 
     public void GivenThereIsAMatchingSchemaInGlueRegistry()
     {
+        var mockGlueSdk = new Mock<IAmazonGlue>();
 
         var getSchemaRequest = new GetSchemaRequest()
         {
@@ -49,13 +51,15 @@ public class MockSchemaRegistry
             SchemaArn = SchemaArn,
         };
 
-        _mockGlue.Setup(x => x.GetSchemaAsync(It.Is<GetSchemaRequest>(x => MockGlueHelperMethods.CheckRequestsEquivalent(getSchemaRequest, x)), It.IsAny<CancellationToken>()))
+        mockGlueSdk.Setup(x => x.GetSchemaAsync(It.Is<GetSchemaRequest>(x => MockGlueHelperMethods.CheckRequestsEquivalent(getSchemaRequest, x)), It.IsAny<CancellationToken>()))
                        .ReturnsAsync(getSchemaResponse);
 
-        _mockGlue.Setup(x => x.GetSchemaVersionAsync(
+        mockGlueSdk.Setup(x => x.GetSchemaVersionAsync(
                 It.Is<GetSchemaVersionRequest>(x => MockGlueHelperMethods.CheckVersionRequestsEquivalent(getSchemaVersion, x)),
                 It.IsAny<CancellationToken>()
             )).ReturnsAsync(new GetSchemaVersionResponse { SchemaDefinition = SchemaDefinition });
+        
+        _mockGlue.Setup(x => x.GlueClient()).ReturnsAsync(mockGlueSdk.Object);
     }
 
     private void SetSchemaEnvVariables()

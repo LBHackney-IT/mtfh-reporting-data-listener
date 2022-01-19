@@ -9,7 +9,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Reflection;
 using System.Text.Json;
-using Amazon.Glue;
+using MtfhReportingDataListener.Factories;
 
 namespace MtfhReportingDataListener
 {
@@ -22,16 +22,16 @@ namespace MtfhReportingDataListener
     public abstract class BaseFunction
     {
         protected readonly static JsonSerializerOptions _jsonOptions = JsonOptions.CreateJsonOptions();
-        protected IAmazonGlue Glue { get; set; }
+        protected IGlueFactory Glue { get; set; }
 
         protected IConfigurationRoot Configuration { get; private set; }
 
         protected IServiceProvider ServiceProvider { get; private set; }
         protected ILogger Logger { get; private set; }
 
-        internal BaseFunction(IAmazonGlue glue = null)
+        internal BaseFunction(IGlueFactory glue = null)
         {
-            Glue = glue ?? new AmazonGlueClient();
+            Glue = glue ?? new GlueFactory();
             Construct();
         }
 

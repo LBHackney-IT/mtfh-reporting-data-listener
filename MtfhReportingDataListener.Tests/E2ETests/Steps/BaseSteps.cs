@@ -4,13 +4,13 @@ using Amazon.Lambda.TestUtilities;
 using AutoFixture;
 using MtfhReportingDataListener.Boundary;
 using MtfhReportingDataListener.Infrastructure;
+using MtfhReportingDataListener.Factories;
 using Moq;
 using System;
 using System.Collections.Generic;
 using System.Text.Json;
 using System.Threading.Tasks;
 using Xunit;
-using Amazon.Glue;
 
 namespace MtfhReportingDataListener.Tests.E2ETests.Steps
 {
@@ -43,14 +43,14 @@ namespace MtfhReportingDataListener.Tests.E2ETests.Steps
                            .Create();
         }
 
-        protected async Task<SQSEvent.SQSMessage> TriggerFunction(Guid id, IAmazonGlue glue)
+        protected async Task<SQSEvent.SQSMessage> TriggerFunction(Guid id, IGlueFactory glue)
         {
             var snsEvent = CreateEvent(id);
             var message = CreateMessage(snsEvent);
             return await TriggerFunction(message, glue).ConfigureAwait(false);
         }
 
-        protected async Task<SQSEvent.SQSMessage> TriggerFunction(SQSEvent.SQSMessage message, IAmazonGlue glue)
+        protected async Task<SQSEvent.SQSMessage> TriggerFunction(SQSEvent.SQSMessage message, IGlueFactory glue)
         {
             var mockLambdaLogger = new Mock<ILambdaLogger>();
             ILambdaContext lambdaContext = new TestLambdaContext()

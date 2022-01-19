@@ -1,5 +1,6 @@
 using Amazon.Glue;
 using MtfhReportingDataListener.Gateway.Interfaces;
+using MtfhReportingDataListener.Factories;
 using System.Threading.Tasks;
 using Amazon.Glue.Model;
 
@@ -7,16 +8,17 @@ namespace MtfhReportingDataListener.Gateway
 {
     public class GlueGateway : IGlueGateway
     {
-        public IAmazonGlue _amazonGlueClient;
-        public GlueGateway(IAmazonGlue amazonGlueClient)
+        public IGlueFactory _amazonGlue;
+        public GlueGateway(IGlueFactory amazonGlue)
         {
-            _amazonGlueClient = amazonGlueClient;
+            _amazonGlue = amazonGlue;
         }
 
         public async Task<SchemaResponse> GetSchema(string schemaArn)
         {
-            var latestVersionNumber = await GetLastestSchemaVersionNumber(schemaArn).ConfigureAwait(false);
-            var SchemaDefinition = await GetSchemaDefinition(schemaArn, latestVersionNumber).ConfigureAwait(false);
+            var glueClient = await _amazonGlue.GlueClient().ConfigureAwait(false);
+            var latestVersionNumber = await GetLastestSchemaVersionNumber(glueClient, schemaArn).ConfigureAwait(false);
+            var SchemaDefinition = await GetSchemaDefinition(glueClient, schemaArn, latestVersionNumber).ConfigureAwait(false);
 
             return new SchemaResponse
             {
@@ -25,7 +27,7 @@ namespace MtfhReportingDataListener.Gateway
             };
         }
 
-        private async Task<string> GetSchemaDefinition(string schemaArn, long versionNumber)
+        private async Task<string> GetSchemaDefinition(IAmazonGlue glueClient, string schemaArn, long versionNumber)
         {
             var schemaVersionRequest = new GetSchemaVersionRequest()
             {
@@ -40,13 +42,13 @@ namespace MtfhReportingDataListener.Gateway
                 }
             };
 
-            var schemaVersionResponse = await _amazonGlueClient.GetSchemaVersionAsync(schemaVersionRequest).ConfigureAwait(false);
+            var schemaVersionResponse = await glueClient.GetSchemaVersionAsync(schemaVersionRequest).ConfigureAwait(false);
             return schemaVersionResponse.SchemaDefinition;
         }
 
 
 
-        private async Task<long> GetLastestSchemaVersionNumber(string schemaArn)
+        private async Task<long> GetLastestSchemaVersionNumber(IAmazonGlue glueClient, string schemaArn)
         {
             var schemaRequest = new GetSchemaRequest()
             {
@@ -56,7 +58,7 @@ namespace MtfhReportingDataListener.Gateway
                 }
             };
 
-            var getSchemaResponse = await _amazonGlueClient.GetSchemaAsync(schemaRequest).ConfigureAwait(false);
+            var getSchemaResponse = await glueClient.GetSchemaAsync(schemaRequest).ConfigureAwait(false);
             return getSchemaResponse.LatestSchemaVersion;
         }
     }

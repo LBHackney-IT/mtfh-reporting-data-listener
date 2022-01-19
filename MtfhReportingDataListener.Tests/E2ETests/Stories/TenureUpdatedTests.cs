@@ -1,10 +1,10 @@
 using MtfhReportingDataListener.Tests.E2ETests.Fixtures;
 using MtfhReportingDataListener.Tests.E2ETests.Steps;
+using MtfhReportingDataListener.Factories;
 using System;
 using TestStack.BDDfy;
 using Xunit;
 using Moq;
-using Amazon.Glue;
 
 namespace MtfhReportingDataListener.Tests.E2ETests.Stories
 {
@@ -19,14 +19,14 @@ namespace MtfhReportingDataListener.Tests.E2ETests.Stories
         private readonly MockSchemaRegistry _schemaRegistry;
         private readonly TenureUpdatedUseCaseSteps _steps;
         private readonly MockApplicationFactory _appFactory;
-        private readonly Mock<IAmazonGlue> _mockGlue;
+        private readonly Mock<IGlueFactory> _mockGlue;
 
         public TenureUpdatedTests(MockApplicationFactory appFactory)
         {
             _tenureFixture = new TenureFixture();
             _appFactory = appFactory;
             _steps = new TenureUpdatedUseCaseSteps();
-            _mockGlue = new Mock<IAmazonGlue>();
+            _mockGlue = new Mock<IGlueFactory>();
             _schemaRegistry = new MockSchemaRegistry(_mockGlue);
         }
 
