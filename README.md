@@ -3,7 +3,7 @@
 This listener implements an AWS Lambda Function that recieves messages when any updates are made to the TenureInformationApi and sends the updates to a Kafka queue. 
 
 Here is the process on how the data is saved to Kafka:
-1. When one of the events in from [this switch statement][usecase-factory] is raised then this listener is triggered
+1. When one of the events in [this switch statement][usecase-factory] is raised then this listener is triggered
 2. The listener calls the [TenureInformationApi][tenure-api-github] using a Shared Nuget Package to ensure that the Tenure sent through in the message exists and to get the details of the tenure. [The ReadME][Api-Gateway] for this package explains how the listener calls the TenureInformationApi.
      - If the Tenure doesn't exist then the listener throws an Exception 
 3. The listener will then get the schema from AWS Glue Schema registry managed in [this repository][ADD LINK HERE]
