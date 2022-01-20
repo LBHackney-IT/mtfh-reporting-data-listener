@@ -5,6 +5,8 @@ using FluentAssertions;
 using MtfhReportingDataListener.Gateway;
 using MtfhReportingDataListener.Gateway.Interfaces;
 using System;
+using System.Linq;
+using System.Threading.Tasks;
 using Xunit;
 using Avro;
 using Avro.Generic;
@@ -64,6 +66,27 @@ namespace MtfhReportingDataListener.Tests.Gateway
                 Assert.NotNull(r?.Message);
                 Assert.Equal(message, r.Message.Value);
                 consumer.Close();
+            }
+        }
+
+        [Fact]
+        public async Task CreatesKafkaTopicCreatesTopic()
+        {
+            string tenureAPITopic = "mtfh-reporting-data-listener";
+            var config = new AdminClientConfig()
+            {
+                BootstrapServers = Environment.GetEnvironmentVariable("DATAPLATFORM_KAFKA_HOSTNAME"),
+            };
+
+            await _gateway.CreateKafkaTopic(tenureAPITopic).ConfigureAwait(false);
+
+            using (var adminClient = new AdminClientBuilder(config)
+                .Build())
+            {
+                var meta = adminClient.GetMetadata(TimeSpan.FromSeconds(5));
+                var topicsList = meta.Topics.Select(t => t.Topic);
+
+                topicsList.Should().Contain(tenureAPITopic);
             }
         }
     }
