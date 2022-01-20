@@ -60,7 +60,7 @@ namespace MtfhReportingDataListener.UseCase
             };
             var record = BuildTenureRecord(schema.Schema, tenureChangeEvent);
 
-            var topicName = Environment.GetEnvironmentVariable("KAFKA_TOPIC");
+            var topicName = Environment.GetEnvironmentVariable("TENURE_API_KAFKA_TOPIC");
             await _kafkaGateway.CreateKafkaTopic(topicName);
             _kafkaGateway.SendDataToKafka(topicName, record, schemaWithMetadata);
         }

@@ -144,7 +144,7 @@ namespace MtfhReportingDataListener.Tests.UseCase
             _mockGlue.Setup(x => x.GetSchema(It.IsAny<string>())).ReturnsAsync(schemaResponse);
             var topicName = "mtfh-reporting-data-listener";
 
-            Environment.SetEnvironmentVariable("KAFKA_TOPIC", topicName);
+            Environment.SetEnvironmentVariable("TENURE_API_KAFKA_TOPIC", topicName);
 
             var message = new EntityEventSns();
 
