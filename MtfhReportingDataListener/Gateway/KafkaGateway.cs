@@ -66,10 +66,9 @@ namespace MtfhReportingDataListener.Gateway
             }).Build())
             {
                 var topicsList = adminClient.GetMetadata(TimeSpan.FromSeconds(5)).Topics;
-                var searchTopic = topicsList.FirstOrDefault(x => x.Topic == topicName);
+                bool topicExists = topicsList.Any(t => t.Topic == topicName);
 
-                if (searchTopic == null)
-
+                if (!topicExists)
                 {
                     await adminClient.CreateTopicsAsync(new TopicSpecification[]
                     {
