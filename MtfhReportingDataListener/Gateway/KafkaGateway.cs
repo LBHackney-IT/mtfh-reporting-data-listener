@@ -65,7 +65,7 @@ namespace MtfhReportingDataListener.Gateway
                 BootstrapServers = Environment.GetEnvironmentVariable("DATAPLATFORM_KAFKA_HOSTNAME")
             }).Build())
             {
-                var topicsList = adminClient.GetMetadata(TimeSpan.FromSeconds(10)).Topics;
+                var topicsList = adminClient.GetMetadata(TimeSpan.FromSeconds(5)).Topics;
                 var searchTopic = topicsList.FirstOrDefault(x => x.Topic == topicName);
 
                 if (searchTopic == null)
