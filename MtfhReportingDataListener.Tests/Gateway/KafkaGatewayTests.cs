@@ -69,16 +69,18 @@ namespace MtfhReportingDataListener.Tests.Gateway
             }
         }
 
-        [Fact]
-        public async Task CreatesKafkaTopicCreatesTopic()
+        [Theory]
+        [InlineData("mtfh-reporting-data-listener")]
+        [InlineData("tenure-api")]
+        public async Task CreatesKafkaTopicCreatesTopic(string topicName)
         {
-            string tenureAPITopic = "mtfh-reporting-data-listener";
+            string tenureApiTopic = topicName;
             var config = new AdminClientConfig()
             {
                 BootstrapServers = Environment.GetEnvironmentVariable("DATAPLATFORM_KAFKA_HOSTNAME"),
             };
 
-            await _gateway.CreateKafkaTopic(tenureAPITopic).ConfigureAwait(false);
+            await _gateway.CreateKafkaTopic(tenureApiTopic).ConfigureAwait(false);
 
             using (var adminClient = new AdminClientBuilder(config)
                 .Build())
@@ -86,7 +88,7 @@ namespace MtfhReportingDataListener.Tests.Gateway
                 var meta = adminClient.GetMetadata(TimeSpan.FromSeconds(5));
                 var topicsList = meta.Topics.Select(t => t.Topic);
 
-                topicsList.Should().Contain(tenureAPITopic);
+                topicsList.Should().Contain(tenureApiTopic);
             }
         }
     }
