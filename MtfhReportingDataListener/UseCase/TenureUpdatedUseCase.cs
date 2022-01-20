@@ -53,15 +53,16 @@ namespace MtfhReportingDataListener.UseCase
                 DateTime = message.DateTime,
                 User = new Domain.User
                 {
-                    Name = message.User.Name,
-                    Email = message.User.Email
+                    Name = message.User?.Name,
+                    Email = message.User?.Email
                 },
                 Tenure = tenure
             };
             var record = BuildTenureRecord(schema.Schema, tenureChangeEvent);
 
-            var topic = "mtfh-reporting-data-listener";
-            _kafkaGateway.SendDataToKafka(topic, record, schemaWithMetadata);
+            var topicName = Environment.GetEnvironmentVariable("KAFKA_TOPIC");
+            await _kafkaGateway.CreateKafkaTopic(topicName);
+            _kafkaGateway.SendDataToKafka(topicName, record, schemaWithMetadata);
         }
 
         public GenericRecord BuildTenureRecord(string schema, TenureChangeEvent tenureResponse)

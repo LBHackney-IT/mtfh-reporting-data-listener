@@ -122,6 +122,38 @@ namespace MtfhReportingDataListener.Tests.UseCase
         }
 
         [Fact]
+        public async Task CallsKafkaGatewayToCreateTopic()
+        {
+            _mockGateway.Setup(x => x.GetTenureInfoByIdAsync(It.IsAny<Guid>(), It.IsAny<Guid>()))
+                .ReturnsAsync(_tenure);
+
+            var schemaResponse = new SchemaResponse()
+            {
+                Schema = @"{
+                ""type"": ""record"",
+                ""name"": ""Person"",
+                ""fields"": [
+                   {
+                     ""name"": ""Id"",
+                     ""type"": ""string""
+                   },
+                ]
+                }"
+            };
+
+            _mockGlue.Setup(x => x.GetSchema(It.IsAny<string>())).ReturnsAsync(schemaResponse);
+            var topicName = "mtfh-reporting-data-listener";
+
+            Environment.SetEnvironmentVariable("KAFKA_TOPIC", topicName);
+
+            var message = new EntityEventSns();
+
+            await _sut.ProcessMessageAsync(message);
+
+            _mockKafka.Verify(x => x.CreateKafkaTopic(topicName), Times.Once);
+        }
+
+        [Fact]
         public async Task ProcessMessageAsyncSendsDataToKafka()
         {
             _mockGateway.Setup(x => x.GetTenureInfoByIdAsync(_message.EntityId, _message.CorrelationId))
