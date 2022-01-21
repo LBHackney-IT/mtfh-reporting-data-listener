@@ -1,4 +1,5 @@
 using MtfhReportingDataListener.Boundary;
+using MtfhReportingDataListener.Domain;
 using MtfhReportingDataListener.Gateway.Interfaces;
 using MtfhReportingDataListener.Infrastructure.Exceptions;
 using MtfhReportingDataListener.UseCase.Interfaces;
@@ -38,19 +39,32 @@ namespace MtfhReportingDataListener.UseCase
             if (tenure is null) throw new EntityNotFoundException<TenureResponseObject>(message.EntityId);
 
             var schemaArn = Environment.GetEnvironmentVariable("SCHEMA_ARN");
-            var registryName = Environment.GetEnvironmentVariable("REGISTRY_NAME");
-            var schemaName = Environment.GetEnvironmentVariable("SCHEMA_NAME");
-            var schema = await _glueGateway.GetSchema(registryName, schemaArn, schemaName).ConfigureAwait(false);
+            var schema = await _glueGateway.GetSchema(schemaArn).ConfigureAwait(false);
 
             var schemaWithMetadata = new Confluent.SchemaRegistry.Schema("tenure", 1, 1, schema.Schema);
-
-            var record = BuildTenureRecord(schema.Schema, tenure);
+            var tenureChangeEvent = new TenureChangeEvent
+            {
+                Id = message.Id,
+                EventType = message.EventType,
+                SourceDomain = message.SourceDomain,
+                SourceSystem = message.SourceSystem,
+                Version = message.Version,
+                CorrelationId = message.CorrelationId,
+                DateTime = message.DateTime,
+                User = new Domain.User
+                {
+                    Name = message.User.Name,
+                    Email = message.User.Email
+                },
+                Tenure = tenure
+            };
+            var record = BuildTenureRecord(schema.Schema, tenureChangeEvent);
 
             var topic = "mtfh-reporting-data-listener";
             _kafkaGateway.SendDataToKafka(topic, record, schemaWithMetadata);
         }
 
-        public GenericRecord BuildTenureRecord(string schema, TenureResponseObject tenureResponse)
+        public GenericRecord BuildTenureRecord(string schema, TenureChangeEvent tenureResponse)
         {
             return PopulateFields(tenureResponse, Schema.Parse(schema));
         }
@@ -78,7 +92,6 @@ namespace MtfhReportingDataListener.UseCase
                         record.Add(field.Name, null);
                         return;
                     }
-
                     fieldSchema = GetNonNullablePartOfNullableSchema(field.Schema);
                     fieldType = fieldSchema.Tag;
                 }

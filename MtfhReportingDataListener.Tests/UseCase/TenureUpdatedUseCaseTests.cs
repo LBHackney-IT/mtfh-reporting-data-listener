@@ -3,6 +3,7 @@ using MtfhReportingDataListener.Boundary;
 using MtfhReportingDataListener.Gateway.Interfaces;
 using MtfhReportingDataListener.Infrastructure.Exceptions;
 using MtfhReportingDataListener.UseCase;
+using MtfhReportingDataListener.Domain;
 using FluentAssertions;
 using Moq;
 using System;
@@ -13,7 +14,6 @@ using Hackney.Shared.Tenure.Domain;
 using System.Linq;
 using System.Collections.Generic;
 using System.Text.Json;
-using Avro;
 using Avro.Generic;
 using Schema = Confluent.SchemaRegistry.Schema;
 
@@ -114,12 +114,8 @@ namespace MtfhReportingDataListener.Tests.UseCase
 
             var schemaArn = "arn:aws:glue:blah";
             Environment.SetEnvironmentVariable("SCHEMA_ARN", schemaArn);
-            var registryName = _fixture.Create<string>();
-            Environment.SetEnvironmentVariable("REGISTRY_NAME", registryName);
-            var schemaName = _fixture.Create<string>();
-            Environment.SetEnvironmentVariable("SCHEMA_NAME", schemaName);
 
-            _mockGlue.Setup(x => x.GetSchema(registryName, schemaArn, schemaName)).ReturnsAsync(mockSchemaResponse).Verifiable();
+            _mockGlue.Setup(x => x.GetSchema(schemaArn)).ReturnsAsync(mockSchemaResponse).Verifiable();
 
             await _sut.ProcessMessageAsync(_message).ConfigureAwait(false);
             _mockGlue.Verify();
@@ -143,7 +139,7 @@ namespace MtfhReportingDataListener.Tests.UseCase
                 ]
                 }"
             };
-            _mockGlue.Setup(x => x.GetSchema(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>())).ReturnsAsync(mockSchemaResponse);
+            _mockGlue.Setup(x => x.GetSchema(It.IsAny<string>())).ReturnsAsync(mockSchemaResponse);
 
             await _sut.ProcessMessageAsync(_message).ConfigureAwait(false);
             _mockKafka.Verify(x => x.SendDataToKafka("mtfh-reporting-data-listener", It.IsAny<GenericRecord>(), It.IsAny<Schema>()), Times.Once);
@@ -164,11 +160,10 @@ namespace MtfhReportingDataListener.Tests.UseCase
                 ]
             }";
 
-            var receivedRecord = _sut.BuildTenureRecord(schema, _tenure);
+            var receivedRecord = ExecuteBuildTenureRecord(schema, _tenure);
 
             Assert.Equal(_tenure.Id.ToString(), receivedRecord["Id"]);
         }
-
 
         [Fact]
         public void BuildTenureRecordCanSetMultipleStringsToAGenericRecord()
@@ -189,7 +184,7 @@ namespace MtfhReportingDataListener.Tests.UseCase
                 ]
             }";
 
-            var receivedRecord = _sut.BuildTenureRecord(schema, _tenure);
+            var receivedRecord = ExecuteBuildTenureRecord(schema, _tenure);
 
             Assert.Equal(_tenure.Id.ToString(), receivedRecord["Id"]);
             Assert.Equal(_tenure.PaymentReference, receivedRecord["PaymentReference"]);
@@ -217,7 +212,7 @@ namespace MtfhReportingDataListener.Tests.UseCase
             var tenure = _tenure;
             tenure.SuccessionDate = new DateTime(1970, 01, 02);
 
-            var receivedRecord = _sut.BuildTenureRecord(schema, tenure);
+            var receivedRecord = ExecuteBuildTenureRecord(schema, tenure);
 
             Assert.Equal(86400, receivedRecord["SuccessionDate"]);
         }
@@ -243,7 +238,7 @@ namespace MtfhReportingDataListener.Tests.UseCase
 
             var fieldValue = GetFieldValueFromStringName<bool>(nullableBoolFieldName, _tenure);
 
-            var receivedRecord = _sut.BuildTenureRecord(schema, _tenure);
+            var receivedRecord = ExecuteBuildTenureRecord(schema, _tenure);
 
             Assert.Equal(_tenure.IsActive, receivedRecord["IsActive"]);
             Assert.Equal(fieldValue, receivedRecord[nullableBoolFieldName]);
@@ -271,7 +266,7 @@ namespace MtfhReportingDataListener.Tests.UseCase
                     ]
                 }";
 
-            var receivedRecord = _sut.BuildTenureRecord(schema, _tenure);
+            var receivedRecord = ExecuteBuildTenureRecord(schema, _tenure);
             var receivedTenureType = (GenericRecord) receivedRecord["TenureType"];
 
             Assert.Equal(_tenure.TenureType.Code, receivedTenureType["Code"]);
@@ -307,7 +302,7 @@ namespace MtfhReportingDataListener.Tests.UseCase
             var tenure = _tenure;
             tenure.HouseholdMembers = new List<HouseholdMembers> { tenure.HouseholdMembers.First() };
 
-            var receivedRecord = _sut.BuildTenureRecord(schema, tenure);
+            var receivedRecord = ExecuteBuildTenureRecord(schema, tenure);
             receivedRecord["HouseholdMembers"].Should().BeOfType<GenericRecord[]>();
 
             var firstRecord = ((GenericRecord[]) receivedRecord["HouseholdMembers"]).ToList().First();
@@ -355,7 +350,7 @@ namespace MtfhReportingDataListener.Tests.UseCase
 
             var tenure = _tenure;
             tenure.HouseholdMembers = new List<HouseholdMembers> { tenure.HouseholdMembers.First() };
-            var receivedRecord = _sut.BuildTenureRecord(schema, tenure);
+            var receivedRecord = ExecuteBuildTenureRecord(schema, tenure);
             var receivedHouseholdMember = ((GenericRecord[]) receivedRecord["HouseholdMembers"])[0];
 
             receivedHouseholdMember["Id"].Should().Be(_tenure.HouseholdMembers.First().Id.ToString());
@@ -402,7 +397,7 @@ namespace MtfhReportingDataListener.Tests.UseCase
                 ]
             }";
 
-            var receivedRecord = _sut.BuildTenureRecord(schema, _tenure);
+            var receivedRecord = ExecuteBuildTenureRecord(schema, _tenure);
             var receivedRecordEnum = (GenericEnum) ((GenericRecord) receivedRecord["TenuredAsset"])["Type"];
             receivedRecord["TenuredAsset"].Should().BeOfType<GenericRecord>();
 
@@ -425,7 +420,7 @@ namespace MtfhReportingDataListener.Tests.UseCase
                 ]
             }";
 
-            Func<GenericRecord> receivedRecord = () => _sut.BuildTenureRecord(schema, _tenure);
+            Func<GenericRecord> receivedRecord = () => ExecuteBuildTenureRecord(schema, _tenure);
 
             receivedRecord.Should().NotThrow<NullReferenceException>();
         }
@@ -433,6 +428,73 @@ namespace MtfhReportingDataListener.Tests.UseCase
         private T GetFieldValueFromStringName<T>(string fieldName, TenureResponseObject tenure)
         {
             return (T) typeof(TenureResponseObject).GetProperty(fieldName).GetValue(tenure);
+        }
+
+        private GenericRecord ExecuteBuildTenureRecord(string tenureSchema, TenureResponseObject tenure)
+        {
+            var schema = @$"{{
+                ""type"": ""record"",
+                ""name"": ""TenureAPIChangeEvent"",
+                ""namespace"": ""MMH"",
+                ""fields"": [
+                    {{
+                        ""name"": ""Id"",
+                        ""type"": ""string"",
+                        ""logicalType"": ""uuid""
+                    }},
+                    {{
+                        ""name"": ""EventType"",
+                        ""type"": ""string""
+                    }},
+                    {{
+                        ""name"": ""SourceDomain"",
+                        ""type"": ""string""
+                    }},
+                    {{
+                        ""name"": ""SourceSystem"",
+                        ""type"": ""string""
+                    }},
+                    {{
+                        ""name"": ""Version"",
+                        ""type"": ""string""
+                    }},
+                    {{
+                        ""name"": ""CorrelationId"",
+                        ""type"": ""string"",
+                        ""logicalType"": ""uuid""
+                    }},
+                    {{
+                        ""name"": ""DateTime"",
+                        ""type"": ""int"",
+                        ""logicalType"": ""date""
+                    }},
+                    {{
+                        ""name"": ""User"",
+                        ""type"": {{
+                            ""type"": ""record"",
+                            ""name"": ""User"",
+                            ""fields"": [
+                                {{
+                                    ""name"": ""Name"",
+                                    ""type"": ""string""
+                                }},
+                                {{
+                                    ""name"": ""Email"",
+                                    ""type"": ""string""
+                                }}
+                            ]
+                        }}
+                    }},
+                    {{
+                        ""name"": ""Tenure"",
+                        ""type"": {tenureSchema}
+                    }}
+                ]
+            }}";
+            var tenureChangeEvent = _fixture.Create<TenureChangeEvent>();
+            tenureChangeEvent.Tenure = _tenure;
+            var record = _sut.BuildTenureRecord(schema, tenureChangeEvent);
+            return (GenericRecord) record["Tenure"];
         }
     }
 }

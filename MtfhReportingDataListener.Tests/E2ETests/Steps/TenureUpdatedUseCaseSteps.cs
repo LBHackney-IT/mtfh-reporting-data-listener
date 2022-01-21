@@ -8,6 +8,7 @@ using FluentAssertions;
 using Hackney.Shared.Tenure.Boundary.Response;
 using MtfhReportingDataListener.Gateway;
 using MtfhReportingDataListener.Infrastructure.Exceptions;
+using MtfhReportingDataListener.Factories;
 using System;
 using System.Threading.Tasks;
 using Xunit;
@@ -25,7 +26,7 @@ namespace MtfhReportingDataListener.Tests.E2ETests.Steps
             _eventType = EventTypes.TenureUpdatedEvent;
         }
 
-        public async Task WhenTheFunctionIsTriggered(Guid id, IAmazonGlue glue)
+        public async Task WhenTheFunctionIsTriggered(Guid id, IGlueFactory glue)
         {
             TheMessage = await TriggerFunction(id, glue).ConfigureAwait(false);
         }
@@ -71,8 +72,9 @@ namespace MtfhReportingDataListener.Tests.E2ETests.Steps
             }
         }
 
-        private void CheckRecord(GenericRecord receivedRecord, TenureResponseObject tenure)
+        private void CheckRecord(GenericRecord record, TenureResponseObject tenure)
         {
+            var receivedRecord = (GenericRecord) record["Tenure"];
             receivedRecord["Id"].Should().Be(tenure.Id.ToString());
             receivedRecord["PaymentReference"].Should().Be(tenure.PaymentReference);
             receivedRecord["SuccessionDate"].Should().Be((int?) (tenure.SuccessionDate?.Subtract(new DateTime(1970, 1, 1)))?.TotalSeconds);

@@ -3,6 +3,7 @@ using Amazon.Glue.Model;
 using Moq;
 using MtfhReportingDataListener.Gateway;
 using MtfhReportingDataListener.Gateway.Interfaces;
+using MtfhReportingDataListener.Factories;
 using Xunit;
 using System.Threading.Tasks;
 using System.Threading;
@@ -22,33 +23,9 @@ namespace MtfhReportingDataListener.Tests.Gateway
         public GlueGatewayTests()
         {
             _mockAmazonGlue = new Mock<IAmazonGlue>();
-            _gateway = new GlueGateway(_mockAmazonGlue.Object);
-        }
-
-
-        [Fact]
-        public async Task VerifyTheSchemaDetailsAreRetrievedFromGlue()
-        {
-            var getSchemaRequest = new GetSchemaRequest()
-            {
-                SchemaId = new SchemaId()
-                {
-
-                    RegistryName = "TenureSchema",
-                    SchemaArn = "arn:aws:glue:mmh",
-                    SchemaName = "MMH"
-                }
-            };
-            var getSchemaResponse = _fixture.Create<GetSchemaResponse>();
-            _mockAmazonGlue.Setup(x => x.GetSchemaAsync(It.Is<GetSchemaRequest>(x => MockGlueHelperMethods.CheckRequestsEquivalent(getSchemaRequest, x)), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(getSchemaResponse).Verifiable();
-            _mockAmazonGlue.Setup(x => x.GetSchemaVersionAsync(
-                    It.IsAny<GetSchemaVersionRequest>(),
-                    It.IsAny<CancellationToken>()
-                )).ReturnsAsync(new GetSchemaVersionResponse { SchemaDefinition = "schema" });
-
-            await _gateway.GetSchema("TenureSchema", "arn:aws:glue:mmh", "MMH").ConfigureAwait(false);
-            _mockAmazonGlue.Verify();
+            var mockGlueWrapper = new Mock<IGlueFactory>();
+            mockGlueWrapper.Setup(x => x.GlueClient()).ReturnsAsync(_mockAmazonGlue.Object);
+            _gateway = new GlueGateway(mockGlueWrapper.Object);
         }
 
         [Theory]
@@ -56,33 +33,23 @@ namespace MtfhReportingDataListener.Tests.Gateway
         [InlineData("hello world", 7)]
         public async Task VerifyGettingTheSchemaStringForTheLatestVersion(string schema, int versionId)
         {
-            var getSchemaResponse = new GetSchemaResponse()
-            {
-                LatestSchemaVersion = versionId,
-                RegistryName = "TenureSchema",
-                SchemaArn = "arn:aws:glue:mmh",
-                SchemaName = "MMH"
-            };
-
             var expectedRequest = new GetSchemaVersionRequest
             {
                 SchemaId = new SchemaId()
                 {
-                    RegistryName = "TenureSchema",
                     SchemaArn = "arn:aws:glue:mmh",
-                    SchemaName = "MMH"
                 },
                 SchemaVersionNumber = new SchemaVersionNumber
                 {
                     LatestVersion = true,
-                    VersionNumber = versionId
                 }
             };
 
-            _mockAmazonGlue.Setup(x => x.GetSchemaAsync(It.IsAny<GetSchemaRequest>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(getSchemaResponse);
-
-            var response = new GetSchemaVersionResponse { SchemaDefinition = schema };
+            var response = new GetSchemaVersionResponse
+            {
+                SchemaDefinition = schema,
+                VersionNumber = versionId
+            };
 
             _mockAmazonGlue.Setup(x =>
                 x.GetSchemaVersionAsync(
@@ -91,7 +58,7 @@ namespace MtfhReportingDataListener.Tests.Gateway
                 )
             ).ReturnsAsync(response);
 
-            var schemaDetails = await _gateway.GetSchema("TenureSchema", "arn:aws:glue:mmh", "MMH").ConfigureAwait(false);
+            var schemaDetails = await _gateway.GetSchema("arn:aws:glue:mmh").ConfigureAwait(false);
 
             var expectedSchemaResponse = new SchemaResponse
             {
