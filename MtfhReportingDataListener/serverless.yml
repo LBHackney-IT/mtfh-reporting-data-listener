@@ -10,7 +10,7 @@ provider:
   stage: ${opt:stage}
   account: ${opt:account}
   region: eu-west-2
-  timeout: 9
+  timeout: 15
 
 package:
   artifact: ./bin/release/netcoreapp3.1/mtfh-reporting-data-listener.zip
