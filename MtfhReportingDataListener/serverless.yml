@@ -109,14 +109,26 @@ resources:
                   Resource: ${ssm:/housing-tl/${self:provider.stage}/dataplatform-role-arn-to-access-glue-registry}
 
 custom:
+  vpcId:
+    development: vpc-0d15f152935c8716f
+    staging: vpc-064521a7a4109ba31
+    production: vpc-0ce853ddb64e8fb3c
   vpc:
     development:
+      securityGroupIds:
+        - Ref: LambdaSecurityGroup
       subnetIds:
-        - subnet-05ce390ba88c42bfd
         - subnet-0140d06fb84fdb547
-    # staging:
-    #   subnetIds:
-    #   
-    # production:
-    #   subnetIds:
-    #  
+        - subnet-05ce390ba88c42bfd
+    staging:
+      securityGroupIds:
+        - Ref: LambdaSecurityGroup
+      subnetIds:
+        - subnet-0743d86e9b362fa38
+        - subnet-0ea0020a44b98a2ca
+    production:
+      securityGroupIds:
+        - Ref: LambdaSecurityGroup
+      subnetIds:
+        - subnet-06a697d86a9b6ed01
+        - subnet-0beb266003a56ca82 
