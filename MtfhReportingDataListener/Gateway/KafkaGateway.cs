@@ -58,7 +58,7 @@ namespace MtfhReportingDataListener.Gateway
         }
 
 
-        public async Task CreateKafkaTopic(string topicName) // should be Task<TResult> ? type string not awaitable
+        public async Task CreateKafkaTopic(string topicName)
         {
             using (var adminClient = new AdminClientBuilder(new AdminClientConfig()
             {
