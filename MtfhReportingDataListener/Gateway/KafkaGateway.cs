@@ -75,6 +75,7 @@ namespace MtfhReportingDataListener.Gateway
                         new TopicSpecification {Name = topicName, ReplicationFactor = 1, NumPartitions = 1},
                     });
                     Console.WriteLine($"Topic: {topicName} was successfully created");
+                    return;
                 }
 
                 Console.WriteLine($"Topic: {topicName} already exists");
