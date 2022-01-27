@@ -1,6 +1,121 @@
-# LBH Base Listener
+# MTFH Reporting Data Listener
 
-Base Listener is a boilerplate template application for creating for new Listener applications for LBH
+This listener implements an AWS Lambda Function that recieves messages when any updates are made to the TenureInformationApi and sends the updates to a Kafka queue. 
+
+Here is the process on how the data is saved to Kafka:
+
+### Retrieving data from the API
+1. When one of the events in [this switch statement][usecase-factory] is raised then this listener is triggered
+2. The listener can then call the relevant API to retrieve the data the needs to be saved. You could potentially use [this Shared NuGet Package][nuget] to make calls to any APIs.[This ReadME][Api-Gateway] explains how the listener calls the relative API.
+     - If the Tenure doesn't exist then the listener throws an Exception 
+
+### Get Schema from AWS Glue
+3. The listener will then get the schema from AWS Glue Schema registry managed in [this repository][ADD LINK HERE]
+
+### Convert data to Avro
+4. Then using this schema, an AVRO generic record is created holding the tenure details retrieved from the tenure API.
+
+   Kafka only accepts the following data types; `byte[], Bytebuffer, Double, Integer, Long, String`. If you need to send through other data types you will first need to serialize the data into one of these types. Below are some code examples of how we have done this.
+
+   **Nullable types (Union)**:
+
+   Here we check whether the field value is null, assign null if it is. This needs to be done as Kafka doesn't accept empty strings.
+   If not, remove the nullable part from the schema and continue as normal.
+
+   ```csharp
+        if (fieldValue == null)
+        {
+            record.Add(field.Name, null);
+            return;
+        }
+
+        fieldSchema = GetNonNullablePartOfNullableSchema(field.Schema);
+        fieldType = fieldSchema.Tag;
+
+        ...
+
+        private Schema GetNonNullablePartOfNullableSchema(Schema nullableSchema)
+        {
+            var jsonSchema = (JsonElement) JsonSerializer.Deserialize<object>(nullableSchema.ToString());
+            jsonSchema.TryGetProperty("type", out var unionList);
+            var notNullSchema = unionList.EnumerateArray().First(type => type.ToString() != "null").ToString();
+            return Schema.Parse(notNullSchema);
+        }
+   ```
+
+   **Enums**:
+
+   ```csharp 
+        new GenericEnum((EnumSchema) fieldSchema, fieldValue.ToString())
+   ```
+
+   **DateTime Objects**:
+
+   Converts to a int holding a Unix timestamp.
+
+    ```csharp
+        private int? UnixTimestampNullable(object obj)
+        {
+            var date = (DateTime?) obj;
+            return (int?) (date?.Subtract(new DateTime(1970, 1, 1)))?.TotalSeconds;
+        }
+    ```
+
+    **Arrays**:
+
+    ```csharp
+        var fieldValueAsList = (List<ExampleList>) fieldValue;
+        var itemsSchema = GetSchemaForArrayItems(fieldSchema);
+        var recordsList = fieldValueAsList.Select(listItem => PopulateFields(listItem, itemsSchema)).ToArray()
+        record.Add(field.Name, recordsList);
+        
+        private Schema GetSchemaForArrayItems(Schema arraySchema)
+        {
+            var jsonSchema = (JsonElement) JsonSerializer.Deserialize<object>(arraySchema.ToString());
+            jsonSchema.TryGetProperty("items", out var itemsSchemaJson);
+            return Schema.Parse(itemsSchemaJson.ToString());
+        }
+    ``` 
+
+    Once the data types have been converted you can create the Generic Record by adding each value to the record, this can be done through the use of a for loop & reflection:
+
+    ```csharp
+
+        public GenericRecord PopulateFields(object item, Schema schema)
+        {
+            var record = new GenericRecord((RecordSchema) schema);
+            ((RecordSchema) schema).Fields.ForEach(field =>
+            {
+                PropertyInfo propInfo = item.GetType().GetProperty(field.Name);
+                if (propInfo == null)
+                {
+                    Console.WriteLine($"Field name: {field.Name} not found in {item}");
+                    return;
+                }
+
+                var fieldValue = propInfo.GetValue(item);
+                var fieldSchema = field.Schema;
+                var fieldType = field.Schema.Tag;
+
+                //Add any data type conversion required here
+
+                record.Add(field.Name, fieldValue);
+            });
+
+            return record;
+        }
+
+    ```
+
+6. Lastly the record created above is then sent through to Kafka.
+   ### Schema Registry
+   In order to send the data through to Kafka a SchemaRegistryClient is required. SchemaRegistery are seperate from your Kafka brokers. The Kafka Producers publish the data to Kafka topics and communicates with the Schema Registry to send and receive schemas that describe the data models for the messages simultaneously. Hence the SchemaRegistry is used to serialize the message and then save the serialize message to Kafka. 
+
+   ### Send Data to Kafka 
+   We then use the `Producer.Flush(TimeSpan.FromSeconds(10))` to immediately send through the message to Kafka. There is a 10 seconds maximum timeout on the listener. This would mean that it will wait until either all the messages have been sent or 10 seconds have passed. If a maximum timeout is not set then it would wait until all the messages have been sent, and in the event there is an issue whilst sending messages, it will likely hang until the lambda timeout which we don't want.
+
+See [this diagram][diagram] for a visual representation of the process of the listener.
+
 
 ## Stack
 
@@ -17,44 +132,7 @@ Base Listener is a boilerplate template application for creating for new Listene
 4. Rename the initial template.
 5. Open it in your IDE.
 
-### Renaming
 
-The renaming of `MtfhReportingDataListener` into `SomethingElseListener` can be done by running a Renamer powershell script. To do so:
-1. Open the powershell and navigate to this directory's root.
-2. Run the script using the following command:
-```
-.\Renamer.ps1 -name SomethingElseListener -alternateName something-else-listener
-```
-
-The `name` value is the name of the Listener and will be used is the Project names.
-The `alternateName` value is the lower case name used in docker compose and for various behind-the-scenes file names.
-
-If your ***script execution policy*** prevents you from running the script, you can temporarily ***bypass*** that with:
-```
-powershell -noprofile -ExecutionPolicy Bypass -file .\Renamer.ps1 -name SomethingElseListener -alternateName something-else-listener
-```
-
-Or you can change your execution policy, prior to running the script, permanently with _(this disables security so, be cautious)_:
-```
-Set-ExecutionPolicy Unrestricted
-```
-
-After the renaming is done, the ***script will ask you if you want to delete it as well***, as it's useless now - It's your choice.
-
-#### On OSX
-
-Use Docker to run this script on Macs:
-```
-docker run -it -v `pwd`:/app mcr.microsoft.com/powershell
-```
-
-#### On *nix
-
-Run the renamer.sh bash script from the project root:
-```
-./rename.sh MyApiName
-```
-Ideally you should provide a script argument in PascalCase as in the example. The script will rename all instances of base api without changing the original casing.
 
 ### Development
 
@@ -63,14 +141,7 @@ To serve the application, run it using your IDE of choice, we use Visual Studio 
 **Note**
 When running locally the appropriate database conneciton details are still needed.
 
-##### DynamoDb
-To use a local instance of DynamoDb, this will need to be installed. This is most easily done using [Docker](https://www.docker.com/products/docker-desktop).
-Run the following command, specifying the local path where you want the container's shared volume to be stored.
-```
-docker run --name dynamodb-local -p 8000:8000 -v <PUT YOUR LOCAL PATH HERE>:/data/ amazon/dynamodb-local -jar DynamoDBLocal.jar -sharedDb -dbPath /data
-```
 
-If you would like to see what is in your local DynamoDb instance using a simple gui, then [this admin tool](https://github.com/aaronshaf/dynamodb-admin) can do that.
 
 The application can also be served locally using docker:
 1.  Add you security credentials to AWS CLI.
@@ -163,3 +234,8 @@ $ make test
 
 [docker-download]: https://www.docker.com/products/docker-desktop
 [AWS-CLI]: https://aws.amazon.com/cli/
+[Api-Gateway]: https://github.com/LBHackney-IT/lbh-core/blob/release/Hackney.Core/Hackney.Core.Http/README.md#ApiGateway
+[diagram]: https://drive.google.com/file/d/1KbF9gcmf0LOvr7w2fE_fxTd1lcccPilr/view?usp=sharing
+[tenure-api-github]: https://github.com/LBHackney-IT/tenure-api
+[usecase-factory]: /MtfhReportingDataListener/Factories/UseCaseFactory.cs#L16
+[nuget]: https://github.com/LBHackney-IT/lbh-core/blob/release/Hackney.Core/Hackney.Core.Http/ApiGateway.cs
