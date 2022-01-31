@@ -72,7 +72,7 @@ namespace MtfhReportingDataListener.Gateway
                 {
                     await adminClient.CreateTopicsAsync(new TopicSpecification[]
                     {
-                        new TopicSpecification {Name = topicName, ReplicationFactor = 1, NumPartitions = 1},
+                        new TopicSpecification {Name = topicName, ReplicationFactor = 2, NumPartitions = 1},
                     });
                     Console.WriteLine($"Topic: {topicName} was successfully created");
                     return;
