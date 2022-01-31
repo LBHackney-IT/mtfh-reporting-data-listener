@@ -13,7 +13,7 @@ namespace MtfhReportingDataListener.Factories
             var stsClient = new AmazonSecurityTokenServiceClient();
             var assumeRoleReq = new AssumeRoleRequest()
             {
-                DurationSeconds = 3600,
+                DurationSeconds = 900,
                 RoleArn = Environment.GetEnvironmentVariable("ROLE_ARN_TO_ACCESS_DATAPLATFORM_GLUE_REGISTRY"),
                 RoleSessionName = "mtfh-tenure-api-events-streaming",
             };
