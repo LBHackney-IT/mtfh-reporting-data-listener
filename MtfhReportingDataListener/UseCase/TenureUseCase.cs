@@ -16,13 +16,13 @@ using Newtonsoft.Json;
 
 namespace MtfhReportingDataListener.UseCase
 {
-    public class TenureUpdatedUseCase : ITenureUpdatedUseCase
+    public class TenureUseCase : ITenureUseCase
     {
         private readonly ITenureInfoApiGateway _tenureInfoApi;
         private readonly IKafkaGateway _kafkaGateway;
         private readonly IGlueGateway _glueGateway;
 
-        public TenureUpdatedUseCase(ITenureInfoApiGateway gateway, IKafkaGateway kafkaGateway, IGlueGateway glueGateway)
+        public TenureUseCase(ITenureInfoApiGateway gateway, IKafkaGateway kafkaGateway, IGlueGateway glueGateway)
         {
             _tenureInfoApi = gateway;
             _kafkaGateway = kafkaGateway;
@@ -42,7 +42,7 @@ namespace MtfhReportingDataListener.UseCase
             var schema = await _glueGateway.GetSchema(schemaArn).ConfigureAwait(false);
 
             var schemaWithMetadata = new Confluent.SchemaRegistry.Schema("tenure", 1, 1, schema.Schema);
-            var tenureChangeEvent = new TenureChangeEvent
+            var tenureChangeEvent = new TenureEvent
             {
                 Id = message.Id,
                 EventType = message.EventType,
@@ -64,7 +64,7 @@ namespace MtfhReportingDataListener.UseCase
             _kafkaGateway.SendDataToKafka(topic, record, schemaWithMetadata);
         }
 
-        public GenericRecord BuildTenureRecord(string schema, TenureChangeEvent tenureResponse)
+        public GenericRecord BuildTenureRecord(string schema, TenureEvent tenureResponse)
         {
             return PopulateFields(tenureResponse, Schema.Parse(schema));
         }
