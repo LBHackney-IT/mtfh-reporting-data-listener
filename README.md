@@ -117,6 +117,10 @@ Here is the process on how the data is saved to Kafka:
    We then use the `Producer.Flush(TimeSpan.FromSeconds(10))` to immediately send through the message through Kafka to the consumer.
    There is a 10 seconds maximum timeout on the listener. This would mean that it will wait until either all the messages have been sent or 10 seconds have passed. If a maximum timeout is not set then it would wait until all the messages have been sent, and in the event there is an issue whilst sending messages, it will likely hang until the lambda timeout which we don't want.
 
+   ### Kafka Images
+   In order to ensure high availability and improve fault tolerance of the event streaming process, we deploy multiple brokers and set a replication factor for Kafka topics to a value that is greater than 1.
+   This means that copies (replicas) of the data will be spread across the brokers so that in the event one of the brokers goes down/ fails, then another broker can take over and serve the request.
+
 See [this diagram][diagram] for a visual representation of the process of the listener.
 
 
