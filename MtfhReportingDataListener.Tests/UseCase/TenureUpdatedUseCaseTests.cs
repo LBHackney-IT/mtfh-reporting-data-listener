@@ -142,15 +142,15 @@ namespace MtfhReportingDataListener.Tests.UseCase
             };
 
             _mockGlue.Setup(x => x.GetSchema(It.IsAny<string>())).ReturnsAsync(schemaResponse);
-            var topicName = "mtfh-reporting-data-listener";
+            var schemaName = "mtfh-reporting-data-listener";
 
-            Environment.SetEnvironmentVariable("TENURE_API_KAFKA_TOPIC", topicName);
+            Environment.SetEnvironmentVariable("TENURE_SCHEMA_NAME", schemaName);
 
             var message = new EntityEventSns();
 
             await _sut.ProcessMessageAsync(message);
 
-            _mockKafka.Verify(x => x.CreateKafkaTopic(topicName), Times.Once);
+            _mockKafka.Verify(x => x.CreateKafkaTopic(schemaName), Times.Once);
         }
 
         [Fact]

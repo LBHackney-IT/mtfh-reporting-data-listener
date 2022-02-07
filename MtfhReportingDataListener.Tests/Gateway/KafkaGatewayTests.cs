@@ -69,15 +69,15 @@ namespace MtfhReportingDataListener.Tests.Gateway
             }
         }
 
-        [Theory]
-        [InlineData("mtfh-reporting-data-listener")]
-        [InlineData("tenure-api")]
-        public async Task CreatesKafkaTopicCreatesTopic(string topicName)
+        [Fact]
+        public async Task CreatesKafkaTopicCreatesTopic()
         {
             var config = new AdminClientConfig()
             {
                 BootstrapServers = Environment.GetEnvironmentVariable("DATAPLATFORM_KAFKA_HOSTNAME"),
             };
+
+            var topicName = "mtfh-reporting-data-listener";
 
             await _gateway.CreateKafkaTopic(topicName).ConfigureAwait(false);
 
