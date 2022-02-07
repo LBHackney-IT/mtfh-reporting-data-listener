@@ -107,7 +107,7 @@ Here is the process on how the data is saved to Kafka:
 
     ```
 
-6. Lastly the record created above is then sent through to Kafka.
+5. Lastly the record created above is then sent through to Kafka.
    ### Schema Registry
    In order to send the data through to Kafka a SchemaRegistryClient is required. SchemaRegistery are seperate from your Kafka brokers. The Kafka Producers publish the data to Kafka topics and communicates with the Schema Registry to send and receive schemas that describe the data models for the messages simultaneously. Hence the SchemaRegistry is used to serialize the message and then save the serialize message to Kafka. 
 
