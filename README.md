@@ -112,8 +112,8 @@ Here is the process on how the data is saved to Kafka:
    In order to send the data through to Kafka a SchemaRegistryClient is required. SchemaRegistery are seperate from your Kafka brokers. The Kafka Producers publish the data to Kafka topics and communicates with the Schema Registry to send and receive schemas that describe the data models for the messages simultaneously. Hence the SchemaRegistry is used to serialize the message and then save the serialize message to Kafka. 
 
    ### Send Data to Kafka
-   Messages are sent to Kafka using Kafka Topics which the consumer subsequently reads from. A Kafka Topic is created for the producer if one doesn't already exist, otherwise it uses the Kafka Topic provided.
-   Kafka Topics are set as environment variables in the producer's AWS account.
+   Messages are sent to Kafka using Kafka Topics which the consumer subsequently reads from. A Kafka Topic is created for the producer from its schema name if one doesn't already exist, otherwise it uses the schema name provided as an environment variable.
+   This is set in Parameter Store in the producer's AWS account.
    We then use the `Producer.Flush(TimeSpan.FromSeconds(10))` to immediately send through the message through Kafka to the consumer.
    There is a 10 seconds maximum timeout on the listener. This would mean that it will wait until either all the messages have been sent or 10 seconds have passed. If a maximum timeout is not set then it would wait until all the messages have been sent, and in the event there is an issue whilst sending messages, it will likely hang until the lambda timeout which we don't want.
 
