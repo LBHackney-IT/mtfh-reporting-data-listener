@@ -50,7 +50,7 @@ namespace MtfhReportingDataListener.Tests.E2ETests.Fixtures
 
         public TenureResponseObject GivenTenureHasBeenCreated()
         {
-            
+
             var tenureResponseObject = _fixture.Build<TenureResponseObject>()
                            .Create();
             TenureId = tenureResponseObject.Id;
