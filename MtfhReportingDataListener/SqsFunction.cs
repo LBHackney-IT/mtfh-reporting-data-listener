@@ -48,7 +48,7 @@ namespace MtfhReportingDataListener
         protected override void ConfigureServices(IServiceCollection services)
         {
             services.AddHttpClient();
-            services.AddScoped<ITenureUpdatedUseCase, TenureUpdatedUseCase>();
+            services.AddScoped<ITenureUseCase, TenureUseCase>();
 
             services.AddScoped<ITenureInfoApiGateway, TenureInfoApiGateway>();
             services.AddScoped<IGlueGateway, GlueGateway>();

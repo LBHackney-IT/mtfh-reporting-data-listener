@@ -20,7 +20,7 @@ using Schema = Confluent.SchemaRegistry.Schema;
 namespace MtfhReportingDataListener.Tests.UseCase
 {
     [Collection("LogCall collection")]
-    public class TenureUpdatedUseCaseTests
+    public class TenureCreatedUseCaseTests
     {
         private readonly Mock<ITenureInfoApiGateway> _mockGateway;
         private readonly Mock<IKafkaGateway> _mockKafka;
@@ -32,7 +32,7 @@ namespace MtfhReportingDataListener.Tests.UseCase
 
         private readonly Fixture _fixture;
 
-        public TenureUpdatedUseCaseTests()
+        public TenureCreatedUseCaseTests()
         {
             _fixture = new Fixture();
 
@@ -47,7 +47,7 @@ namespace MtfhReportingDataListener.Tests.UseCase
 
         }
 
-        private EntityEventSns CreateMessage(string eventType = EventTypes.TenureUpdatedEvent)
+        private EntityEventSns CreateMessage(string eventType = EventTypes.TenureCreatedEvent)
         {
             return _fixture.Build<EntityEventSns>()
                            .With(x => x.EventType, eventType)
