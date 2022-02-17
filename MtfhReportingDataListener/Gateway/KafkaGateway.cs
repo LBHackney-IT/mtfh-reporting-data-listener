@@ -20,7 +20,8 @@ namespace MtfhReportingDataListener.Gateway
             var config = new ProducerConfig
             {
                 BootstrapServers = Environment.GetEnvironmentVariable("DATAPLATFORM_KAFKA_HOSTNAME"),
-                ClientId = "mtfh-reporting-data-listener"
+                ClientId = "mtfh-reporting-data-listener",
+                SecurityProtocol = SecurityProtocol.Ssl 
 
             };
 
