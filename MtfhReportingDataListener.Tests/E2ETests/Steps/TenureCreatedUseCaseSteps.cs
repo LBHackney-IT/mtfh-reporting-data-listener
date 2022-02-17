@@ -43,7 +43,8 @@ namespace MtfhReportingDataListener.Tests.E2ETests.Steps
             {
                 BootstrapServers = Environment.GetEnvironmentVariable("DATAPLATFORM_KAFKA_HOSTNAME"),
                 GroupId = "4c659d6b-4739-4579-9698-a27d1aaa397d",
-                AutoOffsetReset = AutoOffsetReset.Latest
+                AutoOffsetReset = AutoOffsetReset.Latest,
+                SecurityProtocol = SecurityProtocol.Ssl
             };
 
             var topic = "mtfh-reporting-data-listener";
