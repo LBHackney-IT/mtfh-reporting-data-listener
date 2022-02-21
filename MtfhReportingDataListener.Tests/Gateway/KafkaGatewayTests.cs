@@ -25,7 +25,7 @@ namespace MtfhReportingDataListener.Tests.Gateway
         }
 
         [Fact]
-        public void TenureUpdatedSendsDataToKafka()
+        public void TenureUpdatedandCreatedSendsDataToKafka()
         {
             var consumerconfig = new ConsumerConfig
             {

@@ -20,7 +20,7 @@ using Schema = Confluent.SchemaRegistry.Schema;
 namespace MtfhReportingDataListener.Tests.UseCase
 {
     [Collection("LogCall collection")]
-    public class TenureUpdatedUseCaseTests
+    public class TenureCreatedUseCaseTests
     {
         private readonly Mock<ITenureInfoApiGateway> _mockGateway;
         private readonly Mock<IKafkaGateway> _mockKafka;
@@ -32,7 +32,7 @@ namespace MtfhReportingDataListener.Tests.UseCase
 
         private readonly Fixture _fixture;
 
-        public TenureUpdatedUseCaseTests()
+        public TenureCreatedUseCaseTests()
         {
             _fixture = new Fixture();
 
@@ -47,7 +47,7 @@ namespace MtfhReportingDataListener.Tests.UseCase
 
         }
 
-        private EntityEventSns CreateMessage(string eventType = EventTypes.TenureUpdatedEvent)
+        private EntityEventSns CreateMessage(string eventType = EventTypes.TenureCreatedEvent)
         {
             return _fixture.Build<EntityEventSns>()
                            .With(x => x.EventType, eventType)
@@ -119,38 +119,6 @@ namespace MtfhReportingDataListener.Tests.UseCase
 
             await _sut.ProcessMessageAsync(_message).ConfigureAwait(false);
             _mockGlue.Verify();
-        }
-
-        [Fact]
-        public async Task CallsKafkaGatewayToCreateTopic()
-        {
-            _mockGateway.Setup(x => x.GetTenureInfoByIdAsync(It.IsAny<Guid>(), It.IsAny<Guid>()))
-                .ReturnsAsync(_tenure);
-
-            var schemaResponse = new SchemaResponse()
-            {
-                Schema = @"{
-                ""type"": ""record"",
-                ""name"": ""Person"",
-                ""fields"": [
-                   {
-                     ""name"": ""Id"",
-                     ""type"": ""string""
-                   },
-                ]
-                }"
-            };
-
-            _mockGlue.Setup(x => x.GetSchema(It.IsAny<string>())).ReturnsAsync(schemaResponse);
-            var schemaName = "mtfh-reporting-data-listener";
-
-            Environment.SetEnvironmentVariable("TENURE_SCHEMA_NAME", schemaName);
-
-            var message = new EntityEventSns();
-
-            await _sut.ProcessMessageAsync(message);
-
-            _mockKafka.Verify(x => x.CreateKafkaTopic(schemaName), Times.Once);
         }
 
         [Fact]

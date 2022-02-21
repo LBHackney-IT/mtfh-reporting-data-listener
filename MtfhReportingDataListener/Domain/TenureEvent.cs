@@ -3,7 +3,7 @@ using Hackney.Shared.Tenure.Boundary.Response;
 
 namespace MtfhReportingDataListener.Domain
 {
-    public class TenureChangeEvent
+    public class TenureEvent
     {
         public Guid Id { get; set; }
 

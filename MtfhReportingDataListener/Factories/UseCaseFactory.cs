@@ -17,7 +17,13 @@ namespace MtfhReportingDataListener.Factories
             {
                 case EventTypes.TenureUpdatedEvent:
                     {
-                        processor = serviceProvider.GetService<ITenureUpdatedUseCase>();
+                        processor = serviceProvider.GetService<ITenureUseCase>();
+                        break;
+                    }
+
+                case EventTypes.TenureCreatedEvent:
+                    {
+                        processor = serviceProvider.GetService<ITenureUseCase>();
                         break;
                     }
 
