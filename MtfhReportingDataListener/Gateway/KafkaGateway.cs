@@ -64,7 +64,8 @@ namespace MtfhReportingDataListener.Gateway
         {
             using (var adminClient = new AdminClientBuilder(new AdminClientConfig()
             {
-                BootstrapServers = Environment.GetEnvironmentVariable("DATAPLATFORM_KAFKA_HOSTNAME")
+                BootstrapServers = Environment.GetEnvironmentVariable("DATAPLATFORM_KAFKA_HOSTNAME"),
+                SecurityProtocol = Environment.GetEnvironmentVariable("ENVIRONMENT") == "LocalDevelopment" ? SecurityProtocol.Plaintext : SecurityProtocol.Ssl
             }).Build())
             {
                 var topicsList = adminClient.GetMetadata(TimeSpan.FromSeconds(5)).Topics;
