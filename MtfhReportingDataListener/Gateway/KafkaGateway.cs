@@ -3,7 +3,10 @@ using Confluent.Kafka.SyncOverAsync;
 using Confluent.SchemaRegistry.Serdes;
 using MtfhReportingDataListener.Gateway.Interfaces;
 using System;
+using System.Linq;
+using System.Threading.Tasks;
 using Avro.Generic;
+using Confluent.Kafka.Admin;
 using Confluent.SchemaRegistry;
 
 namespace MtfhReportingDataListener.Gateway
@@ -54,6 +57,32 @@ namespace MtfhReportingDataListener.Gateway
             {
                 Success = deliveryReport?.Error?.Code == ErrorCode.NoError
             };
+        }
+
+
+        public async Task CreateKafkaTopic(string topicName)
+        {
+            using (var adminClient = new AdminClientBuilder(new AdminClientConfig()
+            {
+                BootstrapServers = Environment.GetEnvironmentVariable("DATAPLATFORM_KAFKA_HOSTNAME"),
+                SecurityProtocol = Environment.GetEnvironmentVariable("ENVIRONMENT") == "LocalDevelopment" ? SecurityProtocol.Plaintext : SecurityProtocol.Ssl
+            }).Build())
+            {
+                var topicsList = adminClient.GetMetadata(TimeSpan.FromSeconds(5)).Topics;
+                bool topicExists = topicsList.Any(t => t.Topic == topicName);
+
+                if (!topicExists)
+                {
+                    await adminClient.CreateTopicsAsync(new TopicSpecification[]
+                    {
+                        new TopicSpecification {Name = topicName, ReplicationFactor = 2, NumPartitions = 1},
+                    });
+                    Console.WriteLine($"Topic: {topicName} was successfully created");
+                    return;
+                }
+
+                Console.WriteLine($"Topic: {topicName} already exists");
+            }
         }
     }
 }

@@ -107,12 +107,19 @@ Here is the process on how the data is saved to Kafka:
 
     ```
 
-6. Lastly the record created above is then sent through to Kafka.
+5. Lastly the record created above is then sent through to Kafka.
    ### Schema Registry
    In order to send the data through to Kafka a SchemaRegistryClient is required. SchemaRegistery are seperate from your Kafka brokers. The Kafka Producers publish the data to Kafka topics and communicates with the Schema Registry to send and receive schemas that describe the data models for the messages simultaneously. Hence the SchemaRegistry is used to serialize the message and then save the serialize message to Kafka. 
 
-   ### Send Data to Kafka 
-   We then use the `Producer.Flush(TimeSpan.FromSeconds(10))` to immediately send through the message to Kafka. There is a 10 seconds maximum timeout on the listener. This would mean that it will wait until either all the messages have been sent or 10 seconds have passed. If a maximum timeout is not set then it would wait until all the messages have been sent, and in the event there is an issue whilst sending messages, it will likely hang until the lambda timeout which we don't want.
+   ### Send Data to Kafka
+   Messages are sent to Kafka using Kafka Topics which the consumer subsequently reads from. A Kafka Topic is created for the producer from its schema name if one doesn't already exist, otherwise it uses the schema name provided as an environment variable.
+   This is set in Parameter Store in the producer's AWS account.
+   We then use the `Producer.Flush(TimeSpan.FromSeconds(10))` to immediately send through the message through Kafka to the consumer.
+   There is a 10 seconds maximum timeout on the listener. This would mean that it will wait until either all the messages have been sent or 10 seconds have passed. If a maximum timeout is not set then it would wait until all the messages have been sent, and in the event there is an issue whilst sending messages, it will likely hang until the lambda timeout which we don't want.
+
+   ### Kafka Images
+   In order to ensure high availability and improve fault tolerance of the event streaming process, we deploy multiple brokers and set a replication factor for Kafka topics to a value that is greater than 1.
+   This means that copies (replicas) of the data will be spread across the brokers so that in the event one of the brokers goes down/ fails, then another broker can take over and serve the request.
 
 See [this diagram][diagram] for a visual representation of the process of the listener.
 

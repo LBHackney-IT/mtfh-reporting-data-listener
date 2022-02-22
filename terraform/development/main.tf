@@ -90,7 +90,7 @@ resource "aws_sqs_queue_policy" "mtfh_reporting_data_queue_policy" {
                   "aws:SourceArn": "${data.aws_ssm_parameter.tenure_sns_topic_arn.value}"
               }
               }
-          }          
+          }
       ]
   }
   POLICY
