@@ -25,11 +25,11 @@ namespace MtfhReportingDataListener.Tests.E2ETests.Steps
         public BaseSteps()
         { }
 
-        protected EntityEventSns CreateEvent(Guid tenureId)
+        protected EntityEventSns CreateEvent(Guid tenureId, string eventType)
         {
             return _fixture.Build<EntityEventSns>()
                            .With(x => x.EntityId, tenureId)
-                           .With(x => x.EventType, _eventType)
+                           .With(x => x.EventType, eventType)
                            .With(x => x.CorrelationId, _correlationId)
                            .Create();
         }
@@ -43,14 +43,14 @@ namespace MtfhReportingDataListener.Tests.E2ETests.Steps
                            .Create();
         }
 
-        protected async Task<SQSEvent.SQSMessage> TriggerFunction(Guid id, IGlueFactory glue)
+        protected async Task<SQSEvent.SQSMessage> TriggerFunction(Guid id, string eventType)
         {
-            var snsEvent = CreateEvent(id);
+            var snsEvent = CreateEvent(id, eventType);
             var message = CreateMessage(snsEvent);
-            return await TriggerFunction(message, glue).ConfigureAwait(false);
+            return await TriggerFunction(message).ConfigureAwait(false);
         }
 
-        protected async Task<SQSEvent.SQSMessage> TriggerFunction(SQSEvent.SQSMessage message, IGlueFactory glue)
+        protected async Task<SQSEvent.SQSMessage> TriggerFunction(SQSEvent.SQSMessage message)
         {
             var mockLambdaLogger = new Mock<ILambdaLogger>();
             ILambdaContext lambdaContext = new TestLambdaContext()
@@ -64,7 +64,7 @@ namespace MtfhReportingDataListener.Tests.E2ETests.Steps
 
             Func<Task> func = async () =>
             {
-                var fn = new SqsFunction(glue);
+                var fn = new SqsFunction();
                 await fn.FunctionHandler(sqsEvent, lambdaContext).ConfigureAwait(false);
             };
 

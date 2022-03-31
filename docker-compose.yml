@@ -30,14 +30,15 @@ services:
      - AWS_REGION=eu-west-2
      - AWS_ACCESS_KEY_ID=local
      - AWS_SECRET_ACCESS_KEY=local
-     - DATAPLATFORM_KAFKA_HOSTNAME=kafka-1:9092
+     - DATAPLATFORM_KAFKA_HOSTNAME=kafka-1:9092,kafka-2:9093
+     - KAFKA_SCHEMA_REGISTRY_HOSTNAME=schemaregistry:8081
    links:
      - zoo
    depends_on:
     - zoo
     - kafka-1
     - kafka-2
-    # - schemaregistry
+    - schemaregistry
 
   zoo:
     image: confluentinc/cp-zookeeper:6.2.1
@@ -71,7 +72,7 @@ services:
       KAFKA_JMX_PORT: 9999
       KAFKA_JMX_HOSTNAME: ${DOCKER_HOST_IP:-127.0.0.1}
       KAFKA_LOG4J_ROOT_LOGLEVEL: DEBUG
-      # KAFKA_SCHEMA_REGISTRY_URL: "schemaregistry:8081"
+      KAFKA_SCHEMA_REGISTRY_URL: "schemaregistry:8081"
     depends_on:
       - zoo
   kafka-2:
@@ -95,7 +96,22 @@ services:
       KAFKA_JMX_PORT: 9999
       KAFKA_JMX_HOSTNAME: ${DOCKER_HOST_IP:-127.0.0.1}
       KAFKA_LOG4J_ROOT_LOGLEVEL: DEBUG
-      # KAFKA_SCHEMA_REGISTRY_URL: "schemaregistry:8081"
+      KAFKA_SCHEMA_REGISTRY_URL: "schemaregistry:8081"
     depends_on:
       - zoo
+  schemaregistry:
+    depends_on:
       - kafka-1
+      - kafka-2
+    image: confluentinc/cp-schema-registry:5.3.0
+    container_name: schemaregistry
+    hostname: schemaregistry
+    ports:
+      - "8081:8081"
+    environment:
+      SCHEMA_REGISTRY_ACCESS_CONTROL_ALLOW_METHODS: "GET,POST,PUT,OPTIONS"
+      SCHEMA_REGISTRY_ACCESS_CONTROL_ALLOW_ORIGIN: "*"
+      SCHEMA_REGISTRY_DEBUG: "true"
+      SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: "kafka-2:9093,kafka-1:9092"
+      SCHEMA_REGISTRY_KAFKASTORE_SECURITY_PROTOCOL: PLAINTEXT
+      SCHEMA_REGISTRY_HOST_NAME: schemaregistry

@@ -20,13 +20,13 @@ namespace MtfhReportingDataListener.UseCase
     {
         private readonly ITenureInfoApiGateway _tenureInfoApi;
         private readonly IKafkaGateway _kafkaGateway;
-        private readonly IGlueGateway _glueGateway;
+        private readonly ISchemaRegistry _schemaRegistry;
 
-        public TenureUseCase(ITenureInfoApiGateway gateway, IKafkaGateway kafkaGateway, IGlueGateway glueGateway)
+        public TenureUseCase(ITenureInfoApiGateway gateway, IKafkaGateway kafkaGateway, ISchemaRegistry schemaRegistry)
         {
             _tenureInfoApi = gateway;
             _kafkaGateway = kafkaGateway;
-            _glueGateway = glueGateway;
+            _schemaRegistry = schemaRegistry;
         }
 
         [LogCall]
@@ -38,10 +38,6 @@ namespace MtfhReportingDataListener.UseCase
                                              .ConfigureAwait(false);
             if (tenure is null) throw new EntityNotFoundException<TenureResponseObject>(message.EntityId);
 
-            var schemaArn = Environment.GetEnvironmentVariable("SCHEMA_ARN");
-            var schema = await _glueGateway.GetSchema(schemaArn).ConfigureAwait(false);
-
-            var schemaWithMetadata = new Confluent.SchemaRegistry.Schema("tenure", 1, 1, schema.Schema);
             var tenureChangeEvent = new TenureEvent
             {
                 Id = message.Id,
@@ -58,11 +54,14 @@ namespace MtfhReportingDataListener.UseCase
                 },
                 Tenure = tenure
             };
-            var record = BuildTenureRecord(schema.Schema, tenureChangeEvent);
 
             var topicName = Environment.GetEnvironmentVariable("TENURE_SCHEMA_NAME");
+            var schemaRegistryUrl = Environment.GetEnvironmentVariable("KAFKA_SCHEMA_REGISTRY_HOSTNAME");
+            var schema = await _schemaRegistry.GetSchemaForTopic(topicName, schemaRegistryUrl);
+            var record = BuildTenureRecord(schema, tenureChangeEvent);
+
             await _kafkaGateway.CreateKafkaTopic(topicName);
-            _kafkaGateway.SendDataToKafka(topicName, record, schemaWithMetadata);
+            _kafkaGateway.SendDataToKafka(topicName, record);
         }
 
         public GenericRecord BuildTenureRecord(string schema, TenureEvent tenureResponse)

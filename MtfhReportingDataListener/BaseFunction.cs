@@ -9,7 +9,6 @@ using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Reflection;
 using System.Text.Json;
-using MtfhReportingDataListener.Factories;
 
 namespace MtfhReportingDataListener
 {
@@ -22,16 +21,14 @@ namespace MtfhReportingDataListener
     public abstract class BaseFunction
     {
         protected readonly static JsonSerializerOptions _jsonOptions = JsonOptions.CreateJsonOptions();
-        protected IGlueFactory Glue { get; set; }
 
         protected IConfigurationRoot Configuration { get; private set; }
 
         protected IServiceProvider ServiceProvider { get; private set; }
         protected ILogger Logger { get; private set; }
 
-        internal BaseFunction(IGlueFactory glue = null)
+        internal BaseFunction()
         {
-            Glue = glue ?? new GlueFactory();
             Construct();
         }
 

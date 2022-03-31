@@ -3,7 +3,6 @@ FROM mcr.microsoft.com/dotnet/core/sdk:3.1
 # disable microsoft telematry
 ENV DOTNET_CLI_TELEMETRY_OPTOUT='true'
 
-ENV DATAPLATFORM_KAFKA_HOSTNAME='kafka-1:9092'
 ARG LBHPACKAGESTOKEN
 ENV LBHPACKAGESTOKEN=$LBHPACKAGESTOKEN
 WORKDIR /app
@@ -22,4 +21,6 @@ COPY . .
 
 RUN dotnet build -c debug -o out MtfhReportingDataListener.Tests/MtfhReportingDataListener.Tests.csproj
 
-CMD dotnet test
+RUN chmod +x ./wait-until-schemaregistry-up.sh
+
+CMD ./wait-until-schemaregistry-up.sh && dotnet test

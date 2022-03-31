@@ -12,7 +12,6 @@ using System;
 using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 using System.Threading.Tasks;
-using Amazon.Glue;
 using MtfhReportingDataListener.Factories;
 using Hackney.Core.Http;
 using Microsoft.Extensions.Configuration;
@@ -34,13 +33,6 @@ namespace MtfhReportingDataListener
         /// region the Lambda function is executed in.
         /// </summary>
         public SqsFunction() { }
-        /// <summary>
-        /// Contstructor used in E2E tests.
-        /// </summary>
-        /// <param name="glue">
-        /// This parameter allows us to provide a mock for the AWS glue SDK.
-        /// </param>
-        public SqsFunction(IGlueFactory glue) : base(glue) { }
 
         /// <summary>
         /// Use this method to perform any DI configuration required
@@ -48,16 +40,15 @@ namespace MtfhReportingDataListener
         protected override void ConfigureServices(IServiceCollection services)
         {
             services.AddHttpClient();
+
             services.AddScoped<ITenureUseCase, TenureUseCase>();
-
             services.AddScoped<ITenureInfoApiGateway, TenureInfoApiGateway>();
-            services.AddScoped<IGlueGateway, GlueGateway>();
             services.AddScoped<IKafkaGateway, KafkaGateway>();
-            services.AddSingleton<IConfiguration>(Configuration);
+            services.AddScoped<ISchemaRegistry, SchemaRegistry>();
 
+            services.AddSingleton<IConfiguration>(Configuration);
             services.AddApiGateway();
 
-            services.AddSingleton<IGlueFactory>(Glue);
             base.ConfigureServices(services);
         }
 

@@ -15,54 +15,50 @@ using System.Linq;
 using System.Collections.Generic;
 using System.Text.Json;
 using Avro.Generic;
-using Schema = Confluent.SchemaRegistry.Schema;
 
 namespace MtfhReportingDataListener.Tests.UseCase
 {
     [Collection("LogCall collection")]
-    public class TenureCreatedUseCaseTests
+    public class TenureUseCaseTests : IDisposable
     {
         private readonly Mock<ITenureInfoApiGateway> _mockGateway;
         private readonly Mock<IKafkaGateway> _mockKafka;
-        private readonly Mock<IGlueGateway> _mockGlue;
+        private readonly Mock<ISchemaRegistry> _mockSchemaRegistry;
         private readonly TenureUseCase _sut;
         private readonly TenureResponseObject _tenure;
 
-        private readonly EntityEventSns _message;
+        private readonly EntityEventSns _tenureUpdatedMessage;
+        private readonly EntityEventSns _tenureCreatedMessage;
 
         private readonly Fixture _fixture;
 
-        public TenureCreatedUseCaseTests()
+        private readonly string _tenureSchemaName;
+        private readonly string _schemaUrl;
+
+        public TenureUseCaseTests()
         {
             _fixture = new Fixture();
 
             _mockGateway = new Mock<ITenureInfoApiGateway>();
             _mockKafka = new Mock<IKafkaGateway>();
-            _mockGlue = new Mock<IGlueGateway>();
-            _sut = new TenureUseCase(_mockGateway.Object, _mockKafka.Object, _mockGlue.Object);
+            _mockSchemaRegistry = new Mock<ISchemaRegistry>();
+            _sut = new TenureUseCase(_mockGateway.Object, _mockKafka.Object, _mockSchemaRegistry.Object);
 
 
             _tenure = CreateTenure();
-            _message = CreateMessage();
+            _tenureUpdatedMessage = CreateTenureUpdatedMessage();
+            _tenureCreatedMessage = CreateTenureCreatedMessage();
 
+            _tenureSchemaName = Environment.GetEnvironmentVariable("TENURE_SCHEMA_NAME");
+            _schemaUrl = Environment.GetEnvironmentVariable("KAFKA_SCHEMA_REGISTRY_HOSTNAME");
         }
 
-        private EntityEventSns CreateMessage(string eventType = EventTypes.TenureCreatedEvent)
+        public void Dispose()
         {
-            return _fixture.Build<EntityEventSns>()
-                           .With(x => x.EventType, eventType)
-                           .Create();
+            Environment.SetEnvironmentVariable("TENURE_SCHEMA_NAME", _tenureSchemaName);
+            Environment.SetEnvironmentVariable("KAFKA_SCHEMA_REGISTRY_HOSTNAME", _schemaUrl);
         }
 
-        private TenureResponseObject CreateTenure()
-        {
-            return _fixture.Build<TenureResponseObject>()
-                           .With(x => x.HouseholdMembers, _fixture.Build<HouseholdMembers>()
-                                                                  .With(x => x.PersonTenureType, PersonTenureType.Tenant)
-                                                                  .CreateMany(3)
-                                                                  .ToList())
-                           .Create();
-        }
 
         [Fact]
         public void ProcessMessageAsyncTestNullMessageThrows()
@@ -74,7 +70,7 @@ namespace MtfhReportingDataListener.Tests.UseCase
         [Fact]
         public void ProcessMessageAsyncTestEntityIdNotFoundThrows()
         {
-            _mockGateway.Setup(x => x.GetTenureInfoByIdAsync(_message.EntityId, _message.CorrelationId)).ReturnsAsync((TenureResponseObject) null);
+            _mockGateway.Setup(x => x.GetTenureInfoByIdAsync(_tenureCreatedMessage.EntityId, _tenureCreatedMessage.CorrelationId)).ReturnsAsync((TenureResponseObject) null);
             Func<Task> func = async () => await _sut.ProcessMessageAsync(null).ConfigureAwait(false);
             func.Should().ThrowAsync<EntityNotFoundException<TenureResponseObject>>();
         }
@@ -83,24 +79,22 @@ namespace MtfhReportingDataListener.Tests.UseCase
         public void ProcessMessageAsyncTestSaveEntityThrows()
         {
             var exMsg = "This is the last error";
-            var jsonTenure = JsonSerializer.Serialize(_message);
-            _mockGateway.Setup(x => x.GetTenureInfoByIdAsync(_message.EntityId, _message.CorrelationId))
+            var jsonTenure = JsonSerializer.Serialize(_tenureCreatedMessage);
+            _mockGateway.Setup(x => x.GetTenureInfoByIdAsync(_tenureCreatedMessage.EntityId, _tenureCreatedMessage.CorrelationId))
                         .ThrowsAsync(new Exception(exMsg));
 
-            Func<Task> func = async () => await _sut.ProcessMessageAsync(_message).ConfigureAwait(false);
+            Func<Task> func = async () => await _sut.ProcessMessageAsync(_tenureCreatedMessage).ConfigureAwait(false);
             func.Should().ThrowAsync<Exception>().WithMessage(exMsg);
-            _mockGateway.Verify(x => x.GetTenureInfoByIdAsync(_message.EntityId, _message.CorrelationId), Times.Once);
+            _mockGateway.Verify(x => x.GetTenureInfoByIdAsync(_tenureCreatedMessage.EntityId, _tenureCreatedMessage.CorrelationId), Times.Once);
         }
 
 
         [Fact]
-        public async Task ProcessMessageAsyncGetsTheSchemaFromGlue()
+        public async Task ProcessMessageAsyncGetsTheSchema()
         {
-            _mockGateway.Setup(x => x.GetTenureInfoByIdAsync(_message.EntityId, _message.CorrelationId))
+            _mockGateway.Setup(x => x.GetTenureInfoByIdAsync(_tenureCreatedMessage.EntityId, _tenureCreatedMessage.CorrelationId))
                         .ReturnsAsync(_tenure);
-            var mockSchemaResponse = new SchemaResponse
-            {
-                Schema = @"{
+            var mockSchemaResponse = @"{
                 ""type"": ""record"",
                 ""name"": ""Person"",
                 ""fields"": [
@@ -109,44 +103,94 @@ namespace MtfhReportingDataListener.Tests.UseCase
                      ""type"": ""string""
                    },
                 ]
-                }"
-            };
+                }";
 
-            var schemaArn = "arn:aws:glue:blah";
-            Environment.SetEnvironmentVariable("SCHEMA_ARN", schemaArn);
-
-            _mockGlue.Setup(x => x.GetSchema(schemaArn)).ReturnsAsync(mockSchemaResponse).Verifiable();
-
-            await _sut.ProcessMessageAsync(_message).ConfigureAwait(false);
-            _mockGlue.Verify();
-        }
-
-        [Fact]
-        public async Task ProcessMessageAsyncSendsDataToKafka()
-        {
-            _mockGateway.Setup(x => x.GetTenureInfoByIdAsync(_message.EntityId, _message.CorrelationId))
-                        .ReturnsAsync(_tenure);
-            var mockSchemaResponse = new SchemaResponse
-            {
-                Schema = @"{
-                ""type"": ""record"",
-                ""name"": ""Person"",
-                ""fields"": [
-                   {
-                     ""name"": ""Id"",
-                     ""type"": ""string""
-                   },
-                ]
-                }"
-            };
-            _mockGlue.Setup(x => x.GetSchema(It.IsAny<string>())).ReturnsAsync(mockSchemaResponse);
-            var schemaName = "mtfh-reporting-data-listener";
+            var schemaName = _fixture.Create<string>();
             Environment.SetEnvironmentVariable("TENURE_SCHEMA_NAME", schemaName);
-            var topicName = schemaName;
+            var schemaUrl = _fixture.Create<string>();
+            Environment.SetEnvironmentVariable("KAFKA_SCHEMA_REGISTRY_HOSTNAME", schemaUrl);
 
-            await _sut.ProcessMessageAsync(_message).ConfigureAwait(false);
+            _mockSchemaRegistry.Setup(x => x.GetSchemaForTopic(schemaName, schemaUrl)).ReturnsAsync(mockSchemaResponse).Verifiable();
 
-            _mockKafka.Verify(x => x.SendDataToKafka(topicName, It.IsAny<GenericRecord>(), It.IsAny<Schema>()), Times.Once);
+            await _sut.ProcessMessageAsync(_tenureCreatedMessage).ConfigureAwait(false);
+            _mockSchemaRegistry.Verify();
+        }
+
+        [Fact]
+        public async Task CallsKafkaGatewayToCreateTopic()
+        {
+            _mockGateway.Setup(x => x.GetTenureInfoByIdAsync(It.IsAny<Guid>(), It.IsAny<Guid>()))
+                .ReturnsAsync(_tenure);
+
+            var schemaResponse = @"{
+                ""type"": ""record"",
+                ""name"": ""Person"",
+                ""fields"": [
+                    {
+                        ""name"": ""Id"",
+                        ""type"": ""string""
+                    },
+                ]
+            }";
+
+            _mockSchemaRegistry.Setup(x => x.GetSchemaForTopic(It.IsAny<string>(), It.IsAny<string>())).ReturnsAsync(schemaResponse);
+            var schemaName = "mtfh-reporting-data-listener";
+
+            Environment.SetEnvironmentVariable("TENURE_SCHEMA_NAME", schemaName);
+
+            var message = new EntityEventSns();
+
+            await _sut.ProcessMessageAsync(message);
+
+            _mockKafka.Verify(x => x.CreateKafkaTopic(schemaName), Times.Once);
+        }
+
+        [Fact]
+        public async Task ProcessMessageAsyncSendsDataToKafkaWithTenureCreatedEventType()
+        {
+            _mockGateway.Setup(x => x.GetTenureInfoByIdAsync(_tenureCreatedMessage.EntityId, _tenureCreatedMessage.CorrelationId))
+                        .ReturnsAsync(_tenure);
+            var mockSchemaResponse = @"{
+                ""type"": ""record"",
+                ""name"": ""Person"",
+                ""fields"": [
+                   {
+                     ""name"": ""Id"",
+                     ""type"": ""string""
+                   },
+                ]
+                }";
+            _mockSchemaRegistry.Setup(x => x.GetSchemaForTopic(It.IsAny<string>(), It.IsAny<string>())).ReturnsAsync(mockSchemaResponse);
+            var schemaName = "mtfh-reporting-data-listener";
+
+            Environment.SetEnvironmentVariable("TENURE_SCHEMA_NAME", schemaName);
+
+            await _sut.ProcessMessageAsync(_tenureCreatedMessage).ConfigureAwait(false);
+            _mockKafka.Verify(x => x.SendDataToKafka(schemaName, It.IsAny<GenericRecord>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task ProcessMessageAsyncSendsDataToKafkaWithTenureUpdatedEventType()
+        {
+            _mockGateway.Setup(x => x.GetTenureInfoByIdAsync(_tenureUpdatedMessage.EntityId, _tenureUpdatedMessage.CorrelationId))
+                        .ReturnsAsync(_tenure);
+            var mockSchemaResponse = @"{
+                ""type"": ""record"",
+                ""name"": ""Person"",
+                ""fields"": [
+                   {
+                     ""name"": ""Id"",
+                     ""type"": ""string""
+                   },
+                ]
+                }";
+            _mockSchemaRegistry.Setup(x => x.GetSchemaForTopic(It.IsAny<string>(), It.IsAny<string>())).ReturnsAsync(mockSchemaResponse);
+            var schemaName = "mtfh-reporting-data-listener";
+
+            Environment.SetEnvironmentVariable("TENURE_SCHEMA_NAME", schemaName);
+
+            await _sut.ProcessMessageAsync(_tenureUpdatedMessage).ConfigureAwait(false);
+            _mockKafka.Verify(x => x.SendDataToKafka(schemaName, It.IsAny<GenericRecord>()), Times.Once);
         }
 
         [Fact]
@@ -500,5 +544,30 @@ namespace MtfhReportingDataListener.Tests.UseCase
             var record = _sut.BuildTenureRecord(schema, tenureChangeEvent);
             return (GenericRecord) record["Tenure"];
         }
+
+
+        private EntityEventSns CreateTenureUpdatedMessage(string eventType = EventTypes.TenureUpdatedEvent)
+        {
+            return _fixture.Build<EntityEventSns>()
+                           .With(x => x.EventType, eventType)
+                           .Create();
+        }
+        private EntityEventSns CreateTenureCreatedMessage(string eventType = EventTypes.TenureCreatedEvent)
+        {
+            return _fixture.Build<EntityEventSns>()
+                           .With(x => x.EventType, eventType)
+                           .Create();
+        }
+
+        private TenureResponseObject CreateTenure()
+        {
+            return _fixture.Build<TenureResponseObject>()
+                           .With(x => x.HouseholdMembers, _fixture.Build<HouseholdMembers>()
+                                                                  .With(x => x.PersonTenureType, PersonTenureType.Tenant)
+                                                                  .CreateMany(3)
+                                                                  .ToList())
+                           .Create();
+        }
+
     }
 }
