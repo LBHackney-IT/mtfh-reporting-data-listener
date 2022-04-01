@@ -4,6 +4,6 @@ namespace MtfhReportingDataListener.Gateway.Interfaces
 {
     public interface ISchemaRegistry
     {
-        Task<string> GetSchemaForTopic(string topic, string schemaRegistryUrl);
+        Task<string> GetSchemaForTopic(string topic);
     }
 }

@@ -56,8 +56,7 @@ namespace MtfhReportingDataListener.UseCase
             };
 
             var topicName = Environment.GetEnvironmentVariable("TENURE_SCHEMA_NAME");
-            var schemaRegistryUrl = Environment.GetEnvironmentVariable("KAFKA_SCHEMA_REGISTRY_HOSTNAME");
-            var schema = await _schemaRegistry.GetSchemaForTopic(topicName, schemaRegistryUrl);
+            var schema = await _schemaRegistry.GetSchemaForTopic(topicName);
             var record = BuildTenureRecord(schema, tenureChangeEvent);
 
             await _kafkaGateway.CreateKafkaTopic(topicName);

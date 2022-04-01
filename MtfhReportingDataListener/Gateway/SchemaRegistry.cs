@@ -16,8 +16,9 @@ namespace MtfhReportingDataListener.Gateway
             _httpClient = httpClientFactory.CreateClient();
         }
 
-        public async Task<string> GetSchemaForTopic(string topic, string schemaRegistryUrl)
+        public async Task<string> GetSchemaForTopic(string topic)
         {
+            var schemaRegistryUrl = Environment.GetEnvironmentVariable("KAFKA_SCHEMA_REGISTRY_HOSTNAME");
             var response = await _httpClient.GetAsync($"http://{schemaRegistryUrl}/subjects/{topic}-value/versions/latest").ConfigureAwait(true);
             var stringResponse = await response.Content.ReadAsStringAsync();
 

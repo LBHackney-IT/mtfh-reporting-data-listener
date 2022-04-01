@@ -35,7 +35,7 @@ namespace MtfhReportingDataListener.Tests.Gateway
 
             await Helper.SchemaRegistry.SaveSchemaForTopic(HttpClient, _schemaRegistryUrl, schema, topicName);
 
-            var response = await _gateway.GetSchemaForTopic(topicName, _schemaRegistryUrl).ConfigureAwait(true);
+            var response = await _gateway.GetSchemaForTopic(topicName).ConfigureAwait(true);
             response.Should().BeEquivalentTo(schema);
         }
     }

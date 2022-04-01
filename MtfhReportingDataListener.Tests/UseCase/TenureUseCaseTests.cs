@@ -33,7 +33,6 @@ namespace MtfhReportingDataListener.Tests.UseCase
         private readonly Fixture _fixture;
 
         private readonly string _tenureSchemaName;
-        private readonly string _schemaUrl;
 
         public TenureUseCaseTests()
         {
@@ -50,13 +49,11 @@ namespace MtfhReportingDataListener.Tests.UseCase
             _tenureCreatedMessage = CreateTenureCreatedMessage();
 
             _tenureSchemaName = Environment.GetEnvironmentVariable("TENURE_SCHEMA_NAME");
-            _schemaUrl = Environment.GetEnvironmentVariable("KAFKA_SCHEMA_REGISTRY_HOSTNAME");
         }
 
         public void Dispose()
         {
             Environment.SetEnvironmentVariable("TENURE_SCHEMA_NAME", _tenureSchemaName);
-            Environment.SetEnvironmentVariable("KAFKA_SCHEMA_REGISTRY_HOSTNAME", _schemaUrl);
         }
 
 
@@ -107,10 +104,8 @@ namespace MtfhReportingDataListener.Tests.UseCase
 
             var schemaName = _fixture.Create<string>();
             Environment.SetEnvironmentVariable("TENURE_SCHEMA_NAME", schemaName);
-            var schemaUrl = _fixture.Create<string>();
-            Environment.SetEnvironmentVariable("KAFKA_SCHEMA_REGISTRY_HOSTNAME", schemaUrl);
 
-            _mockSchemaRegistry.Setup(x => x.GetSchemaForTopic(schemaName, schemaUrl)).ReturnsAsync(mockSchemaResponse).Verifiable();
+            _mockSchemaRegistry.Setup(x => x.GetSchemaForTopic(schemaName)).ReturnsAsync(mockSchemaResponse).Verifiable();
 
             await _sut.ProcessMessageAsync(_tenureCreatedMessage).ConfigureAwait(false);
             _mockSchemaRegistry.Verify();
@@ -133,7 +128,7 @@ namespace MtfhReportingDataListener.Tests.UseCase
                 ]
             }";
 
-            _mockSchemaRegistry.Setup(x => x.GetSchemaForTopic(It.IsAny<string>(), It.IsAny<string>())).ReturnsAsync(schemaResponse);
+            _mockSchemaRegistry.Setup(x => x.GetSchemaForTopic(It.IsAny<string>())).ReturnsAsync(schemaResponse);
             var schemaName = "mtfh-reporting-data-listener";
 
             Environment.SetEnvironmentVariable("TENURE_SCHEMA_NAME", schemaName);
@@ -160,7 +155,7 @@ namespace MtfhReportingDataListener.Tests.UseCase
                    },
                 ]
                 }";
-            _mockSchemaRegistry.Setup(x => x.GetSchemaForTopic(It.IsAny<string>(), It.IsAny<string>())).ReturnsAsync(mockSchemaResponse);
+            _mockSchemaRegistry.Setup(x => x.GetSchemaForTopic(It.IsAny<string>())).ReturnsAsync(mockSchemaResponse);
             var schemaName = "mtfh-reporting-data-listener";
 
             Environment.SetEnvironmentVariable("TENURE_SCHEMA_NAME", schemaName);
@@ -184,7 +179,7 @@ namespace MtfhReportingDataListener.Tests.UseCase
                    },
                 ]
                 }";
-            _mockSchemaRegistry.Setup(x => x.GetSchemaForTopic(It.IsAny<string>(), It.IsAny<string>())).ReturnsAsync(mockSchemaResponse);
+            _mockSchemaRegistry.Setup(x => x.GetSchemaForTopic(It.IsAny<string>())).ReturnsAsync(mockSchemaResponse);
             var schemaName = "mtfh-reporting-data-listener";
 
             Environment.SetEnvironmentVariable("TENURE_SCHEMA_NAME", schemaName);
