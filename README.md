@@ -9,8 +9,8 @@ Here is the process on how the data is saved to Kafka:
 2. The listener can then call the relevant API to retrieve the data the needs to be saved. You could potentially use [this Shared NuGet Package][nuget] to make calls to any APIs.[This ReadME][Api-Gateway] explains how the listener calls the relative API.
      - If the Tenure doesn't exist then the listener throws an Exception 
 
-### Get Schema from AWS Glue
-3. The listener will then get the schema from AWS Glue Schema registry managed in [this repository][ADD LINK HERE]
+### Get Schema from schema registry
+3. The listener will then get the schema from a schema registry via a http call, the schema registry is managed in [this repository](https://github.com/LBHackney-IT/Data-Platform/tree/main/modules/kafka-schema-registry).
 
 ### Convert data to Avro
 4. Then using this schema, an AVRO generic record is created holding the tenure details retrieved from the tenure API.
@@ -109,7 +109,7 @@ Here is the process on how the data is saved to Kafka:
 
 5. Lastly the record created above is then sent through to Kafka.
    ### Schema Registry
-   In order to send the data through to Kafka a SchemaRegistryClient is required. SchemaRegistery are seperate from your Kafka brokers. The Kafka Producers publish the data to Kafka topics and communicates with the Schema Registry to send and receive schemas that describe the data models for the messages simultaneously. Hence the SchemaRegistry is used to serialize the message and then save the serialize message to Kafka. 
+   A schema registry URL is required to push data to Kafka in AVRO format. The schema registry is hosted separately from the Kafka brokers. The Kafka producer publishes the data to a Kafka topic, using the schema registry to serialize the data into AVRO per the schema relating to the topic. Hence the schema registry is used to store the schemas for a topic. You can store a schema for both the key and value of a message. We only send values in AVRO format. 
 
    ### Send Data to Kafka
    Messages are sent to Kafka using Kafka Topics which the consumer subsequently reads from. A Kafka Topic is created for the producer from its schema name if one doesn't already exist, otherwise it uses the schema name provided as an environment variable.

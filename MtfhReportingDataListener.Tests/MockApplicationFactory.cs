@@ -3,6 +3,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using System;
+using System.Net.Http;
 
 
 namespace MtfhReportingDataListener.Tests
@@ -10,6 +11,7 @@ namespace MtfhReportingDataListener.Tests
     public class MockApplicationFactory
     {
         private readonly IHost _host;
+        public HttpClient HttpClient;
 
         public MockApplicationFactory()
         {
@@ -49,7 +51,11 @@ namespace MtfhReportingDataListener.Tests
            .ConfigureAppConfiguration(b => b.AddEnvironmentVariables())
            .ConfigureServices((hostContext, services) =>
            {
+               services.AddHttpClient();
                var serviceProvider = services.BuildServiceProvider();
+
+               var httpFactory = serviceProvider.GetService<IHttpClientFactory>();
+               HttpClient = httpFactory.CreateClient();
 
                LogCallAspectFixture.SetupLogCallAspect();
            });

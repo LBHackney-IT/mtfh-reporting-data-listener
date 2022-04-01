@@ -1,4 +1,3 @@
-using Amazon.Glue;
 using Amazon.Lambda.SQSEvents;
 using Avro.Generic;
 using Confluent.Kafka;
@@ -6,29 +5,22 @@ using Confluent.Kafka.SyncOverAsync;
 using Confluent.SchemaRegistry.Serdes;
 using FluentAssertions;
 using Hackney.Shared.Tenure.Boundary.Response;
-using MtfhReportingDataListener.Gateway;
 using MtfhReportingDataListener.Infrastructure.Exceptions;
-using MtfhReportingDataListener.Factories;
 using System;
 using System.Threading.Tasks;
 using Xunit;
 using System.Linq;
+using Confluent.SchemaRegistry;
 
 namespace MtfhReportingDataListener.Tests.E2ETests.Steps
 {
-    public class TenureCreatedUseCaseSteps : BaseSteps
+    public class TenureUseCaseSteps : BaseSteps
     {
         public SQSEvent.SQSMessage TheMessage { get; private set; }
 
-
-        public TenureCreatedUseCaseSteps()
+        public async Task WhenTheFunctionIsTriggered(Guid id, string eventType)
         {
-            _eventType = EventTypes.TenureCreatedEvent;
-        }
-
-        public async Task WhenTheFunctionIsTriggered(Guid id, IGlueFactory glue)
-        {
-            TheMessage = await TriggerFunction(id, glue).ConfigureAwait(false);
+            TheMessage = await TriggerFunction(id, eventType).ConfigureAwait(false);
         }
 
         public void ThenEntityNotFoundExceptionIsThrown(Guid id)
@@ -37,23 +29,21 @@ namespace MtfhReportingDataListener.Tests.E2ETests.Steps
             _lastException.Should().BeOfType(typeof(EntityNotFoundException<TenureResponseObject>));
             (_lastException as EntityNotFoundException<TenureResponseObject>).Id.Should().Be(id);
         }
-        public void ThenTheCreatedDataIsSavedToKafka(string schemaDefinition, TenureResponseObject tenure)
+        public void ThenTheMessageIsSavedToKafka(string topic, TenureResponseObject tenure)
         {
             var consumerconfig = new ConsumerConfig
             {
                 BootstrapServers = Environment.GetEnvironmentVariable("DATAPLATFORM_KAFKA_HOSTNAME"),
                 GroupId = "4c659d6b-4739-4579-9698-a27d1aaa397d",
-                AutoOffsetReset = AutoOffsetReset.Latest
+                AutoOffsetReset = AutoOffsetReset.Earliest
             };
 
-            var topic = "mtfh-reporting-data-listener";
-
-            var schemaWithMetadata = new Confluent.SchemaRegistry.Schema("tenure", 1, 1, schemaDefinition);
-
-            var schemaRegistryClient = new SchemaRegistryClient(schemaWithMetadata);
-
+            using (var schemaRegistry = new CachedSchemaRegistryClient(new SchemaRegistryConfig
+            {
+                Url = Environment.GetEnvironmentVariable("KAFKA_SCHEMA_REGISTRY_HOSTNAME")
+            }))
             using (var consumer = new ConsumerBuilder<Ignore, GenericRecord>(consumerconfig)
-                .SetValueDeserializer(new AvroDeserializer<GenericRecord>(schemaRegistryClient).AsSyncOverAsync())
+                .SetValueDeserializer(new AvroDeserializer<GenericRecord>(schemaRegistry).AsSyncOverAsync())
                 .Build()
             )
             {

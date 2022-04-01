@@ -1,10 +1,8 @@
 using MtfhReportingDataListener.Tests.E2ETests.Fixtures;
 using MtfhReportingDataListener.Tests.E2ETests.Steps;
-using MtfhReportingDataListener.Factories;
 using System;
 using TestStack.BDDfy;
 using Xunit;
-using Moq;
 
 namespace MtfhReportingDataListener.Tests.E2ETests.Stories
 {
@@ -17,17 +15,15 @@ namespace MtfhReportingDataListener.Tests.E2ETests.Stories
     {
         private readonly TenureFixture _tenureFixture;
         private readonly MockSchemaRegistry _schemaRegistry;
-        private readonly TenureCreatedUseCaseSteps _steps;
+        private readonly TenureUseCaseSteps _steps;
         private readonly MockApplicationFactory _appFactory;
-        private readonly Mock<IGlueFactory> _mockGlue;
 
         public TenureCreatedTests(MockApplicationFactory appFactory)
         {
             _tenureFixture = new TenureFixture();
             _appFactory = appFactory;
-            _steps = new TenureCreatedUseCaseSteps();
-            _mockGlue = new Mock<IGlueFactory>();
-            _schemaRegistry = new MockSchemaRegistry(_mockGlue);
+            _steps = new TenureUseCaseSteps();
+            _schemaRegistry = new MockSchemaRegistry();
         }
 
         public void Dispose()
@@ -53,17 +49,17 @@ namespace MtfhReportingDataListener.Tests.E2ETests.Stories
         {
 
             this.Given(g => _tenureFixture.GivenTenureHasBeenCreated())
-                .And(g => _schemaRegistry.GivenThereIsAMatchingSchemaInGlueRegistry())
-               .When(w => _steps.WhenTheFunctionIsTriggered(_tenureFixture.TenureId, _mockGlue.Object))
-               .Then(t => _steps.ThenTheCreatedDataIsSavedToKafka(_schemaRegistry.SchemaDefinition, _tenureFixture.ResponseObject))
+                .And(g => _schemaRegistry.GivenThereIsAMatchingSchemaInTheRegistry(_appFactory.HttpClient))
+               .When(w => _steps.WhenTheFunctionIsTriggered(_tenureFixture.TenureId, EventTypes.TenureCreatedEvent))
+               .Then(t => _steps.ThenTheMessageIsSavedToKafka(_schemaRegistry.Topic, _tenureFixture.ResponseObject))
                .BDDfy();
         }
 
         [Fact]
-        public void ListenerNotFoundException()
+        public void TenureNotFoundException()
         {
             this.Given(g => _tenureFixture.GivenNonExistingTenureHasBeenCreated())
-               .When(w => _steps.WhenTheFunctionIsTriggered(_tenureFixture.TenureId, _mockGlue.Object))
+               .When(w => _steps.WhenTheFunctionIsTriggered(_tenureFixture.TenureId, EventTypes.TenureCreatedEvent))
                .Then(t => _steps.ThenEntityNotFoundExceptionIsThrown(_tenureFixture.TenureId))
                .BDDfy();
         }

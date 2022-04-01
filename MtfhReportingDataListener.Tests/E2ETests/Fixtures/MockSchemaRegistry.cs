@@ -1,55 +1,32 @@
 using MtfhReportingDataListener.Tests.Helper;
-using MtfhReportingDataListener.Factories;
-using System.Threading;
-using Amazon.Glue;
-using Amazon.Glue.Model;
-using Moq;
 using AutoFixture;
 using System;
+using System.Threading.Tasks;
+using System.Net.Http;
 
 public class MockSchemaRegistry
 {
-    public string SchemaArn { get; }
     public string SchemaDefinition { get; }
+    public string Topic { get; }
 
-    private Mock<IGlueFactory> _mockGlue { get; set; }
 
-    public MockSchemaRegistry(Mock<IGlueFactory> mockGlue)
+    public MockSchemaRegistry()
     {
         var fixture = new Fixture();
-        SchemaArn = "arn:aws:glue:my-schema-registry";
         SchemaDefinition = SmallTenureSchema();
-        _mockGlue = mockGlue;
-        SetSchemaEnvVariables();
+        Topic = fixture.Create<string>();
+        SetTopicEnvVariable();
     }
 
-    public void GivenThereIsAMatchingSchemaInGlueRegistry()
+    public async Task GivenThereIsAMatchingSchemaInTheRegistry(HttpClient httpClient)
     {
-        var mockGlueSdk = new Mock<IAmazonGlue>();
-
-        var getSchemaVersion = new GetSchemaVersionRequest()
-        {
-            SchemaId = new SchemaId()
-            {
-                SchemaArn = SchemaArn
-            },
-            SchemaVersionNumber = new SchemaVersionNumber()
-            {
-                LatestVersion = true,
-            }
-        };
-
-        mockGlueSdk.Setup(x => x.GetSchemaVersionAsync(
-                It.Is<GetSchemaVersionRequest>(x => MockGlueHelperMethods.CheckVersionRequestsEquivalent(getSchemaVersion, x)),
-                It.IsAny<CancellationToken>()
-            )).ReturnsAsync(new GetSchemaVersionResponse { SchemaDefinition = SchemaDefinition, VersionNumber = 2 });
-
-        _mockGlue.Setup(x => x.GlueClient()).ReturnsAsync(mockGlueSdk.Object);
+        var schemaRegistryUrl = Environment.GetEnvironmentVariable("KAFKA_SCHEMA_REGISTRY_HOSTNAME");
+        await SchemaRegistry.SaveSchemaForTopic(httpClient, schemaRegistryUrl, SchemaDefinition, Topic);
     }
 
-    private void SetSchemaEnvVariables()
+    private void SetTopicEnvVariable()
     {
-        Environment.SetEnvironmentVariable("SCHEMA_ARN", SchemaArn);
+        Environment.SetEnvironmentVariable("TENURE_SCHEMA_NAME", Topic);
     }
     private string SmallTenureSchema()
     {

@@ -11,6 +11,10 @@ using Xunit;
 using Avro;
 using Avro.Generic;
 using Schema = Avro.Schema;
+using AutoFixture;
+using Confluent.SchemaRegistry;
+using SchemaRegistry = MtfhReportingDataListener.Tests.Helper.SchemaRegistry;
+
 
 namespace MtfhReportingDataListener.Tests.Gateway
 {
@@ -18,14 +22,18 @@ namespace MtfhReportingDataListener.Tests.Gateway
     public class KafkaGatewayTests : MockApplicationFactory
     {
         private readonly IKafkaGateway _gateway;
+        private readonly IFixture _fixture;
+        private string _schemaRegistryUrl;
 
         public KafkaGatewayTests()
         {
             _gateway = new KafkaGateway();
+            _fixture = new Fixture();
+            _schemaRegistryUrl = Environment.GetEnvironmentVariable("KAFKA_SCHEMA_REGISTRY_HOSTNAME");
         }
 
         [Fact]
-        public void TenureUpdatedandCreatedSendsDataToKafka()
+        public async Task TenureUpdatedandCreatedSendsDataToKafka()
         {
             var consumerconfig = new ConsumerConfig
             {
@@ -34,7 +42,7 @@ namespace MtfhReportingDataListener.Tests.Gateway
                 AutoOffsetReset = AutoOffsetReset.Earliest
             };
 
-            var topic = "mtfh-reporting-data-listener";
+            var topic = "tenure" + _fixture.Create<string>();
 
             var schemaString = @"{
                  ""type"": ""record"",
@@ -46,22 +54,24 @@ namespace MtfhReportingDataListener.Tests.Gateway
                    }
                  ]
                }";
+            await SchemaRegistry.SaveSchemaForTopic(HttpClient, _schemaRegistryUrl, schemaString, topic);
 
             var schema = (RecordSchema) Schema.Parse(schemaString);
             GenericRecord message = new GenericRecord(schema);
             message.Add("firstName", "Tom");
-            var schemaWithMetadata = new Confluent.SchemaRegistry.Schema("tenure", 1, 1, schemaString);
-            var result = _gateway.SendDataToKafka(topic, message, schemaWithMetadata);
+            var result = _gateway.SendDataToKafka(topic, message);
             result.Success.Should().BeTrue();
 
-            var schemaRegistryClient = new SchemaRegistryClient(schemaWithMetadata);
-
+            using (var schemaRegistry = new CachedSchemaRegistryClient(new SchemaRegistryConfig
+            {
+                Url = _schemaRegistryUrl
+            }))
             using (var consumer = new ConsumerBuilder<Ignore, GenericRecord>(consumerconfig)
-                .SetValueDeserializer(new AvroDeserializer<GenericRecord>(schemaRegistryClient).AsSyncOverAsync())
+                .SetValueDeserializer(new AvroDeserializer<GenericRecord>(schemaRegistry).AsSyncOverAsync())
                 .Build()
             )
             {
-                consumer.Subscribe("mtfh-reporting-data-listener");
+                consumer.Subscribe(topic);
                 var r = consumer.Consume(TimeSpan.FromSeconds(30));
                 Assert.NotNull(r?.Message);
                 Assert.Equal(message, r.Message.Value);
@@ -90,5 +100,6 @@ namespace MtfhReportingDataListener.Tests.Gateway
                 topicsList.Should().Contain(topicName);
             }
         }
+
     }
 }

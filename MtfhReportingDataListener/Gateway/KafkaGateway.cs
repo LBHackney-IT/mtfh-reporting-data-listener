@@ -18,14 +18,18 @@ namespace MtfhReportingDataListener.Gateway
 
     public class KafkaGateway : IKafkaGateway
     {
-        public IsSuccessful SendDataToKafka(string topic, GenericRecord message, Schema schema)
+        public IsSuccessful SendDataToKafka(string topic, GenericRecord message)
         {
             var config = new ProducerConfig
             {
                 BootstrapServers = Environment.GetEnvironmentVariable("DATAPLATFORM_KAFKA_HOSTNAME"),
                 ClientId = "mtfh-reporting-data-listener",
                 SecurityProtocol = Environment.GetEnvironmentVariable("ENVIRONMENT") == "LocalDevelopment" ? SecurityProtocol.Plaintext : SecurityProtocol.Ssl
+            };
 
+            var schemaRegistryConfig = new SchemaRegistryConfig
+            {
+                Url = Environment.GetEnvironmentVariable("KAFKA_SCHEMA_REGISTRY_HOSTNAME")
             };
 
             DeliveryReport<string, GenericRecord> deliveryReport = null;
@@ -42,10 +46,9 @@ namespace MtfhReportingDataListener.Gateway
                 }
             };
 
-            var schemaRegistryClient = new SchemaRegistryClient(schema);
-
+            using (var schemaRegistry = new CachedSchemaRegistryClient(schemaRegistryConfig))
             using (var producer = new ProducerBuilder<string, GenericRecord>(config)
-                .SetValueSerializer(new AvroSerializer<GenericRecord>(schemaRegistryClient).AsSyncOverAsync())
+                .SetValueSerializer(new AvroSerializer<GenericRecord>(schemaRegistry).AsSyncOverAsync())
                 .Build()
             )
             {
