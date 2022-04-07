@@ -25,6 +25,7 @@ services:
      dockerfile: MtfhReportingDataListener.Tests/Dockerfile
      args:
        - LBHPACKAGESTOKEN=${LBHPACKAGESTOKEN}
+       - SONAR_TOKEN=${SONAR_TOKEN}
    environment:
      - ENVIRONMENT=LocalDevelopment
      - AWS_REGION=eu-west-2
