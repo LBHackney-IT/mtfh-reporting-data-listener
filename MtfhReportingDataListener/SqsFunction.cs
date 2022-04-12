@@ -42,7 +42,9 @@ namespace MtfhReportingDataListener
             services.AddHttpClient();
 
             services.AddScoped<ITenureUseCase, TenureUseCase>();
+            services.AddScoped<IContactDetailUseCase, ContactDetailUseCase>();
             services.AddScoped<ITenureInfoApiGateway, TenureInfoApiGateway>();
+            services.AddScoped<IContactDetailApiGateway, ContactDetailApiGateway>();
             services.AddScoped<IKafkaGateway, KafkaGateway>();
             services.AddScoped<ISchemaRegistry, SchemaRegistry>();
 

@@ -6,7 +6,7 @@ setup:
 
 .PHONY: build
 build:
-	LBHPACKAGESTOKEN=${LBHPACKAGESTOKEN} docker-compose build mtfh-reporting-data-listener
+	LBHPACKAGESTOKEN=${LBHPACKAGESTOKEN} SONAR_TOKEN=${SONAR_TOKEN} docker-compose build mtfh-reporting-data-listener
 
 .PHONY: serve
 serve:
@@ -18,7 +18,7 @@ shell:
 
 .PHONY: test
 test:
-	LBHPACKAGESTOKEN=${LBHPACKAGESTOKEN} docker-compose build mtfh-reporting-data-listener-test && docker-compose run mtfh-reporting-data-listener-test 
+	LBHPACKAGESTOKEN=${LBHPACKAGESTOKEN} && SONAR_TOKEN=${SONAR_TOKEN} docker-compose build mtfh-reporting-data-listener-test && docker-compose run mtfh-reporting-data-listener-test 
 
 .PHONY: lint
 lint:
