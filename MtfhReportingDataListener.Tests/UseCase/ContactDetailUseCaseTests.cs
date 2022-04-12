@@ -396,7 +396,7 @@ namespace MtfhReportingDataListener.Tests.UseCase
                         }}
                     }},
                     {{
-                        ""name"": ""Tenure"",
+                        ""name"": ""ContactDetail"",
                         ""type"": {contactDetailSchema}
                     }}
                 ]
