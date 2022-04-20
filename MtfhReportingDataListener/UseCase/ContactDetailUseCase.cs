@@ -55,7 +55,7 @@ namespace MtfhReportingDataListener.UseCase
                 ContactDetails = contactDetail
             };
 
-            var topicName = Environment.GetEnvironmentVariable("TENURE_SCHEMA_NAME");
+            var topicName = Environment.GetEnvironmentVariable("CONTACT_DETAIL_SCHEMA_NAME");
             var schema = await _schemaRegistry.GetSchemaForTopic(topicName);
             var record = BuildContactDetailRecord(schema, contactDetailChangeEvent);
 

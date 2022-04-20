@@ -80,6 +80,53 @@ namespace MtfhReportingDataListener.Tests.Gateway
         }
 
         [Fact]
+        public async Task ContactDetailAddedSendsDataToKafka()
+        {
+            var consumerconfig = new ConsumerConfig
+            {
+                BootstrapServers = Environment.GetEnvironmentVariable("DATAPLATFORM_KAFKA_HOSTNAME"),
+                GroupId = "4c659d6b-4739-4579-9698-a27d1aaa397d",
+                AutoOffsetReset = AutoOffsetReset.Earliest
+            };
+
+            var topic = "contactDetail" + _fixture.Create<string>();
+
+            var schemaString = @"{
+                ""type"": ""record"",
+                ""name"": ""ContactDetail"",
+                ""fields"": [
+                   {
+                     ""name"": ""Id"",
+                     ""type"": ""string""
+                   },
+                ]
+                }";
+            await SchemaRegistry.SaveSchemaForTopic(HttpClient, _schemaRegistryUrl, schemaString, topic);
+
+            var schema = (RecordSchema) Schema.Parse(schemaString);
+            GenericRecord message = new GenericRecord(schema);
+            message.Add("targetType", "person");
+            var result = _gateway.SendDataToKafka(topic, message);
+            result.Success.Should().BeTrue();
+
+            using (var schemaRegistry = new CachedSchemaRegistryClient(new SchemaRegistryConfig
+            {
+                Url = _schemaRegistryUrl
+            }))
+            using (var consumer = new ConsumerBuilder<Ignore, GenericRecord>(consumerconfig)
+                .SetValueDeserializer(new AvroDeserializer<GenericRecord>(schemaRegistry).AsSyncOverAsync())
+                .Build()
+            )
+            {
+                consumer.Subscribe(topic);
+                var r = consumer.Consume(TimeSpan.FromSeconds(30));
+                Assert.NotNull(r?.Message);
+                Assert.Equal(message, r.Message.Value);
+                consumer.Close();
+            }
+        }
+
+        [Fact]
         public async Task CreatesKafkaTopicCreatesTopic()
         {
             var config = new AdminClientConfig()

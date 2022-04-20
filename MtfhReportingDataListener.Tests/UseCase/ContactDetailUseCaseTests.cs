@@ -296,15 +296,14 @@ namespace MtfhReportingDataListener.Tests.UseCase
                         {
                             ""name"": ""ContactType"",
                             ""type"": [{
-                            ""name"": ""ContactType"",
+                            ""name"": ""Type"",
                             ""type"": ""enum"",
                             ""symbols"": [
                                 ""Phone"",
                                 ""Email"",
                                 ""Address""
-                                
                             ]
-                            }]
+                            }, ""null""]
                         },
                         ]
                     }
@@ -396,7 +395,7 @@ namespace MtfhReportingDataListener.Tests.UseCase
                         }}
                     }},
                     {{
-                        ""name"": ""ContactDetail"",
+                        ""name"": ""ContactDetails"",
                         ""type"": {contactDetailSchema}
                     }}
                 ]
@@ -404,7 +403,7 @@ namespace MtfhReportingDataListener.Tests.UseCase
             var contactDetailAddedEvent = _fixture.Create<ContactDetailEvent>();
             contactDetailAddedEvent.ContactDetails = _contactDetail;
             var record = _sut.BuildContactDetailRecord(schema, contactDetailAddedEvent);
-            return (GenericRecord) record["ContactDetail"];
+            return (GenericRecord) record["ContactDetails"];
         }
 
         private EntityEventSns CreateContactDetailAddedMessage(string eventType = EventTypes.ContactDetailAddedEvent)
