@@ -105,7 +105,7 @@ namespace MtfhReportingDataListener.Tests.Gateway
 
             var schema = (RecordSchema) Schema.Parse(schemaString);
             GenericRecord message = new GenericRecord(schema);
-            message.Add("targetType", "person");
+            message.Add("TargetType", "person");
             var result = _gateway.SendDataToKafka(topic, message);
             result.Success.Should().BeTrue();
 
