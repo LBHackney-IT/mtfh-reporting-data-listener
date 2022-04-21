@@ -258,16 +258,16 @@ namespace MtfhReportingDataListener.Tests.UseCase
         {
             var schema = @"{
                 ""type"": ""record"",
-                ""name"": ""ContactDetail"",
+                ""name"": ""ContactDetails"",
                 ""fields"": [
-                   {{
+                   {
                      ""name"": ""TargetType"",
                      ""type"": ""enum"",
                      ""symbols"": [
                          ""Person"",
                          ""Organisation""
                      ]
-                   }}
+                   }
                 ]
             }";
 
@@ -283,40 +283,30 @@ namespace MtfhReportingDataListener.Tests.UseCase
                 ""type"": ""record"",
                 ""name"": ""ContactDetail"",
                 ""fields"": [
-                    {
-                    ""name"": ""ContactInformation"",
-                    ""type"": {
+                   {
+                     ""name"": ""SourceServiceArea"",
+                     ""type"": {
                         ""type"": ""record"",
-                        ""name"": ""ContactInformation"",
+                        ""name"": ""SourceServiceArea"",
                         ""fields"": [
-                        {
-                            ""name"": ""Value"",
-                            ""type"": ""string""
-                        },
-                        {
-                            ""name"": ""ContactType"",
-                            ""type"": [{
-                            ""name"": ""Type"",
-                            ""type"": ""enum"",
-                            ""symbols"": [
-                                ""Phone"",
-                                ""Email"",
-                                ""Address""
-                            ]
-                            }, ""null""]
-                        },
-                        ]
-                    }
-                }
+                            {
+                               ""name"": ""Area"",
+                               ""type"": ""string""
+                            },
+                            {
+                              ""name"": ""IsDefault"",
+                              ""type"": ""boolean""
+                            }
+                      ]}
+                  }
                 ]
             }";
 
             var receivedRecord = ExecuteBuildContactDetailRecord(schema, _contactDetail);
-            var receivedRecordEnum = (GenericEnum) ((GenericRecord) receivedRecord["ContactInformation"])["ContactType"];
-            receivedRecord["ContactInformation"].Should().BeOfType<GenericRecord>();
+            receivedRecord["SourceServiceArea"].Should().BeOfType<GenericRecord>();
 
-            ((GenericRecord) receivedRecord["ContactInformation"])["Value"].Should().Be(_contactDetail.ContactInformation.Value);
-            receivedRecordEnum.Value.Should().Be(_contactDetail.ContactInformation.ContactType.ToString());
+            ((GenericRecord) receivedRecord["SourceServiceArea"])["Area"].Should().Be(_contactDetail.SourceServiceArea.Area);
+            ((GenericRecord) receivedRecord["SourceServiceArea"])["IsDefault"].Should().Be(_contactDetail.SourceServiceArea.IsDefault);
 
         }
 
