@@ -1,12 +1,8 @@
 using AutoFixture;
 using Hackney.Core.Testing.Shared.E2E;
 using Hackney.Shared.ContactDetail.Boundary.Response;
-using Hackney.Shared.Tenure.Boundary.Response;
-using Hackney.Shared.Tenure.Domain;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+
 
 namespace MtfhReportingDataListener.Tests.E2ETests.Fixtures
 {

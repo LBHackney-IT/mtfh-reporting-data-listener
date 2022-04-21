@@ -142,7 +142,7 @@ namespace MtfhReportingDataListener.Tests.UseCase
                         .ReturnsAsync(_contactDetail);
             var mockSchemaResponse = @"{
                 ""type"": ""record"",
-                ""name"": ""Person"",
+                ""name"": ""ContactDetail"",
                 ""fields"": [
                    {
                      ""name"": ""Id"",
