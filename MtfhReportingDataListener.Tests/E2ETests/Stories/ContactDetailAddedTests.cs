@@ -14,7 +14,7 @@ namespace MtfhReportingDataListener.Tests.E2ETests.Stories
     public class ContactDetailAddedTests : IDisposable
     {
         private readonly ContactDetailFixture _contactDetailFixture;
-        private readonly MockSchemaRegistry _schemaRegistry;
+        private readonly MockContactDetailSchemaRegistry _schemaRegistry;
         private readonly ContactDetailUseCaseSteps _steps;
         private readonly MockApplicationFactory _appFactory;
 
@@ -23,7 +23,7 @@ namespace MtfhReportingDataListener.Tests.E2ETests.Stories
             _contactDetailFixture = new ContactDetailFixture();
             _appFactory = appFactory;
             _steps = new ContactDetailUseCaseSteps();
-            _schemaRegistry = new MockSchemaRegistry();
+            _schemaRegistry = new MockContactDetailSchemaRegistry();
         }
 
         public void Dispose()
