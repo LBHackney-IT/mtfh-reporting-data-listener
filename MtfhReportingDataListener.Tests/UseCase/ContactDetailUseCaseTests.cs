@@ -12,6 +12,7 @@ using Xunit;
 using System.Text.Json;
 using Avro.Generic;
 using Hackney.Shared.ContactDetail.Boundary.Response;
+using MtfhReportingDataListener.Helper;
 
 namespace MtfhReportingDataListener.Tests.UseCase
 {
@@ -21,6 +22,7 @@ namespace MtfhReportingDataListener.Tests.UseCase
         private readonly Mock<IContactDetailApiGateway> _mockGateway;
         private readonly Mock<IKafkaGateway> _mockKafka;
         private readonly Mock<ISchemaRegistry> _mockSchemaRegistry;
+        private readonly Mock<IConvertToAvroHelper> _mockConvertToAvroHelper;
         private readonly ContactDetailUseCase _sut;
         private readonly ContactDetailsResponseObject _contactDetail;
 
@@ -37,7 +39,8 @@ namespace MtfhReportingDataListener.Tests.UseCase
             _mockGateway = new Mock<IContactDetailApiGateway>();
             _mockKafka = new Mock<IKafkaGateway>();
             _mockSchemaRegistry = new Mock<ISchemaRegistry>();
-            _sut = new ContactDetailUseCase(_mockGateway.Object, _mockKafka.Object, _mockSchemaRegistry.Object);
+            _mockConvertToAvroHelper = new Mock<IConvertToAvroHelper>();
+            _sut = new ContactDetailUseCase(_mockGateway.Object, _mockKafka.Object, _mockSchemaRegistry.Object, _mockConvertToAvroHelper.Object);
 
 
             _contactDetail = CreateContactDetail();
@@ -157,243 +160,6 @@ namespace MtfhReportingDataListener.Tests.UseCase
 
             await _sut.ProcessMessageAsync(_contactDetailAddedMessage).ConfigureAwait(false);
             _mockKafka.Verify(x => x.SendDataToKafka(schemaName, It.IsAny<GenericRecord>()), Times.Once);
-        }
-
-        [Fact]
-        public void BuildContactDetailRecordCanSetOneStringValueToAGenericRecord()
-        {
-            var schema = @"{
-                ""type"": ""record"",
-                ""name"": ""ContactDetail"",
-                ""fields"": [
-                   {
-                     ""name"": ""TargetId"",
-                     ""type"": ""string"",
-                     ""logicalType"": ""uuid""
-                   }
-                ]
-            }";
-
-            var receivedRecord = ExecuteBuildContactDetailRecord(schema, _contactDetail);
-
-            Assert.Equal(_contactDetail.TargetId.ToString(), receivedRecord["TargetId"]);
-        }
-
-        [Fact]
-        public void BuildContactDetailCanConvertDatesToUnixTimestamps()
-        {
-            var schema = @"{
-                ""type"": ""record"",
-                ""name"": ""ContactDetail"",
-                ""fields"": [
-                   {
-                     ""name"": ""Id"",
-                     ""type"": ""string"",
-                     ""logicalType"": ""uuid""
-                   },
-                   {
-                     ""name"": ""RecordValidUntil"",
-                     ""type"": [""null"", ""int""]
-                   },
-                ]
-            }";
-
-            var contactDetail = _contactDetail;
-            contactDetail.RecordValidUntil = new DateTime(1970, 01, 02);
-
-            var receivedRecord = ExecuteBuildContactDetailRecord(schema, contactDetail);
-
-            Assert.Equal(86400, receivedRecord["RecordValidUntil"]);
-        }
-
-        [Fact]
-        public void BuildContactDetailRecordCanSetBooleanTypeValuesToAGenericRecord()
-        {
-            var schema = @$"{{
-                ""type"": ""record"",
-                ""name"": ""ContactDetail"",
-                ""fields"": [
-                   {{
-                     ""name"": ""IsActive"",
-                     ""type"": ""boolean""
-                   }}
-                ]
-            }}";
-
-            var receivedRecord = ExecuteBuildContactDetailRecord(schema, _contactDetail);
-
-            Assert.Equal(_contactDetail.IsActive, receivedRecord["IsActive"]);
-        }
-
-        [Fact]
-        public void BuildContactDetailRecordCanSetNestedFields()
-        {
-            var schema = @"{
-                    ""type"": ""record"",
-                    ""name"": ""ContactDetail"",
-                    ""fields"": [
-                       {
-                         ""name"": ""ContactInformation"",
-                         ""type"": {
-                            ""type"": ""record"",
-                            ""name"": ""charge"",
-                            ""fields"": [
-                            {
-                                ""name"": ""Value"",
-                                ""type"": ""string""
-                            }]
-                            }
-                        }
-                    ]
-                }";
-
-            var receivedRecord = ExecuteBuildContactDetailRecord(schema, _contactDetail);
-            var receivedContactInformation = (GenericRecord) receivedRecord["ContactInformation"];
-
-            Assert.Equal(_contactDetail.ContactInformation.Value, receivedContactInformation["Value"]);
-        }
-
-        [Fact]
-        public void BuildContactDetailCanAssignEnums()
-        {
-            var schema = @"{
-                ""type"": ""record"",
-                ""name"": ""ContactDetails"",
-                ""fields"": [
-                   {
-                     ""name"": ""TargetType"",
-                     ""type"": ""enum"",
-                     ""symbols"": [
-                         ""Person"",
-                         ""Organisation""
-                     ]
-                   }
-                ]
-            }";
-
-            var contactDetail = _contactDetail;
-            var receivedRecord = ExecuteBuildContactDetailRecord(schema, contactDetail);
-            ((GenericEnum) receivedRecord["TargetType"]).Value.Should().Be(_contactDetail.TargetType.ToString());
-        }
-
-        [Fact]
-        public void BuildContactDetailCanHandleNestedObjects()
-        {
-            var schema = @"{
-                ""type"": ""record"",
-                ""name"": ""ContactDetail"",
-                ""fields"": [
-                   {
-                     ""name"": ""SourceServiceArea"",
-                     ""type"": {
-                        ""type"": ""record"",
-                        ""name"": ""SourceServiceArea"",
-                        ""fields"": [
-                            {
-                               ""name"": ""Area"",
-                               ""type"": ""string""
-                            },
-                            {
-                              ""name"": ""IsDefault"",
-                              ""type"": ""boolean""
-                            }
-                      ]}
-                  }
-                ]
-            }";
-
-            var receivedRecord = ExecuteBuildContactDetailRecord(schema, _contactDetail);
-            receivedRecord["SourceServiceArea"].Should().BeOfType<GenericRecord>();
-
-            ((GenericRecord) receivedRecord["SourceServiceArea"])["Area"].Should().Be(_contactDetail.SourceServiceArea.Area);
-            ((GenericRecord) receivedRecord["SourceServiceArea"])["IsDefault"].Should().Be(_contactDetail.SourceServiceArea.IsDefault);
-
-        }
-
-        [Fact]
-        public void LogsOutSchemaFieldNameWhenItDoesNotExistInContactDetail()
-        {
-            var schema = @"{
-                ""type"": ""record"",
-                ""name"": ""ContactDetail"",
-                ""fields"": [
-                   {
-                     ""name"": ""FieldNameNotInContactDetail"",
-                     ""type"": ""string"",
-                   },
-                ]
-            }";
-
-            Func<GenericRecord> receivedRecord = () => ExecuteBuildContactDetailRecord(schema, _contactDetail);
-
-            receivedRecord.Should().NotThrow<NullReferenceException>();
-        }
-
-        private GenericRecord ExecuteBuildContactDetailRecord(string contactDetailSchema, ContactDetailsResponseObject contactDetail)
-        {
-            var schema = @$"{{
-                ""type"": ""record"",
-                ""name"": ""ContactDetailAPIAddedEvent"",
-                ""namespace"": ""MMH"",
-                ""fields"": [
-                    {{
-                        ""name"": ""Id"",
-                        ""type"": ""string"",
-                        ""logicalType"": ""uuid""
-                    }},
-                    {{
-                        ""name"": ""EventType"",
-                        ""type"": ""string""
-                    }},
-                    {{
-                        ""name"": ""SourceDomain"",
-                        ""type"": ""string""
-                    }},
-                    {{
-                        ""name"": ""SourceSystem"",
-                        ""type"": ""string""
-                    }},
-                    {{
-                        ""name"": ""Version"",
-                        ""type"": ""string""
-                    }},
-                    {{
-                        ""name"": ""CorrelationId"",
-                        ""type"": ""string"",
-                        ""logicalType"": ""uuid""
-                    }},
-                    {{
-                        ""name"": ""DateTime"",
-                        ""type"": ""int"",
-                        ""logicalType"": ""date""
-                    }},
-                    {{
-                        ""name"": ""User"",
-                        ""type"": {{
-                            ""type"": ""record"",
-                            ""name"": ""User"",
-                            ""fields"": [
-                                {{
-                                    ""name"": ""Name"",
-                                    ""type"": ""string""
-                                }},
-                                {{
-                                    ""name"": ""Email"",
-                                    ""type"": ""string""
-                                }}
-                            ]
-                        }}
-                    }},
-                    {{
-                        ""name"": ""ContactDetails"",
-                        ""type"": {contactDetailSchema}
-                    }}
-                ]
-            }}";
-            var contactDetailAddedEvent = _fixture.Create<ContactDetailEvent>();
-            contactDetailAddedEvent.ContactDetails = _contactDetail;
-            var record = _sut.BuildContactDetailRecord(schema, contactDetailAddedEvent);
-            return (GenericRecord) record["ContactDetails"];
         }
 
         private EntityEventSns CreateContactDetailAddedMessage(string eventType = EventTypes.ContactDetailAddedEvent)
