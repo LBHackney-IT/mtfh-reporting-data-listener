@@ -68,7 +68,6 @@ namespace MtfhReportingDataListener.Tests.E2ETests.Steps
             var receivedRecord = (GenericRecord) record["ContactDetails"];
             receivedRecord["Id"].Should().Be(contactDetail.Id.ToString());
             receivedRecord["TargetId"].Should().Be(contactDetail.TargetId.ToString());
-            ((GenericEnum) receivedRecord["TargetType"]).Value.Should().Be(contactDetail.TargetType.ToString());
 
             var sourceServiceArea = (GenericRecord) receivedRecord["SourceServiceArea"];
             sourceServiceArea["Area"].Should().Be(contactDetail.SourceServiceArea.Area);
@@ -82,19 +81,6 @@ namespace MtfhReportingDataListener.Tests.E2ETests.Steps
             contactInformation["Value"].Should().Be(contactDetail.ContactInformation.Value);
             ((GenericEnum) contactInformation["ContactType"]).Value.Should().Be(contactDetail.ContactInformation.ContactType.ToString());
             contactInformation["Description"].Should().Be(contactDetail.ContactInformation.Description);
-            ((GenericEnum) contactInformation["SubType"]).Value.Should().Be(contactDetail.ContactInformation.SubType.ToString());
-
-            var addressExtended = (GenericRecord) contactInformation["AddressExtended"];
-            addressExtended["IsOverseasAddress"].Should().Be(contactDetail.ContactInformation.AddressExtended.IsOverseasAddress);
-            addressExtended["OverseasAddress"].Should().Be(contactDetail.ContactInformation.AddressExtended.OverseasAddress);
-            addressExtended["UPRN"].Should().Be(contactDetail.ContactInformation.AddressExtended.UPRN);
-
-            var createdBy = (GenericRecord) receivedRecord["createdBy"];
-            createdBy["FullName"].Should().Be(contactDetail.CreatedBy.FullName);
-            createdBy["EmailAddress"].Should().Be(contactDetail.CreatedBy.EmailAddress);
-            createdBy["CreatedAt"].Should().Be((int?) (contactDetail.CreatedBy.CreatedAt?.Subtract(new DateTime(1970, 1, 1)))?.TotalSeconds);
-
-
         }
     }
 }

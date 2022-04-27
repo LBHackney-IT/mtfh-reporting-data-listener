@@ -88,24 +88,19 @@ public class MockContactDetailSchemaRegistry
                     ""type"": {
                         ""type"": ""record"",
                         ""namespace"": ""MMH"",
-                        ""name"": ""ContactDetail"",
-                        ""fields"": [
-                            {
+                        ""name"": ""ContactDetails"",
+                        ""fields"":[
+                             {
                                 ""name"": ""Id"",
                                 ""type"": ""string"",
                                 ""logicalType"": ""uuid""
-                            },
-                            {
+                             },
+                             {
                                 ""name"": ""TargetId"",
-                                ""type"": ""string""
+                                ""type"": ""string"",
                                 ""logicalType"": ""uuid""
-                            },
-                            {
-                                ""name"": ""RecordValidUntil"",
-                                ""type"": [""int"", ""null""],
-                                ""logicalType"": ""date""
-                            },
-                            {
+                             },
+                             {
                                 ""name"": ""SourceServiceArea"",
                                 ""type"": {
                                     ""type"": ""record"",
@@ -123,6 +118,11 @@ public class MockContactDetailSchemaRegistry
                                 }
                             },
                             {
+                                ""name"": ""RecordValidUntil"",
+                                ""type"": [""int"", ""null""],
+                                ""logicalType"": ""date""
+                            },
+                            {
                                 ""name"": ""IsActive"",
                                 ""type"": ""boolean""
                             },
@@ -138,35 +138,23 @@ public class MockContactDetailSchemaRegistry
                                         },
                                         {
                                             ""name"": ""ContactType"",
+                                            ""type"": [{
+                                            ""name"": ""ContactType"",
                                             ""type"": ""enum"",
                                             ""symbols"": [
-                                                ""Phone"",
-                                                ""Email"",
-                                                ""Address""
-                                           ]
+                                                ""phone"",
+                                                ""email"",
+                                                ""address"" 
+                                            ]
+                                            }, ""null""]
                                         },
                                         {
                                             ""name"": ""Description"",
                                             ""type"": ""string""
-                                        },
-                                        {
-                                            ""name"": ""SubType"",
-                                            ""type"": [{
-                                                ""name"": ""ContactInformationSubType"",
-                                                ""type"": ""enum"",
-                                                ""symbols"": [
-                                                    ""correspondenceAddress,
-                                                    ""mobile"",
-                                                    ""home"",
-                                                    ""work"",
-                                                    ""other"",
-                                                    ""landline""
-                                               ]
-                                            }, ""null""]
-                                        },
+                                        }
                                     ]
                                 }
-                            },
+                            }
                         ]
                     }
                 }
