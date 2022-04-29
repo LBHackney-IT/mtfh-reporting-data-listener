@@ -106,7 +106,7 @@ namespace MtfhReportingDataListener.Tests.UseCase
             _mockSchemaRegistry.Setup(x => x.GetSchemaForTopic(schemaName)).ReturnsAsync(mockSchemaResponse).Verifiable();
 
             await _sut.ProcessMessageAsync(_contactDetailAddedMessage).ConfigureAwait(false);
-            _mockSchemaRegistry.Verify();
+            _mockSchemaRegistry.Verify(x => x.GetSchemaForTopic(schemaName), Times.Once);
         }
 
         [Fact]
