@@ -6,28 +6,28 @@ using MtfhReportingDataListener.UseCase.Interfaces;
 using Hackney.Core.Logging;
 using System;
 using System.Threading.Tasks;
-using Hackney.Shared.Tenure.Boundary.Response;
 using Avro;
 using Avro.Generic;
 using System.Linq;
 using System.Text.Json;
 using System.Reflection;
 using Newtonsoft.Json;
+using Hackney.Shared.ContactDetail.Boundary.Response;
 using MtfhReportingDataListener.Helper;
 
 namespace MtfhReportingDataListener.UseCase
 {
-    public class TenureUseCase : ITenureUseCase
+    public class ContactDetailUseCase : IContactDetailUseCase
     {
-        private readonly ITenureInfoApiGateway _tenureInfoApi;
+        private readonly IContactDetailApiGateway _contactDetailApi;
         private readonly IKafkaGateway _kafkaGateway;
         private readonly ISchemaRegistry _schemaRegistry;
         private readonly IConvertToAvroHelper _convertToAvroHelper;
 
-        public TenureUseCase(ITenureInfoApiGateway gateway, IKafkaGateway kafkaGateway,
-                             ISchemaRegistry schemaRegistry, IConvertToAvroHelper convertToAvroHelper)
+        public ContactDetailUseCase(IContactDetailApiGateway gateway, IKafkaGateway kafkaGateway,
+                                    ISchemaRegistry schemaRegistry, IConvertToAvroHelper convertToAvroHelper)
         {
-            _tenureInfoApi = gateway;
+            _contactDetailApi = gateway;
             _kafkaGateway = kafkaGateway;
             _schemaRegistry = schemaRegistry;
             _convertToAvroHelper = convertToAvroHelper;
@@ -38,11 +38,11 @@ namespace MtfhReportingDataListener.UseCase
         {
             if (message is null) throw new ArgumentNullException(nameof(message));
 
-            var tenure = await _tenureInfoApi.GetTenureInfoByIdAsync(message.EntityId, message.CorrelationId)
+            var contactDetail = await _contactDetailApi.GetContactDetailByTargetIdAsync(message.EntityId, message.CorrelationId)
                                              .ConfigureAwait(false);
-            if (tenure is null) throw new EntityNotFoundException<TenureResponseObject>(message.EntityId);
+            if (contactDetail is null) throw new EntityNotFoundException<ContactDetailsResponseObject>(message.EntityId);
 
-            var tenureChangeEvent = new TenureEvent
+            var contactDetailChangeEvent = new ContactDetailEvent
             {
                 Id = message.Id,
                 EventType = message.EventType,
@@ -56,12 +56,12 @@ namespace MtfhReportingDataListener.UseCase
                     Name = message.User?.Name,
                     Email = message.User?.Email
                 },
-                Tenure = tenure
+                ContactDetails = contactDetail
             };
 
-            var topicName = Environment.GetEnvironmentVariable("TENURE_SCHEMA_NAME");
+            var topicName = Environment.GetEnvironmentVariable("CONTACT_DETAIL_SCHEMA_NAME");
             var schema = await _schemaRegistry.GetSchemaForTopic(topicName);
-            var record = _convertToAvroHelper.BuildRecord(schema, tenureChangeEvent);
+            var record = _convertToAvroHelper.BuildRecord(schema, contactDetailChangeEvent);
 
             await _kafkaGateway.CreateKafkaTopic(topicName);
             _kafkaGateway.SendDataToKafka(topicName, record);

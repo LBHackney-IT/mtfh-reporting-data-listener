@@ -1,9 +1,11 @@
+using Hackney.Shared.ContactDetail.Boundary.Response;
 using System;
-using Hackney.Shared.Tenure.Boundary.Response;
+using System.Collections.Generic;
+using System.Text;
 
 namespace MtfhReportingDataListener.Domain
 {
-    public class TenureEvent
+    public class ContactDetailEvent
     {
         public Guid Id { get; set; }
 
@@ -21,6 +23,6 @@ namespace MtfhReportingDataListener.Domain
 
         public User User { get; set; }
 
-        public TenureResponseObject Tenure { get; set; }
+        public ContactDetailsResponseObject ContactDetails { get; set; }
     }
 }

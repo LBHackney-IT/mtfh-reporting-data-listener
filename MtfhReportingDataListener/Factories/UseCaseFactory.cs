@@ -27,6 +27,12 @@ namespace MtfhReportingDataListener.Factories
                         break;
                     }
 
+                case EventTypes.ContactDetailAddedEvent:
+                    {
+                        processor = serviceProvider.GetService<IContactDetailUseCase>();
+                        break;
+                    }
+
                 default:
                     throw new ArgumentException($"Unknown event type: {entityEvent.EventType}");
             }

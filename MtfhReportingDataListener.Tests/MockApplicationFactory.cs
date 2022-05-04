@@ -16,6 +16,7 @@ namespace MtfhReportingDataListener.Tests
         public MockApplicationFactory()
         {
             EnsureEnvVarConfigured("DATAPLATFORM_KAFKA_HOSTNAME", "localhost:9092");
+            EnsureEnvVarConfigured("KAFKA_SCHEMA_REGISTRY_HOSTNAME", "localhost:8081");
 
             _host = CreateHostBuilder().Build();
         }
