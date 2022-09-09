@@ -80,7 +80,7 @@ namespace MtfhReportingDataListener.Tests.Gateway
         }
 
         [Fact]
-        public async Task ContactDetailAddedSendsDataToKafka()
+        public async Task ContactDetailAddedAndUpdatedSendsDataToKafka()
         {
             var consumerconfig = new ConsumerConfig
             {
