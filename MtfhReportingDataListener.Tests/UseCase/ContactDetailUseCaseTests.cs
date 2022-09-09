@@ -27,6 +27,7 @@ namespace MtfhReportingDataListener.Tests.UseCase
         private readonly ContactDetailsResponseObject _contactDetail;
 
         private readonly EntityEventSns _contactDetailAddedMessage;
+        private readonly EntityEventSns _contactDetailUpdatedMessage;
 
         private readonly Fixture _fixture;
 
@@ -45,6 +46,7 @@ namespace MtfhReportingDataListener.Tests.UseCase
 
             _contactDetail = CreateContactDetail();
             _contactDetailAddedMessage = CreateContactDetailAddedMessage();
+            _contactDetailUpdatedMessage = CreateContactDetailUpdatedMessage();
 
             _contactDetailSchemaName = Environment.GetEnvironmentVariable("CONTACT_DETAIL_SCHEMA_NAME");
         }
@@ -160,6 +162,38 @@ namespace MtfhReportingDataListener.Tests.UseCase
 
             await _sut.ProcessMessageAsync(_contactDetailAddedMessage).ConfigureAwait(false);
             _mockKafka.Verify(x => x.SendDataToKafka(schemaName, It.IsAny<GenericRecord>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task ProcessMessageAsyncSendsDataToKafkaWithContactDetailUpdatedEventType()
+        {
+            _mockGateway.Setup(x => x.GetContactDetailByTargetIdAsync(_contactDetailUpdatedMessage.EntityId, _contactDetailUpdatedMessage.CorrelationId))
+                        .ReturnsAsync(_contactDetail);
+            var mockSchemaResponse = @"{
+                ""type"": ""record"",
+                ""name"": ""ContactDetail"",
+                ""fields"": [
+                   {
+                     ""name"": ""Id"",
+                     ""type"": ""string""
+                   },
+                ]
+                }";
+            _mockSchemaRegistry.Setup(x => x.GetSchemaForTopic(It.IsAny<string>())).ReturnsAsync(mockSchemaResponse);
+            var schemaName = "mtfh-reporting-data-listener";
+
+            Environment.SetEnvironmentVariable("CONTACT_DETAIL_SCHEMA_NAME", schemaName);
+
+            await _sut.ProcessMessageAsync(_contactDetailUpdatedMessage).ConfigureAwait(false);
+            _mockKafka.Verify(x => x.SendDataToKafka(schemaName, It.IsAny<GenericRecord>()), Times.Once);
+        }
+
+
+        private EntityEventSns CreateContactDetailUpdatedMessage(string eventType = EventTypes.ContactDetailUpdatedEvent)
+        {
+            return _fixture.Build<EntityEventSns>()
+                            .With(x => x.EventType, eventType)
+                            .Create();
         }
 
         private EntityEventSns CreateContactDetailAddedMessage(string eventType = EventTypes.ContactDetailAddedEvent)
