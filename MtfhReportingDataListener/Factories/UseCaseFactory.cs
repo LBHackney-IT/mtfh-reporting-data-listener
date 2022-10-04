@@ -34,7 +34,7 @@ namespace MtfhReportingDataListener.Factories
                     }
 
                 default:
-                    throw new ArgumentException($"Unknown event type: {entityEvent.EventType}");
+                    return null;
             }
 
             return processor;
