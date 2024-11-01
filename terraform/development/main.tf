@@ -114,3 +114,30 @@ resource "aws_ssm_parameter" "mtfh_reporting_data_sqs_queue_arn" {
   value = aws_sqs_queue.mtfh_reporting_data_queue.arn
 }
 
+# Reference to the SNS Topic All_DLQ_Alarms_Topic - which will contain all the email subscriptions
+data "aws_sns_topic" "dlq_alarm_topic" {
+  name = "All_DLQ_Alarms_Topic"
+}
+ 
+# CloudWatch Alarm for DLQ NumberOfMessagesReceived
+resource "aws_cloudwatch_metric_alarm" "dlq_alarm" {
+  alarm_name          = "DLQ_Alarm_${aws_sqs_queue.mtfh_reporting_data_dead_letter_queue.name}_${var.environment_name}"
+  comparison_operator = "GreaterThanOrEqualToThreshold"
+  evaluation_periods  = 1
+  metric_name         = "NumberOfMessagesReceived"
+  namespace           = "AWS/SQS"
+  period              = 300  # 5 minutes
+  statistic           = "Average"
+  threshold           = 1  # Trigger if 1 or more messages are received
+
+  dimensions = {
+    QueueName = aws_sqs_queue.mtfh_reporting_data_dead_letter_queue.name
+  }
+
+    alarm_description = "Alarm for when messages are sent to the Dead Letter Queue"
+    actions_enabled   = true
+
+    # Link the SNS Notifications Topic to the alarm's notification actions
+    alarm_actions          = [data.aws_sns_topic.dlq_alarm_topic.arn]
+    ok_actions             = [data.aws_sns_topic.dlq_alarm_topic.arn]
+}
