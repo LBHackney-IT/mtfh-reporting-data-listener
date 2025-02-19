@@ -27,12 +27,6 @@ namespace MtfhReportingDataListener.Factories
                         break;
                     }
 
-                case EventTypes.ContactDetailAddedEvent:
-                    {
-                        processor = serviceProvider.GetService<IContactDetailUseCase>();
-                        break;
-                    }
-
                 default:
                     return null;
             }

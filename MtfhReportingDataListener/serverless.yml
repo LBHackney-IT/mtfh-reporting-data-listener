@@ -23,13 +23,9 @@ functions:
       ENVIRONMENT:  ${ssm:/housing-tl/${self:provider.stage}/aspnetcore-environment}
       TenureApiUrl: ${ssm:/housing-tl/${self:provider.stage}/tenure-api-url}
       TenureApiToken: ${ssm:/housing-tl/${self:provider.stage}/tenure-api-token}
-      ContactDetailApiUrl: ${ssm:/housing-tl/${self:provider.stage}/contact-details-api-url}
-      ContactDetailApiToken: ${ssm:/housing-tl/${self:provider.stage}/contact-details-api-token}
       DATAPLATFORM_KAFKA_HOSTNAME: ${ssm:/housing-tl/${self:provider.stage}/dataplatform-kafka-hostname}
       TENURE_SCHEMA_NAME: ${ssm:/housing-tl/${self:provider.stage}/dataplatform-tenure-schema-name}
-      CONTACT_DETAIL_SCHEMA_NAME: ${ssm:/housing-tl/${self:provider.stage}/dataplatform-contact-detail-schema-name}
       KAFKA_SCHEMA_REGISTRY_HOSTNAME: ${ssm:/housing-tl/${self:provider.stage}/dataplatform-kafka-schema-registry-hostname}
-
     events:
       ## Specify the parameter containing the queue arn used to trigget the lambda function here
       ## This will have been defined in the terraform configuration

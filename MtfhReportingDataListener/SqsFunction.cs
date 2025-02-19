@@ -15,7 +15,6 @@ using System.Threading.Tasks;
 using MtfhReportingDataListener.Factories;
 using Hackney.Core.Http;
 using Microsoft.Extensions.Configuration;
-using MtfhReportingDataListener.Helper;
 
 // Assembly attribute to enable the Lambda function's JSON input to be converted into a .NET class.
 [assembly: LambdaSerializer(typeof(Amazon.Lambda.Serialization.SystemTextJson.DefaultLambdaJsonSerializer))]
@@ -43,12 +42,9 @@ namespace MtfhReportingDataListener
             services.AddHttpClient();
 
             services.AddScoped<ITenureUseCase, TenureUseCase>();
-            services.AddScoped<IContactDetailUseCase, ContactDetailUseCase>();
             services.AddScoped<ITenureInfoApiGateway, TenureInfoApiGateway>();
-            services.AddScoped<IContactDetailApiGateway, ContactDetailApiGateway>();
             services.AddScoped<IKafkaGateway, KafkaGateway>();
             services.AddScoped<ISchemaRegistry, SchemaRegistry>();
-            services.AddScoped<IConvertToAvroHelper, ConvertToAvroHelper>();
 
             services.AddSingleton<IConfiguration>(Configuration);
             services.AddApiGateway();

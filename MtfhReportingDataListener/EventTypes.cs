@@ -4,7 +4,6 @@ namespace MtfhReportingDataListener
     {
         public const string TenureUpdatedEvent = "TenureUpdatedEvent";
         public const string TenureCreatedEvent = "TenureCreatedEvent";
-        public const string ContactDetailAddedEvent = "ContactDetailAddedEvent";
 
     }
 }

@@ -23,4 +23,11 @@ namespace MtfhReportingDataListener.Domain
 
         public TenureResponseObject Tenure { get; set; }
     }
+
+    public class User
+    {
+        public string Name { get; set; }
+
+        public string Email { get; set; }
+    }
 }

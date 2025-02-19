@@ -25,10 +25,10 @@ namespace MtfhReportingDataListener.Tests.E2ETests.Steps
         public BaseSteps()
         { }
 
-        protected EntityEventSns CreateEvent(Guid id, string eventType)
+        protected EntityEventSns CreateEvent(Guid tenureId, string eventType)
         {
             return _fixture.Build<EntityEventSns>()
-                           .With(x => x.EntityId, id)
+                           .With(x => x.EntityId, tenureId)
                            .With(x => x.EventType, eventType)
                            .With(x => x.CorrelationId, _correlationId)
                            .Create();

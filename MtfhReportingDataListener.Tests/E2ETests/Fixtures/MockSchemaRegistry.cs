@@ -4,13 +4,13 @@ using System;
 using System.Threading.Tasks;
 using System.Net.Http;
 
-public class MockTenureSchemaRegistry
+public class MockSchemaRegistry
 {
     public string SchemaDefinition { get; }
     public string Topic { get; }
 
 
-    public MockTenureSchemaRegistry()
+    public MockSchemaRegistry()
     {
         var fixture = new Fixture();
         SchemaDefinition = SmallTenureSchema();

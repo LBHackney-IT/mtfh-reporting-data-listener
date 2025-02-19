@@ -14,7 +14,7 @@ namespace MtfhReportingDataListener.Tests.E2ETests.Stories
     public class TenureUpdatedTests : IDisposable
     {
         private readonly TenureFixture _tenureFixture;
-        private readonly MockTenureSchemaRegistry _schemaRegistry;
+        private readonly MockSchemaRegistry _schemaRegistry;
         private readonly TenureUseCaseSteps _steps;
         private readonly MockApplicationFactory _appFactory;
 
@@ -23,7 +23,7 @@ namespace MtfhReportingDataListener.Tests.E2ETests.Stories
             _tenureFixture = new TenureFixture();
             _appFactory = appFactory;
             _steps = new TenureUseCaseSteps();
-            _schemaRegistry = new MockTenureSchemaRegistry();
+            _schemaRegistry = new MockSchemaRegistry();
         }
 
         public void Dispose()
