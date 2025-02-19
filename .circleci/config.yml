@@ -260,7 +260,7 @@ jobs:
           stage: "production"
 
 workflows:
-  check-and-deploy-development:
+  development:
     jobs:
       - check-code-formatting:
           context: api-nuget-token-context
@@ -291,7 +291,7 @@ workflows:
           filters:
             branches:
               only: master
-  check-and-deploy-staging-and-production:
+  staging-and-production:
     jobs:
       - check-code-formatting:
           context: api-nuget-token-context
