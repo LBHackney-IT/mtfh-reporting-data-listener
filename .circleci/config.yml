@@ -228,6 +228,21 @@ jobs:
     steps:
       - terraform-apply:
           environment: "production"
+  preview-development-terraform:
+    executor: docker-terraform
+    steps:
+      - terraform-preview:
+          environment: "development"
+  preview-staging-terraform:
+    executor: docker-terraform
+    steps:
+      - terraform-preview:
+          environment: "staging"
+  preview-production-terraform:
+    executor: docker-terraform
+    steps:
+      - terraform-preview:
+          environment: "production"
   deploy-to-development:
     executor: docker-dotnet
     steps:
