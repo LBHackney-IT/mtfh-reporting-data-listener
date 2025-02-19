@@ -23,6 +23,4 @@ COPY . .
 RUN dotnet build -c Release -o out MtfhReportingDataListener/MtfhReportingDataListener.csproj
 RUN dotnet build -c debug -o out MtfhReportingDataListener.Tests/MtfhReportingDataListener.Tests.csproj
 
-RUN chmod +x ./wait-until-schemaregistry-up.sh
-
-CMD ./wait-until-schemaregistry-up.sh && dotnet test
+CMD dotnet test
