@@ -36,14 +36,10 @@ services:
    links:
      - zoo
    depends_on:
-    zoo:
-      condition: service_started
-    kafka-1:
-      condition: service_started
-    kafka-2:
-      condition: service_started
-    schemaregistry:
-      condition: service_healthy
+    - zoo
+    - kafka-1
+    - kafka-2
+    - schemaregistry
 
   zoo:
     image: confluentinc/cp-zookeeper:6.2.1
