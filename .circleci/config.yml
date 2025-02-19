@@ -278,6 +278,36 @@ workflows:
               ignore:
                 - master
                 - release
+      - assume-role-development:
+          context: api-assume-role-housing-development-context
+          filters:
+            branches:
+              ignore:
+                - master
+                - release
+      - preview-development-terraform:
+          requires:
+            - assume-role-development
+      - assume-role-staging:
+          context: api-assume-role-housing-staging-context
+          filters:
+            branches:
+              ignore:
+                - master
+                - release
+      - preview-staging-terraform:
+          requires:
+            - assume-role-staging
+      - assume-role-production:
+          context: api-assume-role-housing-production-context
+          filters:
+            branches:
+              ignore:
+                - master
+                - release
+      - preview-production-terraform:
+          requires:
+            - assume-role-production
   development:
     jobs:
       - build-and-test:
