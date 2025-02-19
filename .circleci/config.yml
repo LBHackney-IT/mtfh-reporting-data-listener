@@ -262,12 +262,13 @@ jobs:
 workflows:
   development:
     jobs:
-      - check-code-formatting:
-          context: api-nuget-token-context
       - build-and-test:
           context:
             - api-nuget-token-context
             - SonarCloud
+          filters:
+            branches:
+              only: master
       - assume-role-development:
           context: api-assume-role-housing-development-context
           requires:
@@ -281,16 +282,10 @@ workflows:
       - terraform-apply-development:
           requires:
             - terraform-compliance-development
-          filters:
-            branches:
-              only: master
       - deploy-to-development:
           context: api-nuget-token-context
           requires:
             - terraform-apply-development
-          filters:
-            branches:
-              only: master
   staging-and-production:
     jobs:
       - check-code-formatting:
