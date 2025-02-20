@@ -153,6 +153,11 @@ jobs:
       - run:
           name: Run tests
           command: docker compose run mtfh-reporting-data-listener-test
+      - run:
+          name: Report
+          command: |
+            mkdir coverage
+            docker cp $(docker ps -aqf "name=mtfh-reporting-data-listener-test"):/app/coverage ./
   assume-role-development:
     executor: docker-python
     steps:
