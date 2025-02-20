@@ -4,12 +4,12 @@ orbs:
   aws-ecr: circleci/aws-ecr@3.0.0
   aws-cli: circleci/aws-cli@0.1.9
   aws_assume_role: lbh-hackit/aws_assume_role@0.1.0
-  sonarcloud: sonarsource/sonarcloud@1.1.1
+  sonarcloud: sonarsource/sonarcloud@2.0.0
 
 executors:
   docker-python:
     docker:
-      - image: cimg/python:3.8.4
+      - image: cimg/python:3.13
   docker-terraform:
     docker:
       - image: "hashicorp/terraform:1.1.9"
@@ -102,6 +102,21 @@ commands:
           root: *workspace_root
           paths:
             - .aws
+  terraform-preview:
+    description: "Gives a preview for Terraform configuration changes."
+    parameters:
+      environment:
+        type: string
+    steps:
+      - *attach_workspace
+      - checkout
+      - run:
+          command: |
+            cd ./terraform/<<parameters.environment>>/
+            terraform get -update=true
+            terraform init
+            terraform plan
+          name: terraform preview
   deploy-lambda:
     description: "Deploys via Serverless"
     parameters:
@@ -149,10 +164,17 @@ jobs:
       - setup_remote_docker
       - run:
           name: build
-          command: docker-compose build mtfh-reporting-data-listener-test
+          command: docker compose build mtfh-reporting-data-listener-test
       - run:
           name: Run tests
-          command: docker-compose run mtfh-reporting-data-listener-test
+          command: docker compose run mtfh-reporting-data-listener-test
+      - run:
+          name: Report
+          command: |
+            mkdir coverage
+            docker cp $(docker ps -aqf "name=mtfh-reporting-data-listener-test"):/app/coverage ./
+            sed -i "s|/app/|$(pwd)/|g" coverage/*/coverage.opencover.xml
+      - sonarcloud/scan
   assume-role-development:
     executor: docker-python
     steps:
@@ -213,6 +235,21 @@ jobs:
     steps:
       - terraform-apply:
           environment: "production"
+  preview-development-terraform:
+    executor: docker-terraform
+    steps:
+      - terraform-preview:
+          environment: "development"
+  preview-staging-terraform:
+    executor: docker-terraform
+    steps:
+      - terraform-preview:
+          environment: "staging"
+  preview-production-terraform:
+    executor: docker-terraform
+    steps:
+      - terraform-preview:
+          environment: "production"
   deploy-to-development:
     executor: docker-dotnet
     steps:
@@ -230,14 +267,63 @@ jobs:
           stage: "production"
 
 workflows:
-  check-and-deploy-development:
+  feature:
     jobs:
       - check-code-formatting:
           context: api-nuget-token-context
+          filters:
+            branches:
+              ignore:
+                - master
+                - release
       - build-and-test:
           context:
             - api-nuget-token-context
             - SonarCloud
+          filters:
+            branches:
+              ignore:
+                - master
+                - release
+      - assume-role-development:
+          context: api-assume-role-housing-development-context
+          filters:
+            branches:
+              ignore:
+                - master
+                - release
+      - preview-development-terraform:
+          requires:
+            - assume-role-development
+      - assume-role-staging:
+          context: api-assume-role-housing-staging-context
+          filters:
+            branches:
+              ignore:
+                - master
+                - release
+      - preview-staging-terraform:
+          requires:
+            - assume-role-staging
+      - assume-role-production:
+          context: api-assume-role-housing-production-context
+          filters:
+            branches:
+              ignore:
+                - master
+                - release
+      - preview-production-terraform:
+          requires:
+            - assume-role-production
+  development:
+    jobs:
+      - build-and-test:
+          context:
+            - api-nuget-token-context
+            - SonarCloud
+          filters:
+            branches:
+              only: master
       - assume-role-development:
           context: api-assume-role-housing-development-context
           requires:
@@ -251,17 +337,11 @@ workflows:
       - terraform-apply-development:
           requires:
             - terraform-compliance-development
-          filters:
-            branches:
-              only: master
       - deploy-to-development:
           context: api-nuget-token-context
           requires:
             - terraform-apply-development
-          filters:
-            branches:
-              only: master
-  check-and-deploy-staging-and-production:
+  staging-and-production:
     jobs:
       - check-code-formatting:
           context: api-nuget-token-context

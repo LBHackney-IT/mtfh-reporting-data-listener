@@ -19,27 +19,31 @@ services:
       - zoo
 
   mtfh-reporting-data-listener-test:
-   image: mtfh-reporting-data-listener-test
-   build:
-     context: .
-     dockerfile: MtfhReportingDataListener.Tests/Dockerfile
-     args:
-       - LBHPACKAGESTOKEN=${LBHPACKAGESTOKEN}
-       - SONAR_TOKEN=${SONAR_TOKEN}
-   environment:
-     - ENVIRONMENT=LocalDevelopment
-     - AWS_REGION=eu-west-2
-     - AWS_ACCESS_KEY_ID=local
-     - AWS_SECRET_ACCESS_KEY=local
-     - DATAPLATFORM_KAFKA_HOSTNAME=kafka-1:9092,kafka-2:9093
-     - KAFKA_SCHEMA_REGISTRY_HOSTNAME=schemaregistry:8081
-   links:
-     - zoo
-   depends_on:
-    - zoo
-    - kafka-1
-    - kafka-2
-    - schemaregistry
+    image: mtfh-reporting-data-listener-test
+    build:
+      context: .
+      dockerfile: MtfhReportingDataListener.Tests/Dockerfile
+      args:
+        - LBHPACKAGESTOKEN=${LBHPACKAGESTOKEN}
+        - SONAR_TOKEN=${SONAR_TOKEN}
+    environment:
+      - ENVIRONMENT=LocalDevelopment
+      - AWS_REGION=eu-west-2
+      - AWS_ACCESS_KEY_ID=local
+      - AWS_SECRET_ACCESS_KEY=local
+      - DATAPLATFORM_KAFKA_HOSTNAME=kafka-1:9092,kafka-2:9093
+      - KAFKA_SCHEMA_REGISTRY_HOSTNAME=schemaregistry:8081
+    links:
+      - zoo
+    depends_on:
+      zoo:
+        condition: service_started
+      kafka-1:
+        condition: service_started
+      kafka-2:
+        condition: service_started
+      schemaregistry:
+        condition: service_healthy
 
   zoo:
     image: confluentinc/cp-zookeeper:6.2.1
@@ -116,3 +120,9 @@ services:
       SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: "kafka-2:9093,kafka-1:9092"
       SCHEMA_REGISTRY_KAFKASTORE_SECURITY_PROTOCOL: PLAINTEXT
       SCHEMA_REGISTRY_HOST_NAME: schemaregistry
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8081"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 10s

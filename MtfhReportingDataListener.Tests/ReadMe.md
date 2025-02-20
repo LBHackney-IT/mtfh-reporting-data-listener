@@ -94,24 +94,3 @@ These use BDDfy to implement tests that are constructed using the gherkin syntax
 The triggering of the publicly-facing function is not done using a real SQS queue instance, but rather we create an instance of the `SqsFunction` class
 and call the `FunctionHandler()` method directly to simulate how AWS would do this in a deployed environment.
 See the [BaseSteps class](/MtfhReportingDataListener.Tests/E2ETests/Steps/BaseSteps.cs) for more details.
-
-
-## Run coverage
-In the root of this test project directory is the file `RunCoverage.bat` which can be used (on Windows at least) to generate a test code coverage report.
-
-### Pre-requisites
-To use `RunCoverage.bat` the [reportgenerator](https://github.com/danielpalme/ReportGenerator) package needs to be installed locally.
-```
-dotnet tool install -g dotnet-reportgenerator-globaltool
-```
-
-### Usage
-- Ensure that all tests are passing.
-- Open a command prompt in the root of the test project.
-- Run the following command 
-```
-RunCoverage.bat
-```
-- The tests will be run, an HTML coverage report generated and then opened in the default browser.
-- If any tests fail then a new coverage report will not get created. If one _is_ shown it will be the previous one created from the last successful run.
-
