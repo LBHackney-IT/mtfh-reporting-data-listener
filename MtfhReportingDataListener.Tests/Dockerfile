@@ -23,4 +23,4 @@ COPY . .
 RUN dotnet build -c Release -o out MtfhReportingDataListener/MtfhReportingDataListener.csproj
 RUN dotnet build -c debug -o out MtfhReportingDataListener.Tests/MtfhReportingDataListener.Tests.csproj
 
-ENTRYPOINT ["dotnet", "test", "--collect", "XPlat Code Coverage;Format=opencover", "--results-directory", "./coverage"]
+ENTRYPOINT ["dotnet", "test", "--collect", "XPlat Code Coverage", "--results-directory", "./coverage", "--settings", "coverlet.runsettings"]
