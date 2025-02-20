@@ -1,13 +1,10 @@
-<!--
-Coverlet settings to make the scanner work with dotnetcore 3.1
-way of configuring the OpenCover test coverage export format.
--->
 <?xml version="1.0" encoding="utf-8"?>
 <RunSettings>
   <DataCollectionRunSettings>
     <DataCollectors>
       <DataCollector friendlyName="XPlat Code Coverage">
         <Configuration>
+          <!-- Coverlet settings to make the scanner work with dotnetcore 3.1 way of configuring the OpenCover test coverage export format. -->
           <Format>opencover</Format>
         </Configuration>
       </DataCollector>
