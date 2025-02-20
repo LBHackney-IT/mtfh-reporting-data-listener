@@ -159,6 +159,7 @@ jobs:
             mkdir coverage
             docker cp $(docker ps -aqf "name=mtfh-reporting-data-listener-test"):/app/coverage ./
             sed -i "s|/app/|$(pwd)/|g" coverage/*/coverage.opencover.xml
+      - sonarcloud/scan
   assume-role-development:
     executor: docker-python
     steps:
