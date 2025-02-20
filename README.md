@@ -235,10 +235,6 @@ $ make test
 - **Mirela Georgieva**, Lead Developer at London Borough of Hackney (mirela.georgieva@hackney.gov.uk)
 - **Matt Keyworth**, Lead Developer at London Borough of Hackney (matthew.keyworth@hackney.gov.uk)
 
-### Other Contacts
-
-- **Rashmi Shetty**, Product Owner at London Borough of Hackney (rashmi.shetty@hackney.gov.uk)
-
 [docker-download]: https://www.docker.com/products/docker-desktop
 [AWS-CLI]: https://aws.amazon.com/cli/
 [Api-Gateway]: https://github.com/LBHackney-IT/lbh-core/blob/release/Hackney.Core/Hackney.Core.Http/README.md#ApiGateway
