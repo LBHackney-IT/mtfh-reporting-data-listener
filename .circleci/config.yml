@@ -137,9 +137,9 @@ commands:
             echo "Searching $CF_STACK_NAME resources for failures."
 
             FAILED_ROLLBACK_RESOURCES=$( \
-              aws cloudformation list-stack-resources \
+              aws cloudformation describe-stack-resources \
                 --stack-name "$CF_STACK_NAME" \
-                --query "StackResourceSummaries[?ResourceStatus == 'UPDATE_FAILED'].LogicalResourceId" \
+                --query "StackResources[?ResourceStatus == 'UPDATE_FAILED'].LogicalResourceId" \
                 --no-paginate \
                 --output json \
               )
