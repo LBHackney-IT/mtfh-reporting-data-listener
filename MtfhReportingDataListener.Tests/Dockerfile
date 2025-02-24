@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/dotnet/core/sdk:3.1
+FROM mcr.microsoft.com/dotnet/sdk:8.0
 
 # disable microsoft telematry
 ENV DOTNET_CLI_TELEMETRY_OPTOUT='true'
@@ -23,4 +23,4 @@ COPY . .
 RUN dotnet build -c Release -o out MtfhReportingDataListener/MtfhReportingDataListener.csproj
 RUN dotnet build -c debug -o out MtfhReportingDataListener.Tests/MtfhReportingDataListener.Tests.csproj
 
-ENTRYPOINT ["dotnet", "test", "--collect", "XPlat Code Coverage", "--results-directory", "./coverage", "--settings", "coverlet.runsettings"]
+ENTRYPOINT ["dotnet", "test", "--collect", "XPlat Code Coverage;Format=opencover", "--results-directory", "./coverage"]
