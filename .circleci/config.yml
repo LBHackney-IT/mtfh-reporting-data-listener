@@ -144,10 +144,8 @@ commands:
                 --output json \
               )
 
-            echo "*$FAILED_ROLLBACK_RESOURCES*"
-
             echo "Failing resources found:"
-            echo $FAILED_ROLLBACK_RESOURCES | jq -r '.[] | "Resource: \(.LogicalResourceId), Fail Reason: \(.ResourceStatusReason).'
+            echo $FAILED_ROLLBACK_RESOURCES | jq -r '.[] | "Resource: \(.LogicalResourceId), Fail Reason: \(.ResourceStatusReason)."'
           name: manual rollback
   deploy-lambda:
     description: "Deploys via Serverless"
