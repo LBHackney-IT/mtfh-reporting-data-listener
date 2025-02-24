@@ -128,8 +128,19 @@ commands:
       - aws-cli/install
       - run:
           command: |
-            echo "Performing manual upgrade for <<parameters.environment>> environment."
-            # TODO
+            echo "Performing manual CF stack rollback for <<parameters.environment>> environment."
+
+            TARGET_DATABASE_INSTANCE_ID='mtfh-reporting-data-<<parameters.environment>>'
+
+            FAILED_ROLLBACK_RESOURCES=$( \
+              aws cloudformation list-stack-resources \
+                --stack-name $TARGET_DATABASE_INSTANCE_ID \
+                --query 'StackResourceSummaries[?ResourceStatus == 'UPDATE_FAILED'].LogicalResourceId' \
+                --no-paginate \
+                --output text \
+              )
+            
+            echo $FAILED_ROLLBACK_RESOURCES
           name: manual rollback
   deploy-lambda:
     description: "Deploys via Serverless"
