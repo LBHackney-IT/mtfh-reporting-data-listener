@@ -138,13 +138,23 @@ commands:
 
             FAILED_ROLLBACK_RESOURCES=$( \
               aws cloudformation list-stack-resources \
-                --stack-name $CF_STACK_NAME \
+                --stack-name "$CF_STACK_NAME" \
                 --query 'StackResourceSummaries[?ResourceStatus == 'UPDATE_FAILED'].LogicalResourceId' \
                 --no-paginate \
                 --output text \
               )
-            
-            echo $FAILED_ROLLBACK_RESOURCES
+
+            # Test that credentials are configured
+            aws s3 ls
+
+            ALL_RESOURCES=$(aws cloudformation list-stack-resources \
+                --stack-name "$CF_STACK_NAME" \
+                --no-paginate \
+                --output json \
+              )
+
+            echo "*$FAILED_ROLLBACK_RESOURCES*"
+            echo "*$ALL_RESOURCES*"
           name: manual rollback
   deploy-lambda:
     description: "Deploys via Serverless"
