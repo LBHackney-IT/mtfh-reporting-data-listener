@@ -366,10 +366,17 @@ workflows:
       - terraform-apply-development:
           requires:
             - terraform-compliance-development
+      - permit-dev-cfs-rollback:
+          type: approval
+          requires:
+            - terraform-apply-development
+      - fix-stack-rollback-development:
+          requires:
+            - permit-dev-cfs-rollback
       - deploy-to-development:
           context: api-nuget-token-context
           requires:
-            - terraform-apply-development
+            - fix-stack-rollback-development
   staging-and-production:
     jobs:
       - check-code-formatting:
@@ -409,10 +416,17 @@ workflows:
           filters:
             branches:
               only: release
+      - permit-stage-cfs-rollback:
+          type: approval
+          requires:
+            - terraform-apply-staging
+      - fix-stack-rollback-staging:
+          requires:
+            - permit-stage-cfs-rollback
       - deploy-to-staging:
           context: api-nuget-token-context
           requires:
-            - terraform-apply-staging
+            - fix-stack-rollback-staging
           filters:
             branches:
               only: release
@@ -456,10 +470,13 @@ workflows:
           filters:
             branches:
               only: release
+      - fix-stack-rollback-production:
+          requires:
+            - permit-production-release
       - deploy-to-production:
           context: api-nuget-token-context
           requires:
-            - permit-production-release
+            - fix-stack-rollback-production
           filters:
             branches:
               only: release
