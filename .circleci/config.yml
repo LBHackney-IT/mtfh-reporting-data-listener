@@ -130,11 +130,12 @@ commands:
           command: |
             echo "Performing manual CF stack rollback for <<parameters.environment>> environment."
 
-            TARGET_DATABASE_INSTANCE_ID='mtfh-reporting-data-<<parameters.environment>>'
+            SERVICE_NAME=$(find . -type f -name 'serverless.yml' -exec grep -oP 'service:\s+\K[\w-]+$' {} \;)
+            CF_STACK_NAME='${SERVICE_NAME}-<<parameters.environment>>'
 
             FAILED_ROLLBACK_RESOURCES=$( \
               aws cloudformation list-stack-resources \
-                --stack-name $TARGET_DATABASE_INSTANCE_ID \
+                --stack-name $CF_STACK_NAME \
                 --query 'StackResourceSummaries[?ResourceStatus == 'UPDATE_FAILED'].LogicalResourceId' \
                 --no-paginate \
                 --output text \
