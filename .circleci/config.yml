@@ -128,13 +128,13 @@ commands:
       - aws-cli/install
       - run:
           command: |
-            echo "Performing manual CF stack rollback for <<parameters.environment>> environment."
+            echo -e "Performing manual CF stack rollback for <<parameters.environment>> environment.\n"
 
             SERVICE_NAME=$(find . -type f -name 'serverless.yml' -exec grep -oP 'service:\s+\K[\w-]+$' {} \;)
-            echo "Service $SERVICE_NAME detected."
+            echo -e "Service $SERVICE_NAME detected.\n"
 
             CF_STACK_NAME="${SERVICE_NAME}-<<parameters.environment>>"
-            echo "Searching $CF_STACK_NAME resources for failures."
+            echo -e "Searching $CF_STACK_NAME resources for failures...\n"
 
             FAILED_ROLLBACK_RESOURCES=$( \
               aws cloudformation describe-stack-resources \
@@ -145,7 +145,7 @@ commands:
               )
 
             echo "Failing resources found:"
-            echo $FAILED_ROLLBACK_RESOURCES | jq -r '.[] | "Resource: \(.LogicalResourceId), Fail Reason: \(.ResourceStatusReason)."'
+            echo $FAILED_ROLLBACK_RESOURCES | jq -r '.[] | "Resource: \(.LogicalResourceId),\nFail Reason: \(.ResourceStatusReason).\n"'
           name: manual rollback
   deploy-lambda:
     description: "Deploys via Serverless"
