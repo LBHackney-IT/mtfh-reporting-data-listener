@@ -142,10 +142,15 @@ commands:
                 --query "StackResources[?ResourceStatus == 'UPDATE_FAILED']" \
                 --no-paginate \
                 --output json \
-              )
-
+            )
             echo "Failing resources found:"
             echo $FAILED_ROLLBACK_RESOURCES | jq -r '.[] | "Resource: \(.LogicalResourceId),\nFail Reason: \(.ResourceStatusReason).\n"'
+            
+            FAILED_RESOURCE_IDENTIFIERS=$( \
+              echo $FAILED_ROLLBACK_RESOURCES | \
+              jq -r '[.[].LogicalResourceId] | map("\"" + . + "\"") | join(" ")' \
+            )
+            echo "Failed ids: *$FAILED_RESOURCE_IDENTIFIERS*."
           name: manual rollback
   deploy-lambda:
     description: "Deploys via Serverless"
