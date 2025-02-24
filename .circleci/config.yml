@@ -117,6 +117,20 @@ commands:
             terraform init
             terraform plan
           name: terraform preview
+  fix-stack-rollback:
+    description: "Fixes the CloudFormation UPDATE_ROLLBACK_FAILED when upgrading lambda from an unsupported runtime."
+    parameters:
+      environment:
+        type: string
+    steps:
+      - *attach_workspace
+      - checkout
+      - aws-cli/install
+      - run:
+          command: |
+            echo "Performing manual upgrade for <<parameters.environment>> environment."
+            # TODO
+          name: manual rollback
   deploy-lambda:
     description: "Deploys via Serverless"
     parameters:
