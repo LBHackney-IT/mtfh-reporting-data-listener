@@ -130,6 +130,9 @@ commands:
           command: |
             echo -e "Performing manual CF stack rollback for <<parameters.environment>> environment.\n"
 
+            # Needed in case of a retry to prevent processing the same action twice.
+            REQUEST_TOKEN="ContinueUpdateRollback-<<parameters.environment>>-9e28137b-c8c8-43d2-9389-afb0efccb623"
+
             SERVICE_NAME=$(find . -type f -name 'serverless.yml' -exec grep -oP 'service:\s+\K[\w-]+$' {} \;)
             echo -e "Service $SERVICE_NAME detected.\n"
 
@@ -144,13 +147,20 @@ commands:
                 --output json \
             )
             echo "Failing resources found:"
-            echo $FAILED_ROLLBACK_RESOURCES | jq -r '.[] | "Resource: \(.LogicalResourceId),\nFail Reason: \(.ResourceStatusReason).\n"'
+            echo $FAILED_ROLLBACK_RESOURCES | \
+            jq -r '.[] | "Resource: \(.LogicalResourceId),\nFail Reason: \(.ResourceStatusReason).\n"'
             
             FAILED_RESOURCE_IDENTIFIERS=$( \
               echo $FAILED_ROLLBACK_RESOURCES | \
-              jq -r '[.[].LogicalResourceId] | map("\"" + . + "\"") | join(" ")' \
+              jq -r '[.[].LogicalResourceId] | join(" ")' \
             )
             echo "Failed ids: *$FAILED_RESOURCE_IDENTIFIERS*."
+
+            # Perform manual CF stack rollback
+            aws cloudformation continue-update-rollback \
+              --stack-name $CF_STACK_NAME \
+              --resources-to-skip $FAILED_RESOURCE_IDENTIFIERS \
+              --client-request-token $REQUEST_TOKEN
           name: manual rollback
   deploy-lambda:
     description: "Deploys via Serverless"
