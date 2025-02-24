@@ -324,6 +324,9 @@ workflows:
       - preview-development-terraform:
           requires:
             - assume-role-development
+      - fix-stack-rollback-development:
+          requires:
+            - preview-development-terraform
       - assume-role-staging:
           context: api-assume-role-housing-staging-context
           filters:
