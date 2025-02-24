@@ -269,12 +269,12 @@ jobs:
     steps:
       - fix-stack-rollback:
           environment: "development"
-  fix-stack-rollback-development:
+  fix-stack-rollback-staging:
     executor: aws-cli/default
     steps:
       - fix-stack-rollback:
           environment: "staging"
-  fix-stack-rollback-development:
+  fix-stack-rollback-production:
     executor: aws-cli/default
     steps:
       - fix-stack-rollback:
