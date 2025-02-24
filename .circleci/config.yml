@@ -176,11 +176,23 @@ commands:
             echo "Failed ids: *$FAILED_RESOURCE_IDENTIFIERS*.\n"
 
             # Perform manual CF stack rollback
-            echo "Trigger continuation of the $CF_STACK_NAME rollback whilst excluding failed resources."
+            echo -e "Trigger continuation of the $CF_STACK_NAME rollback whilst excluding failed resources.\n"
             aws cloudformation continue-update-rollback \
               --stack-name $CF_STACK_NAME \
               --resources-to-skip $FAILED_RESOURCE_IDENTIFIERS \
               --client-request-token $REQUEST_TOKEN
+            
+            echo -e "Await updates from AWS confirming rollback progress:\n"
+            STACK_STATUS=''
+            until (echo $STACK_STATUS | grep -iqP '^UPDATE_ROLLBACK_COMPLETE$');
+            do
+              STACK_STATUS=$(get_stack_status "$CF_STACK_NAME")
+              echo "The $CF_STACK_NAME stack status is: $STACK_STATUS."
+              sleep 1s
+            done
+
+            echo "The $CF_STACK_NAME stack status is: $STACK_STATUS."
+            echo -e "\nScript done."
           name: manual rollback
   deploy-lambda:
     description: "Deploys via Serverless"
