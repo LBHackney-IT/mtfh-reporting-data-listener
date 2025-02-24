@@ -131,7 +131,7 @@ commands:
             echo "Performing manual CF stack rollback for <<parameters.environment>> environment."
 
             SERVICE_NAME=$(find . -type f -name 'serverless.yml' -exec grep -oP 'service:\s+\K[\w-]+$' {} \;)
-            CF_STACK_NAME='${SERVICE_NAME}-<<parameters.environment>>'
+            CF_STACK_NAME="${SERVICE_NAME}-<<parameters.environment>>"
 
             FAILED_ROLLBACK_RESOURCES=$( \
               aws cloudformation list-stack-resources \
