@@ -139,19 +139,12 @@ commands:
             FAILED_ROLLBACK_RESOURCES=$( \
               aws cloudformation list-stack-resources \
                 --stack-name "$CF_STACK_NAME" \
-                --query 'StackResourceSummaries[?ResourceStatus == 'UPDATE_FAILED'].LogicalResourceId' \
-                --no-paginate \
-              )
-
-            ALL_RESOURCES=$(aws cloudformation list-stack-resources \
-                --stack-name "$CF_STACK_NAME" \
-                --query 'StackResourceSummaries[?ResourceStatus == 'UPDATE_FAILED']' \
+                --query "StackResourceSummaries[?ResourceStatus == 'UPDATE_FAILED'].LogicalResourceId" \
                 --no-paginate \
                 --output json \
               )
 
             echo "*$FAILED_ROLLBACK_RESOURCES*"
-            echo "*$ALL_RESOURCES*"
           name: manual rollback
   deploy-lambda:
     description: "Deploys via Serverless"
