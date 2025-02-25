@@ -2,7 +2,7 @@ version: 2.1
 
 orbs:
   aws-ecr: circleci/aws-ecr@3.0.0
-  aws-cli: circleci/aws-cli@0.1.9
+  aws-cli: circleci/aws-cli@5.1.0
   aws_assume_role: lbh-hackit/aws_assume_role@0.1.0
   sonarcloud: sonarsource/sonarcloud@2.0.0
 
@@ -117,6 +117,83 @@ commands:
             terraform init
             terraform plan
           name: terraform preview
+  fix-stack-rollback:
+    description: "Fixes the CloudFormation UPDATE_ROLLBACK_FAILED when upgrading lambda from an unsupported runtime."
+    parameters:
+      environment:
+        type: string
+    steps:
+      - *attach_workspace
+      - checkout
+      - aws-cli/install
+      - run:
+          command: |
+            get_stack_status() {
+              local stack_name="$1"
+              aws cloudformation describe-stacks \
+                --stack-name "$stack_name" \
+                --query 'Stacks[].StackStatus | [0]' \
+                --no-paginate \
+                --output text
+            }
+
+            # Needed in case of a retry to prevent processing the same action twice.
+            REQUEST_TOKEN="ContinueUpdateRollback-<<parameters.environment>>-9e28137b-c8c8-43d2-9389-afb0efccb623"
+
+            SERVICE_NAME=$(find . -type f -name 'serverless.yml' -exec grep -oP 'service:\s+\K[\w-]+$' {} \;)
+            echo -e "Service $SERVICE_NAME detected.\n"
+
+            CF_STACK_NAME="${SERVICE_NAME}-<<parameters.environment>>"
+            echo -e "Checking $CF_STACK_NAME stack's status.\n"
+
+            STACK_STATUS=$(get_stack_status "$CF_STACK_NAME")
+            if [[ "$STACK_STATUS" != "UPDATE_ROLLBACK_FAILED" ]]; then
+              echo "Stack hasn't experienced rollback failure yet!"
+              exit 0
+            fi
+
+            # Debug/failsafe sleep
+            sleep 20s
+
+            echo -e "CF stack is confirmed to have failed rollback. Performing manual one.\n"
+            echo -e "Searching $CF_STACK_NAME resources for failures...\n"
+
+            FAILED_ROLLBACK_RESOURCES=$( \
+              aws cloudformation describe-stack-resources \
+                --stack-name "$CF_STACK_NAME" \
+                --query "StackResources[?ResourceStatus == 'UPDATE_FAILED']" \
+                --no-paginate \
+                --output json \
+            )
+            echo "Failing resources found:"
+            echo $FAILED_ROLLBACK_RESOURCES | \
+            jq -r '.[] | "Resource: \(.LogicalResourceId),\nFail Reason: \(.ResourceStatusReason).\n"'
+            
+            FAILED_RESOURCE_IDENTIFIERS=$( \
+              echo $FAILED_ROLLBACK_RESOURCES | \
+              jq -r '[.[].LogicalResourceId] | join(" ")' \
+            )
+            echo "Failed ids: *$FAILED_RESOURCE_IDENTIFIERS*.\n"
+
+            # Perform manual CF stack rollback
+            echo -e "Trigger continuation of the $CF_STACK_NAME rollback whilst excluding failed resources.\n"
+            aws cloudformation continue-update-rollback \
+              --stack-name $CF_STACK_NAME \
+              --resources-to-skip $FAILED_RESOURCE_IDENTIFIERS \
+              --client-request-token $REQUEST_TOKEN
+            
+            echo -e "Await updates from AWS confirming rollback progress:\n"
+            STACK_STATUS=''
+            until (echo $STACK_STATUS | grep -iqP '^UPDATE_ROLLBACK_COMPLETE$');
+            do
+              STACK_STATUS=$(get_stack_status "$CF_STACK_NAME")
+              echo "The $CF_STACK_NAME stack status is: $STACK_STATUS."
+              sleep 1s
+            done
+
+            echo "The $CF_STACK_NAME stack status is: $STACK_STATUS."
+            echo -e "\nScript done."
+          name: manual rollback
   deploy-lambda:
     description: "Deploys via Serverless"
     parameters:
@@ -250,6 +327,21 @@ jobs:
     steps:
       - terraform-preview:
           environment: "production"
+  fix-stack-rollback-development:
+    executor: aws-cli/default
+    steps:
+      - fix-stack-rollback:
+          environment: "development"
+  fix-stack-rollback-staging:
+    executor: aws-cli/default
+    steps:
+      - fix-stack-rollback:
+          environment: "staging"
+  fix-stack-rollback-production:
+    executor: aws-cli/default
+    steps:
+      - fix-stack-rollback:
+          environment: "production"
   deploy-to-development:
     executor: docker-dotnet
     steps:
@@ -295,6 +387,9 @@ workflows:
       - preview-development-terraform:
           requires:
             - assume-role-development
+      - fix-stack-rollback-development:
+          requires:
+            - preview-development-terraform
       - assume-role-staging:
           context: api-assume-role-housing-staging-context
           filters:
@@ -337,10 +432,17 @@ workflows:
       - terraform-apply-development:
           requires:
             - terraform-compliance-development
+      - permit-dev-cfs-rollback:
+          type: approval
+          requires:
+            - terraform-apply-development
+      - fix-stack-rollback-development:
+          requires:
+            - permit-dev-cfs-rollback
       - deploy-to-development:
           context: api-nuget-token-context
           requires:
-            - terraform-apply-development
+            - fix-stack-rollback-development
   staging-and-production:
     jobs:
       - check-code-formatting:
@@ -380,10 +482,17 @@ workflows:
           filters:
             branches:
               only: release
+      - permit-stage-cfs-rollback:
+          type: approval
+          requires:
+            - terraform-apply-staging
+      - fix-stack-rollback-staging:
+          requires:
+            - permit-stage-cfs-rollback
       - deploy-to-staging:
           context: api-nuget-token-context
           requires:
-            - terraform-apply-staging
+            - fix-stack-rollback-staging
           filters:
             branches:
               only: release
@@ -427,10 +536,13 @@ workflows:
           filters:
             branches:
               only: release
+      - fix-stack-rollback-production:
+          requires:
+            - permit-production-release
       - deploy-to-production:
           context: api-nuget-token-context
           requires:
-            - permit-production-release
+            - fix-stack-rollback-production
           filters:
             branches:
               only: release
