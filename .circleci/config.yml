@@ -280,7 +280,7 @@ jobs:
   terraform-apply-development:
     executor: docker-terraform
     steps:
-      - terraform-init-then-plan:
+      - terraform-apply:
           environment: "development"
   terraform-init-and-plan-staging:
     executor: docker-terraform
