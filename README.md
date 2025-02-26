@@ -227,14 +227,11 @@ $ make test
 - Observable monitoring in place
 - Should not affect any existing databases
 
-## Contacts
+## Maintainers
 
-### Active Maintainers
+The @[LBHackney-IT/housing-products](https://github.com/orgs/LBHackney-IT/teams/housing-products) team.
 
-- **Selwyn Preston**, Lead Developer at London Borough of Hackney (selwyn.preston@hackney.gov.uk)
-- **Mirela Georgieva**, Lead Developer at London Borough of Hackney (mirela.georgieva@hackney.gov.uk)
-- **Matt Keyworth**, Lead Developer at London Borough of Hackney (matthew.keyworth@hackney.gov.uk)
-
+## Resource links:
 [docker-download]: https://www.docker.com/products/docker-desktop
 [AWS-CLI]: https://aws.amazon.com/cli/
 [Api-Gateway]: https://github.com/LBHackney-IT/lbh-core/blob/release/Hackney.Core/Hackney.Core.Http/README.md#ApiGateway
