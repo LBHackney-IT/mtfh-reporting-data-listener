@@ -8,17 +8,11 @@ ENV LBHPACKAGESTOKEN=$LBHPACKAGESTOKEN
 
 WORKDIR /app
 
-# Copy csproj and restore as distinct layers
-COPY ./MtfhReportingDataListener.sln ./
-COPY ./MtfhReportingDataListener/MtfhReportingDataListener.csproj ./MtfhReportingDataListener/
-COPY ./MtfhReportingDataListener.Tests/MtfhReportingDataListener.Tests.csproj ./MtfhReportingDataListener.Tests/
-COPY /NuGet.Config /root/.nuget/NuGet/NuGet.Config
+# Copy everything else and build
+COPY . .
 
 RUN dotnet restore ./MtfhReportingDataListener/MtfhReportingDataListener.csproj
 RUN dotnet restore ./MtfhReportingDataListener.Tests/MtfhReportingDataListener.Tests.csproj
-
-# Copy everything else and build
-COPY . .
 
 RUN dotnet build -c Release -o out MtfhReportingDataListener/MtfhReportingDataListener.csproj
 RUN dotnet build -c debug -o out MtfhReportingDataListener.Tests/MtfhReportingDataListener.Tests.csproj
