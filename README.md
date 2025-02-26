@@ -232,10 +232,10 @@ $ make test
 The @[LBHackney-IT/housing-products](https://github.com/orgs/LBHackney-IT/teams/housing-products) team.
 
 ## Resource links:
-- \[[docker-download](https://www.docker.com/products/docker-desktop)\]
-- \[[AWS-CLI](https://aws.amazon.com/cli/)\]
-- \[[Api-Gateway](https://github.com/LBHackney-IT/lbh-core/blob/release/Hackney.Core/Hackney.Core.Http/README.md#ApiGateway)\]
-- \[[diagram](https://drive.google.com/file/d/1KbF9gcmf0LOvr7w2fE_fxTd1lcccPilr/view?usp=sharing)\]
-- \[[tenure-api-github](https://github.com/LBHackney-IT/tenure-api)\]
-- \[[usecase-factory](/MtfhReportingDataListener/Factories/UseCaseFactory.cs#L16)\]
-- \[[nuget](https://github.com/LBHackney-IT/lbh-core/blob/release/Hackney.Core/Hackney.Core.Http/ApiGateway.cs)\]
+- \[[docker-download](https://www.docker.com/products/docker-desktop)\] - Download docker for running an application in containerised form.
+- \[[AWS-CLI](https://aws.amazon.com/cli/)\] - Download AWS CLI to establish access to the development resources this application may need.
+- \[[Api-Gateway](https://github.com/LBHackney-IT/lbh-core/blob/release/Hackney.Core/Hackney.Core.Http/README.md#ApiGateway)\] - Read more on re-usable code for accesing Hackney APIs.
+- \[[diagram](https://drive.google.com/file/d/1KbF9gcmf0LOvr7w2fE_fxTd1lcccPilr/view?usp=sharing)\] - Application flow diagram.
+- \[[tenure-api-github](https://github.com/LBHackney-IT/tenure-api)\] - API used to manage and retrieve DynamoDB tenancy data.
+- \[[usecase-factory](/MtfhReportingDataListener/Factories/UseCaseFactory.cs#L16)\] - Class that determines what the application will do based on the event name that is supplied.
+- \[[nuget](https://github.com/LBHackney-IT/lbh-core/blob/release/Hackney.Core/Hackney.Core.Http/ApiGateway.cs)\] - Link to the source code of package containing re-usable HTTP setup for calling Hackney APIs.
