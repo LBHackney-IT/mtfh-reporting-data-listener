@@ -327,21 +327,6 @@ jobs:
     steps:
       - terraform-preview:
           environment: "production"
-  fix-stack-rollback-development:
-    executor: aws-cli/default
-    steps:
-      - fix-stack-rollback:
-          environment: "development"
-  fix-stack-rollback-staging:
-    executor: aws-cli/default
-    steps:
-      - fix-stack-rollback:
-          environment: "staging"
-  fix-stack-rollback-production:
-    executor: aws-cli/default
-    steps:
-      - fix-stack-rollback:
-          environment: "production"
   deploy-to-development:
     executor: docker-dotnet
     steps:
