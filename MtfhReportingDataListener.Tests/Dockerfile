@@ -11,8 +11,7 @@ WORKDIR /app
 # Copy everything else and build
 COPY . .
 
-RUN dotnet restore ./MtfhReportingDataListener/MtfhReportingDataListener.csproj
-RUN dotnet restore ./MtfhReportingDataListener.Tests/MtfhReportingDataListener.Tests.csproj
+RUN dotnet restore
 
 RUN dotnet build -c Release -o out MtfhReportingDataListener/MtfhReportingDataListener.csproj
 RUN dotnet build -c debug -o out MtfhReportingDataListener.Tests/MtfhReportingDataListener.Tests.csproj
