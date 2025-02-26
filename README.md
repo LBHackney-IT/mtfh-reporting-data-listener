@@ -231,6 +231,7 @@ $ make test
 
 The @[LBHackney-IT/housing-products](https://github.com/orgs/LBHackney-IT/teams/housing-products) team.
 
+## Resource links:
 [docker-download]: https://www.docker.com/products/docker-desktop
 [AWS-CLI]: https://aws.amazon.com/cli/
 [Api-Gateway]: https://github.com/LBHackney-IT/lbh-core/blob/release/Hackney.Core/Hackney.Core.Http/README.md#ApiGateway
