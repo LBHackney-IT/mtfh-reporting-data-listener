@@ -38,19 +38,6 @@ terraform {
   }
 }
 
-data "aws_vpc" "housing_development_vpc" {
-  tags = {
-    Name = "housing-dev"
-  }
-}
-
-module "mtfh-reporting-data_listener_sg" {
-  source              = "../modules/security_groups/outbound_only_traffic"
-  vpc_id              = data.aws_vpc.housing_development_vpc.id
-  user_resource_name  = "mtfh-reporting-data_listener"
-  environment_name    = var.environment_name
-}
-
 # This is the parameter containing the arn of the topic to which we want to subscribe
 # This will have been created by the service the generates the events in which we are interested
 
