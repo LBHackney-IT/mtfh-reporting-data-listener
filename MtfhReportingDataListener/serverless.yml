@@ -111,7 +111,7 @@ custom:
   vpcId:
     development: vpc-0d15f152935c8716f
     staging: vpc-064521a7a4109ba31
-    production: vpc-0ce853ddb64e8fb3c
+    production: vpc-006989d0b2bb070d9
   vpc:
     production:
       securityGroupIds:
