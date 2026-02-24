@@ -56,11 +56,23 @@ namespace MtfhReportingDataListener.UseCase
             };
 
             var topicName = Environment.GetEnvironmentVariable("TENURE_SCHEMA_NAME");
-            var schema = await _schemaRegistry.GetSchemaForTopic(topicName);
-            var record = BuildTenureRecord(schema, tenureChangeEvent);
 
+            Console.WriteLine($"About to fetch schema for topic: {topicName}");
+            var schema = await _schemaRegistry.GetSchemaForTopic(topicName);
+            Console.WriteLine($"Schema fetched for topic: {topicName}");
+            
+            Console.WriteLine($"About to build record for topic: {topicName}");
+            var record = BuildTenureRecord(schema, tenureChangeEvent);
+            Console.WriteLine($"Record built for topic: {topicName}");
+
+            Console.WriteLine($"About to create topic if not exists: {topicName}");
             await _kafkaGateway.CreateKafkaTopic(topicName);
-            _kafkaGateway.SendDataToKafka(topicName, record);
+            Console.WriteLine($"Topic checked/created: {topicName}");
+
+            Console.WriteLine($"About to send record to Kafka topic: {topicName}");
+            var result = _kafkaGateway.SendDataToKafka(topicName, record);
+
+            Console.WriteLine($"Finished sending record to Kafka topic {result.Success}: {topicName}");
         }
 
         public GenericRecord BuildTenureRecord(string schema, TenureEvent tenureResponse)
