@@ -20,6 +20,8 @@ namespace MtfhReportingDataListener.Gateway
     {
         public IsSuccessful SendDataToKafka(string topic, GenericRecord message)
         {
+            Console.WriteLine($"About to send message to Kafka topic: {topic}");
+            
             var config = new ProducerConfig
             {
                 BootstrapServers = Environment.GetEnvironmentVariable("DATAPLATFORM_KAFKA_HOSTNAME"),
