@@ -1,241 +1,85 @@
 # MTFH Reporting Data Listener
 
-This listener implements an AWS Lambda Function that recieves messages when any updates are made to the TenureInformationApi and sends the updates to a Kafka queue. 
+An AWS Lambda that receives tenure events through SQS, retrieves the current tenure from the Tenure API, and publishes an Avro record to Kafka. This repository deploys a service; it has no NuGet publishing workflow or package release version.
 
-Here is the process on how the data is saved to Kafka:
+## Message processing and data sources
 
-### Retrieving data from the API
-1. When one of the events in [this switch statement][usecase-factory] is raised then this listener is triggered
-2. The listener can then call the relevant API to retrieve the data the needs to be saved. You could potentially use [this Shared NuGet Package][nuget] to make calls to any APIs.[This ReadME][Api-Gateway] explains how the listener calls the relative API.
-     - If the Tenure doesn't exist then the listener throws an Exception 
+Terraform subscribes the listener queue to the tenure SNS topic with raw message delivery. Each SQS record body is deserialized as an `EntityEventSns`. `TenureCreatedEvent` and `TenureUpdatedEvent` are handled; other event types are logged and ignored.
 
-### Get Schema from schema registry
-3. The listener will then get the schema from a schema registry via a http call, the schema registry is managed in [this repository](https://github.com/LBHackney-IT/Data-Platform/tree/main/modules/kafka-schema-registry).
+For each supported event, the listener retrieves the tenure, combines it with event metadata, retrieves the latest value schema, builds an Avro record, ensures the Kafka topic exists, and publishes the record. Processing exceptions propagate to Lambda for SQS retry/dead letter handling. Records in a batch are processed sequentially.
 
-### Convert data to Avro
-4. Then using this schema, an AVRO generic record is created holding the tenure details retrieved from the tenure API.
+The service exposes no HTTP API endpoints. Its Lambda entry point is:
 
-   Kafka only accepts the following data types; `byte[], Bytebuffer, Double, Integer, Long, String`. If you need to send through other data types you will first need to serialize the data into one of these types. Below are some code examples of how we have done this.
-
-   **Nullable types (Union)**:
-
-   Here we check whether the field value is null, assign null if it is. This needs to be done as Kafka doesn't accept empty strings.
-   If not, remove the nullable part from the schema and continue as normal.
-
-   ```csharp
-        if (fieldValue == null)
-        {
-            record.Add(field.Name, null);
-            return;
-        }
-
-        fieldSchema = GetNonNullablePartOfNullableSchema(field.Schema);
-        fieldType = fieldSchema.Tag;
-
-        ...
-
-        private Schema GetNonNullablePartOfNullableSchema(Schema nullableSchema)
-        {
-            var jsonSchema = (JsonElement) JsonSerializer.Deserialize<object>(nullableSchema.ToString());
-            jsonSchema.TryGetProperty("type", out var unionList);
-            var notNullSchema = unionList.EnumerateArray().First(type => type.ToString() != "null").ToString();
-            return Schema.Parse(notNullSchema);
-        }
-   ```
-
-   **Enums**:
-
-   ```csharp 
-        new GenericEnum((EnumSchema) fieldSchema, fieldValue.ToString())
-   ```
-
-   **DateTime Objects**:
-
-   Converts to a int holding a Unix timestamp.
-
-    ```csharp
-        private int? UnixTimestampNullable(object obj)
-        {
-            var date = (DateTime?) obj;
-            return (int?) (date?.Subtract(new DateTime(1970, 1, 1)))?.TotalSeconds;
-        }
-    ```
-
-    **Arrays**:
-
-    ```csharp
-        var fieldValueAsList = (List<ExampleList>) fieldValue;
-        var itemsSchema = GetSchemaForArrayItems(fieldSchema);
-        var recordsList = fieldValueAsList.Select(listItem => PopulateFields(listItem, itemsSchema)).ToArray()
-        record.Add(field.Name, recordsList);
-        
-        private Schema GetSchemaForArrayItems(Schema arraySchema)
-        {
-            var jsonSchema = (JsonElement) JsonSerializer.Deserialize<object>(arraySchema.ToString());
-            jsonSchema.TryGetProperty("items", out var itemsSchemaJson);
-            return Schema.Parse(itemsSchemaJson.ToString());
-        }
-    ``` 
-
-    Once the data types have been converted you can create the Generic Record by adding each value to the record, this can be done through the use of a for loop & reflection:
-
-    ```csharp
-
-        public GenericRecord PopulateFields(object item, Schema schema)
-        {
-            var record = new GenericRecord((RecordSchema) schema);
-            ((RecordSchema) schema).Fields.ForEach(field =>
-            {
-                PropertyInfo propInfo = item.GetType().GetProperty(field.Name);
-                if (propInfo == null)
-                {
-                    Console.WriteLine($"Field name: {field.Name} not found in {item}");
-                    return;
-                }
-
-                var fieldValue = propInfo.GetValue(item);
-                var fieldSchema = field.Schema;
-                var fieldType = field.Schema.Tag;
-
-                //Add any data type conversion required here
-
-                record.Add(field.Name, fieldValue);
-            });
-
-            return record;
-        }
-
-    ```
-
-5. Lastly the record created above is then sent through to Kafka.
-   ### Schema Registry
-   A schema registry URL is required to push data to Kafka in AVRO format. The schema registry is hosted separately from the Kafka brokers. The Kafka producer publishes the data to a Kafka topic, using the schema registry to serialize the data into AVRO per the schema relating to the topic. Hence the schema registry is used to store the schemas for a topic. You can store a schema for both the key and value of a message. We only send values in AVRO format. 
-
-   ### Send Data to Kafka
-   Messages are sent to Kafka using Kafka Topics which the consumer subsequently reads from. A Kafka Topic is created for the producer from its schema name if one doesn't already exist, otherwise it uses the schema name provided as an environment variable.
-   This is set in Parameter Store in the producer's AWS account.
-   We then use the `Producer.Flush(TimeSpan.FromSeconds(10))` to immediately send through the message through Kafka to the consumer.
-   There is a 10 seconds maximum timeout on the listener. This would mean that it will wait until either all the messages have been sent or 10 seconds have passed. If a maximum timeout is not set then it would wait until all the messages have been sent, and in the event there is an issue whilst sending messages, it will likely hang until the lambda timeout which we don't want.
-
-   ### Kafka Images
-   In order to ensure high availability and improve fault tolerance of the event streaming process, we deploy multiple brokers and set a replication factor for Kafka topics to a value that is greater than 1.
-   This means that copies (replicas) of the data will be spread across the brokers so that in the event one of the brokers goes down/ fails, then another broker can take over and serve the request.
-
-See [this diagram][diagram] for a visual representation of the process of the listener.
-
-
-## Stack
-
-- .NET Core as a web framework.
-- xUnit as a test framework.
-
-## Contributing
-
-### Setup
-
-1. Install [Docker][docker-download].
-2. Install [AWS CLI][AWS-CLI].
-3. Clone this repository.
-4. Rename the initial template.
-5. Open it in your IDE.
-
-
-
-### Development
-
-To serve the application, run it using your IDE of choice, we use Visual Studio CE and JetBrains Rider on Mac.
-
-**Note**
-When running locally the appropriate database conneciton details are still needed.
-
-
-
-The application can also be served locally using docker:
-1.  Add you security credentials to AWS CLI.
-```sh
-$ aws configure
-```
-2. Log into AWS ECR.
-```sh
-$ aws ecr get-login --no-include-email
-```
-3. Build and serve the application. It will be available in the port 3000.
-```sh
-$ make build && make serve
+```text
+MtfhReportingDataListener::MtfhReportingDataListener.SqsFunction::FunctionHandler
 ```
 
-### Release process
+External interfaces:
 
-We use a pull request workflow, where changes are made on a branch and approved by one or more other maintainers before the developer can merge into `master` branch.
+| System | Interface | Purpose |
+| --- | --- | --- |
+| SNS / SQS | Tenure event messages | Trigger processing |
+| Tenure API | `GET {ApiRoute}/tenures/{id}` | Retrieve current tenure, using the configured API URL and token |
+| Schema Registry | `GET http://{KAFKA_SCHEMA_REGISTRY_HOSTNAME}/subjects/{TENURE_SCHEMA_NAME}-value/versions/latest` | Retrieve the Avro schema |
+| Kafka | Topic named by `TENURE_SCHEMA_NAME` | Publish serialized tenure events |
+| AWS Systems Manager Parameter Store | References in `serverless.yml` and Terraform | Supply deployment configuration, queue and topic ARNs |
 
-![Circle CI Workflow Example](docs/circle_ci_workflow.png)
+The listener does not directly query a database. Kafka topic creation uses one partition and a replication factor of two. The producer flush timeout is ten seconds.
 
-Then we have an automated six step deployment process, which runs in CircleCI.
+## Setup
 
-1. Automated tests (xUnit) are run to ensure the release is of good quality.
-2. The application is deployed to development automatically, where we check our latest changes work well.
-3. We manually confirm a staging deployment in the CircleCI workflow once we're happy with our changes in development.
-4. The application is deployed to staging.
-5. We manually confirm a production deployment in the CircleCI workflow once we're happy with our changes in staging.
-6. The application is deployed to production.
+Install Docker with Docker Compose v2. For builds outside Docker, install the .NET 10 SDK. Private Hackney dependencies require a GitHub Packages credential with access to the `LBHackney-IT` feed.
 
-Our staging and production environments are hosted by AWS. We would deploy to production per each feature/config merged into  `release`  branch.
-
-### Creating A PR
-
-To help with making changes to code easier to understand when being reviewed, we've added a PR template.
-When a new PR is created on a repo that uses this API template, the PR template will automatically fill in the `Open a pull request` description textbox.
-The PR author can edit and change the PR description using the template as a guide.
-
-## Static Code Analysis
-
-### Using [FxCop Analysers](https://www.nuget.org/packages/Microsoft.CodeAnalysis.FxCopAnalyzers)
-
-FxCop runs code analysis when the Solution is built.
-
-Both the API and Test projects have been set up to **treat all warnings from the code analysis as errors** and therefore, fail the build.
-
-However, we can select which errors to suppress by setting the severity of the responsible rule to none, e.g `dotnet_analyzer_diagnostic.<Category-or-RuleId>.severity = none`, within the `.editorconfig` file.
-Documentation on how to do this can be found [here](https://docs.microsoft.com/en-us/visualstudio/code-quality/use-roslyn-analyzers?view=vs-2019).
-
-## Testing
-
-### Run the tests
+From the repository root:
 
 ```sh
-$ make test
+cp .env.example .env
 ```
 
-### Agreed Testing Approach
-- Use xUnit, FluentAssertions and Moq
-- Always follow a TDD approach
-- Tests should be independent of each other
-- Gateway tests should interact with a real test instance of the database
-- Test coverage should never go down. (See the [test project readme](MtfhReportingDataListener.Tests/readme.md#Run-coverage) for how to run a coverage check.)
-- All use cases should be covered by E2E tests
-- Optimise when test run speed starts to hinder development
-- Unit tests and E2E tests should run in CI
-- Test database schemas should match up with production database schema
-- Have integration tests which test from the DynamoDb database to API Gateway
+Replace the placeholder in `.env` with the `LBHPACKAGESTOKEN` credential. Keep this file private. For native .NET commands, export `LBHPACKAGESTOKEN` in the shell as well; `NuGet.Config` reads it from the environment.
 
-## Data Migrations
-### A good data migration
-- Record failure logs
-- Automated
-- Reliable
-- As close to real time as possible
-- Observable monitoring in place
-- Should not affect any existing databases
+```sh
+dotnet restore MtfhReportingDataListener.sln
+dotnet build MtfhReportingDataListener.sln --no-restore
+```
 
-## Maintainers
+## Configuration
 
-The @[LBHackney-IT/housing-products](https://github.com/orgs/LBHackney-IT/teams/housing-products) team.
+`BaseFunction` loads `appsettings.json`, optionally `appsettings.{ENVIRONMENT}.json`, then environment variables.
 
-## Resource links:
-- \[[docker-download](https://www.docker.com/products/docker-desktop)\] - Download docker for running an application in containerised form.
-- \[[AWS-CLI](https://aws.amazon.com/cli/)\] - Download AWS CLI to establish access to the development resources this application may need.
-- \[[Api-Gateway](https://github.com/LBHackney-IT/lbh-core/blob/release/Hackney.Core/Hackney.Core.Http/README.md#ApiGateway)\] - Read more on re-usable code for accesing Hackney APIs.
-- \[[diagram](https://drive.google.com/file/d/1KbF9gcmf0LOvr7w2fE_fxTd1lcccPilr/view?usp=sharing)\] - Application flow diagram.
-- \[[tenure-api-github](https://github.com/LBHackney-IT/tenure-api)\] - API used to manage and retrieve DynamoDB tenancy data.
-- \[[usecase-factory](/MtfhReportingDataListener/Factories/UseCaseFactory.cs#L16)\] - Class that determines what the application will do based on the event name that is supplied.
-- \[[nuget](https://github.com/LBHackney-IT/lbh-core/blob/release/Hackney.Core/Hackney.Core.Http/ApiGateway.cs)\] - Link to the source code of package containing re-usable HTTP setup for calling Hackney APIs.
+| Variable | Purpose |
+| --- | --- |
+| `ENVIRONMENT` | Select optional settings; `LocalDevelopment` also selects plaintext Kafka connections, otherwise SSL is used |
+| `TenureApiUrl` | Tenure API base URL |
+| `TenureApiToken` | Tenure API credential |
+| `DATAPLATFORM_KAFKA_HOSTNAME` | Comma-separated Kafka bootstrap servers |
+| `TENURE_SCHEMA_NAME` | Kafka topic and schema subject prefix |
+| `KAFKA_SCHEMA_REGISTRY_HOSTNAME` | Schema Registry host and port; schema retrieval prepends `http://` |
+| `AWS_REGION` / AWS credentials | AWS SDK configuration; deployed Lambda uses its execution role |
+
+Deployment values are mapped from SSM in [serverless.yml](MtfhReportingDataListener/serverless.yml). Use reachable API, Kafka and schema services when invoking the handler locally.
+
+## Tests
+
+```sh
+make test
+```
+
+This builds the test container, starts ZooKeeper, two Kafka brokers and Schema Registry, and runs the existing xUnit unit, gateway and end-to-end tests. Compose supplies local AWS placeholder credentials and Kafka/schema addresses. Coverage is collected inside the test container under `/app/coverage` in OpenCover format. The test Dockerfile does not install or run SonarScanner; CircleCI runs the SonarCloud scan separately.
+
+The application project is a Lambda class library. The existing `make serve` command does not provide an HTTP server or a Lambda invocation host; port 3000 is not a service endpoint. Use the automated tests or a Lambda invocation tool to exercise the handler.
+
+## Packaging and deployment
+
+From `MtfhReportingDataListener`, `build.sh` installs Amazon.Lambda.Tools and packages a Release build under `bin/release/net10.0/mtfh-reporting-data-listener.zip`. On Windows, `build.cmd` packages the same artifact and requires Amazon.Lambda.Tools to be installed already.
+
+The Serverless configuration selects the managed `dotnet10` runtime in `eu-west-2`. CircleCI builds and tests changes, manages Terraform, and deploys development from `master`; the `release` workflow deploys staging and uses approval steps before production. Deployment requires the configured AWS credentials, SSM parameters, VPC resources and execution permissions. The existing Serverless v3 runtime schema may warn about `dotnet10`; deployment validation is still required before release.
+
+## Project layout
+
+- `MtfhReportingDataListener`: Lambda handler, configuration, gateways and tenure processing.
+- `MtfhReportingDataListener.Tests`: xUnit tests, mocks and integration fixtures.
+- `terraform/{development,staging,production}`: queue, SNS subscription and related infrastructure.
+- `.circleci/config.yml`: build, test and deployment workflows.
+
+Maintained by the LBHackney-IT housing products team.

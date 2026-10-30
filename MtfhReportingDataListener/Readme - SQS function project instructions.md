@@ -1,51 +1,16 @@
-# AWS Lambda Simple SQS Function Project
+# SQS Lambda packaging and invocation
 
-This starter project consists of:
-* Function.cs - class file containing a class with a single function handler method
-* aws-lambda-tools-defaults.json - default argument settings for use with Visual Studio and command line deployment tools for AWS
+The deployed handler is `MtfhReportingDataListener::MtfhReportingDataListener.SqsFunction::FunctionHandler`. It accepts an AWS SQS event; each record body contains the JSON tenure event directly, rather than an SNS envelope. Terraform configures raw SNS delivery to the SQS queue, and `serverless.yml` configures the queue as the Lambda event source.
 
-You may also have a test project depending on the options selected.
+From the repository root, run `make test` to exercise the existing automated tests with their local Kafka and Schema Registry dependencies. See the [repository README](../README.md) for credentials and configuration.
 
-The generated function handler responds to events on an Amazon SQS queue.
+For packaging, install the .NET 10 SDK and provide `LBHPACKAGESTOKEN` in the environment, then run:
 
-After deploying your function you must configure an Amazon SQS queue as an event source to trigger your Lambda function.
-
-## Here are some steps to follow from Visual Studio:
-
-To deploy your function to AWS Lambda, right click the project in Solution Explorer and select *Publish to AWS Lambda*.
-
-To view your deployed function open its Function View window by double-clicking the function name shown beneath the AWS Lambda node in the AWS Explorer tree.
-
-To perform testing against your deployed function use the Test Invoke tab in the opened Function View window.
-
-To configure event sources for your deployed function use the Event Sources tab in the opened Function View window.
-
-To update the runtime configuration of your deployed function use the Configuration tab in the opened Function View window.
-
-To view execution logs of invocations of your function use the Logs tab in the opened Function View window.
-
-## Here are some steps to follow to get started from the command line:
-
-Once you have edited your template and code you can deploy your application using the [Amazon.Lambda.Tools Global Tool](https://github.com/aws/aws-extensions-for-dotnet-cli#aws-lambda-amazonlambdatools) from the command line.
-
-Install Amazon.Lambda.Tools Global Tools if not already installed.
-```
-    dotnet tool install -g Amazon.Lambda.Tools
+```sh
+cd MtfhReportingDataListener
+./build.sh
 ```
 
-If already installed check if new version is available.
-```
-    dotnet tool update -g Amazon.Lambda.Tools
-```
+The script installs Amazon.Lambda.Tools and produces `bin/release/net10.0/mtfh-reporting-data-listener.zip`. On Debian it also installs `zip`, requiring appropriate system permissions. `build.cmd` is the Windows equivalent and assumes the Lambda tool is already installed.
 
-Execute unit tests
-```
-    cd "MtfhReportingDataListener/test/MtfhReportingDataListener.Tests"
-    dotnet test
-```
-
-Deploy function to AWS Lambda
-```
-    cd "MtfhReportingDataListener/src/MtfhReportingDataListener"
-    dotnet lambda deploy-function
-```
+`aws-lambda-tools-defaults.json` selects `net10.0` and the `dotnet10` runtime. Normal deployment uses the CircleCI Serverless workflow and the SSM/VPC configuration in `serverless.yml`. An AWS console test invocation must supply an SQS event and configuration permitting access to the Tenure API, Schema Registry and Kafka. The class library cannot be started as an HTTP application with `dotnet run`.
