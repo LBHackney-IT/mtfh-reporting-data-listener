@@ -66,3 +66,6 @@ tmp/
 testresults/
 
 .env
+
+# Local PR summary
+/pr-summary-dotnet-10.md
